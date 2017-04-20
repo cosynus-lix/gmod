@@ -63,7 +63,7 @@ end
 (** Programs. *)
 module P = struct
   type t =
-    | Spawn of app
+    | Spawn of t
     | P of string
     | V of string
     | Cmd of E.t

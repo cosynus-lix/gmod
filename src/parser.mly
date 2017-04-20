@@ -41,9 +41,11 @@ declaration_arguments:
 
 instrs:
     | instr SEMICOLON instrs { $1::$3 }
+    | instr { [$1] }
     | { [] }
 
 instr:
+    | command { P.Cmd $1 }
     | P LPAR IDENT RPAR { P.P $3 }
     | V LPAR IDENT RPAR { P.V $3 }
     | LACC instrs RACC { P.Seq $2 }
@@ -51,9 +53,7 @@ instr:
 //    | IF expr instr { P.If ($2,$3,P.Seq []) }
     | WHILE expr instr { P.While ($2,$3) }
     | IDENT LPAR expr_list RPAR { P.Call ($1,$3) }
-
-action:
-    | command { P.Cmd $1 }
+    | SPAWN instr { P.Spawn $2 }
 
 command:
     | ASSERT expr { E.Assert $2 }
