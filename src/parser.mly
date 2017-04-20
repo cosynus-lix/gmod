@@ -59,7 +59,7 @@ command:
     | ASSERT expr { E.Assert $2 }
     | RETURN expr { E.Return $2 }
     | IDENT EQ expr { E.Assign ($1, $3) }
-    | typ IDENT { E.New_var ($1, $2) }
+    | typ IDENT { E.New_var ($1, $2, None) }
 
 typ:
     | T_VOID { T.Void }
@@ -69,11 +69,11 @@ typ:
 
 expr:
     | IDENT { E.Var $1 }
-    | V_INT { E.Int $1 }
-    | V_BOOL { E.Bool $1 }
-//    | NOT expr { ENot $2 }
-//    | expr PLUS expr { EAdd ($1,$3) }
-//    | expr MINUS expr { ESub ($1,$3) }
+    | V_INT { E.Val (E.Int $1) }
+    | V_BOOL { E.Val (E.Bool $1) }
+    | NOT expr { E.Not $2 }
+    | expr PLUS expr { E.Add ($1,$3) }
+//    | expr MINUS expr { E.Sub ($1,$3) }
 //    | expr MULT expr { EMult ($1,$3) }
 //    | expr ISEQ expr { EIs_eq ($1,$3) }
 //    | expr AND expr { EAnd ($1,$3) }

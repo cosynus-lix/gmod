@@ -15,14 +15,18 @@ end
 
 (** Expressions. *)
 module E = struct
+  type value =
+    | Bot (** undefined value *)
+    | Int of int
+    | Bool of bool
+
   type t =
+    | Val of value
     | Assign of string * t
-    | New_var of T.t * string
+    | New_var of T.t * string * t option
     | Assert of t
     | Return of t
     | Var of string
-    | Int of int
-    | Bool of bool
     | Add of t * t
     | Sub of t * t
     | Not of t
@@ -37,15 +41,16 @@ module E = struct
   let rec to_string e =
     let to_string e =
       match e with
-      | Var _ | Int _ -> to_string e
+      | Var _ | Val _ -> to_string e
       | _ -> "(" ^ to_string e ^ ")"
     in
     match e with
     | Assign (s,e) -> Printf.sprintf "%s = %s" s (to_string e)
-    | New_var (t,v) -> Printf.sprintf "%s %s" (T.to_string t) v
+    | New_var (t,v,e) -> Printf.sprintf "%s %s" (T.to_string t) v
     | Var v -> v
-    | Int n -> string_of_int n
-    | Bool b -> if b then "true" else "false"
+    | Val Bot -> "?"
+    | Val (Int n) -> string_of_int n
+    | Val (Bool b) -> if b then "true" else "false"
     | Add (e1, e2) -> Printf.sprintf "%s+%s" (to_string e1) (to_string e2)
     | Sub (e1, e2) -> Printf.sprintf "%s-%s" (to_string e1) (to_string e2)
     | Mult (e1, e2) -> Printf.sprintf "%s*%s" (to_string e1) (to_string e2)
@@ -73,7 +78,6 @@ module P = struct
     | Call of app
    and app =
      string * E.t list
-              
 
   (** Function declaration. *)
   type decl =
