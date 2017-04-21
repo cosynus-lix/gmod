@@ -1,4 +1,4 @@
-SOURCES = stdlib.ml lang.ml parser.mly lexer.mll interpreter.ml gmod.ml
+SOURCES = stdlib.ml lang.ml parser.mly lexer.mll interpreter.ml simple.ml gmod.ml
 RESULT = gmod
 ANNOTATE = true
 

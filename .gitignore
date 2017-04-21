@@ -1,4 +1,5 @@
 *~
+*.annot
 *.cmi
 *.cmx
 *.o

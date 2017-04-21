@@ -1,3 +1,5 @@
+open Stdlib
+
 (** Types. *)
 module T = struct
   type t =
@@ -25,18 +27,7 @@ module E = struct
     | Assign of string * t
     | New_var of T.t * string * t option
     | Assert of t
-    | Return of t
     | Var of string
-    | Add of t * t
-    | Sub of t * t
-    | Not of t
-    | Mult of t * t
-    | Div of t * t
-    | Is_eq of t * t
-    | Le of t * t
-    | Lt of t * t
-    | And of t * t
-    | Or of t * t
 
   let rec to_string e =
     let to_string e =
@@ -51,18 +42,14 @@ module E = struct
     | Val Bot -> "?"
     | Val (Int n) -> string_of_int n
     | Val (Bool b) -> if b then "true" else "false"
-    | Add (e1, e2) -> Printf.sprintf "%s+%s" (to_string e1) (to_string e2)
-    | Sub (e1, e2) -> Printf.sprintf "%s-%s" (to_string e1) (to_string e2)
-    | Mult (e1, e2) -> Printf.sprintf "%s*%s" (to_string e1) (to_string e2)
-    | Div (e1, e2) -> Printf.sprintf "%s/%s" (to_string e1) (to_string e2)
-    | Le (e1, e2) -> Printf.sprintf "%s <= %s" (to_string e1) (to_string e2)
-    | Lt (e1, e2) -> Printf.sprintf "%s < %s" (to_string e1) (to_string e2)
-    | Is_eq (e1, e2) -> Printf.sprintf "%s == %s" (to_string e1) (to_string e2)
-    | Not e -> Printf.sprintf "!%s" (to_string e)
-    | And (e1, e2) -> Printf.sprintf "%s && %s" (to_string e1) (to_string e2)
-    | Or (e1, e2) -> Printf.sprintf "%s || %s" (to_string e1) (to_string e2)
-    | Return e -> Printf.sprintf "return %s" (to_string e)
     | Assert e -> Printf.sprintf "assert(%s)" (to_string e)
+
+  let rec subst s = function
+    | Val _ as e -> e
+    | Assign (x,e) -> Assign (x, subst s e)
+    | New_var (t,x,e) -> New_var (t,x,Option.map (subst s) e)
+    | Assert e -> Assert (subst s e)
+    | Var x -> (try List.assoc x s with Not_found -> Var x)
 end
 
 (** Programs. *)
@@ -76,6 +63,7 @@ module P = struct
     | If of E.t * t * t
     | While of E.t * t
     | Call of app
+    | Return of E.t
    and app =
      string * E.t list
 
