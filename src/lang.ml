@@ -1,3 +1,5 @@
+(** Internal representation of programs. *)
+
 open Stdlib
 
 (** Types. *)
@@ -62,10 +64,8 @@ module P = struct
     | Seq of t list
     | If of E.t * t * t
     | While of E.t * t
-    | Call of app
+    | Call of string * E.t list
     | Return of E.t
-   and app =
-     string * E.t list
 
   (** Function declaration. *)
   type decl =

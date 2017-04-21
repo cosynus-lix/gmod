@@ -1,3 +1,6 @@
+(** Standard library. *)
+
+(** Operations on option types. *)
 module Option = struct
   let bind f x =
     match x with
