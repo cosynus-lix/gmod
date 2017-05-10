@@ -1,0 +1,3 @@
+[submodule "lib/ocaml-alg"]
+	path = lib/ocaml-alg
+	url = https://github.com/smimram/ocaml-alg.git
