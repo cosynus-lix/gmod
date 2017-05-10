@@ -9,12 +9,16 @@ module T = struct
     | Bool
     | Int
     | Mutex
+    | Semaph
+    | Barr
 
   let to_string = function
     | Void -> "void"
     | Int -> "int"
     | Bool -> "bool"
     | Mutex -> "mutex"
+    | Semaph -> "semaph"
+    | Barr -> "barrier"
 end
 
 (** Expressions. *)
@@ -35,7 +39,7 @@ module E = struct
     let to_string e =
       match e with
       | Var _ | Val _ -> to_string e
-      | _ -> "(" ^ to_string e ^ ")"
+      | _ -> Printf.sprintf "(%s)" (to_string e)
     in
     match e with
     | Assign (s,e) -> Printf.sprintf "%s = %s" s (to_string e)
@@ -43,7 +47,7 @@ module E = struct
     | Var v -> v
     | Val Bot -> "?"
     | Val (Int n) -> string_of_int n
-    | Val (Bool b) -> if b then "true" else "false"
+    | Val (Bool b) -> Printf.sprintf "%b" b
     | Assert e -> Printf.sprintf "assert(%s)" (to_string e)
 
   let rec subst s = function
