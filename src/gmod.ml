@@ -14,5 +14,5 @@ let () =
   let fin = open_in !fname in
   let lexbuf = Lexing.from_channel fin in
   let prog = parse lexbuf in
-  ignore prog;
-  close_in fin
+  close_in fin;
+  ignore prog

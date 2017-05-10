@@ -9,16 +9,16 @@ module T = struct
     | Bool
     | Int
     | Mutex
-    | Semaph
-    | Barr
+    | Semaphore
+    | Barrier
 
   let to_string = function
     | Void -> "void"
     | Int -> "int"
     | Bool -> "bool"
     | Mutex -> "mutex"
-    | Semaph -> "semaph"
-    | Barr -> "barrier"
+    | Semaphore -> "semaphore"
+    | Barrier -> "barrier"
 end
 
 (** Expressions. *)
