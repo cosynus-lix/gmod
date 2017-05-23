@@ -40,8 +40,6 @@ rule token = parse
   | "bool" { T_BOOL }
   | "int" { T_INT }
   | "mutex" { T_MUTEX }
-  | "semaph" { T_SEMAPH }
-  | "barrier" { T_BARR }
   | "if" { IF }
   | "then" { THEN }
   | "else" { ELSE }

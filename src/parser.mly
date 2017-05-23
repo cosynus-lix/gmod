@@ -4,7 +4,7 @@
 
 %token LPAR RPAR LACC RACC SEMICOLON COMMA
 %token IF THEN ELSE RETURN NOT WHILE
-%token T_VOID T_BOOL T_INT T_MUTEX T_SEMAPH T_BARR
+%token T_VOID T_BOOL T_INT T_MUTEX
 %token ISEQ LE LT EQ PLUS MINUS MULT AND OR
 %token ASSERT
 %token EOF
@@ -21,7 +21,7 @@
 %left DOT SEMICOLON
 
 %start decls
-%type <Lang.P.decl list> decls
+%type <Lang.D.t> decls
 %%
 
 decls:
@@ -32,8 +32,8 @@ declarations:
     | declaration declarations { $1::$2 }
 
 declaration:
-    | typ IDENT LPAR declaration_arguments RPAR instr { { P.typ=$1; name=$2; args=Some $4; prog=Some $6 } }
-    | typ IDENT SEMICOLON { { P.typ=$1; name=$2; args=None; prog=None } }
+    | typ IDENT LPAR declaration_arguments RPAR instr { D.fct $1 $2 (Array.of_list $4) $6 }
+    | typ IDENT EQ instr { D.cst $1 $2 $4 }
 
 declaration_arguments:
     | { [] }

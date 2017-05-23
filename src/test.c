@@ -1,7 +1,7 @@
 // The Swiss flag
 
-mutex a;
-mutex b;
+//mutex a;
+//mutex b;
 
 void p1() {
   lock(a);
