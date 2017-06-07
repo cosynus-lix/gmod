@@ -1,9 +1,18 @@
-SOURCES = stdlib.ml lang.ml parser.mly lexer.mll interpreter.ml simple.ml gmod.ml
-RESULT = gmod
+SOURCES = dashed.ml
+RESULT = dashed
+INCDIRS =
+LIBS =
 ANNOTATE = true
-DOC_FILES = stdlib.ml lang.ml simple.ml
+USE_CAMLP4 =
+DOC_FILES = $(SOURCES)
+OCAMLDEP = ocamldep.opt
+OCAMLOPT = ocamlopt.opt
+OCAMLDOC = ocamldoc.opt
+OCAMLDOCFLAGS = -sort
 
-all: dnc
-	./gmod test.c
+all: dncl
+
+test: all
+	$(OCAMLOPT) dashed.ml -o dashed
 
 include OCamlMakefile
