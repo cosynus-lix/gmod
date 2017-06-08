@@ -1,0 +1,496 @@
+open Common
+open AbstractSyntax
+
+(** This module provides the functions which determine the various relevant
+    geometric information about a given PV program. Actually the calculations
+    performed by some is required during the calculations performed by some
+    others so the results obtained are kept in the variable
+    "parameters". Therefore, once the syntactical semantics of a program has been
+    extracted, the function "init" should be called. If one wishes to analyze
+    another program, one can save the results that have been calculated so far
+    through the variable "parameters". Actually, one should keep a table outside
+    the module that associates a syntactical semantics with its geometric
+    semantics.
+
+    For example, one may need only to determine the forbidden area. Then later
+    one may need the state space which is just the complement of the forbidden
+    area. It is therefore useful to remember the forbidden area. *)
+
+module Make
+  (AC:AreaOverCube.S with type ints = Common.IntSet.t)
+  (*Co:Covering.S with type area = AC.t*)
+  (*CS:Concur2005.CubicalSet with type area = AC.t*)
+  (Forbidden:Forbidden.S with type area = AC.t) =
+struct
+
+  type t =
+    {
+      mutable forbidden:                AC.t option;
+      mutable state:                    AC.t option;
+      mutable sources:                  AC.t option;
+      mutable deadlocks:                AC.t option;
+      mutable deadlock_attractor:       AC.t option;
+      mutable deadlock_attractor_weak:  AC.t option;
+      mutable hopeful:                  AC.t option;
+      mutable local_deadlock:           AC.t option;
+      mutable reachable:                AC.t option;
+      mutable unreachable:              AC.t option;
+      mutable safe:                     AC.t option;
+      mutable hazardous:                AC.t option;
+      mutable overflow:                 AC.t option;
+      mutable reachable_overflow:       AC.t option;
+      mutable critical_section:         AC.t option;
+      mutable printable_list_of_conflicts:string list option;
+      mutable cset:                     CS.t option;
+      mutable maximal_dipaths:          Co.t option;
+      mutable local_deadlock_with_parameter: AC.t option;
+      mutable cech_complex: ((int list) * AC.brick) list array option
+    }
+
+  let default () =
+    {
+      forbidden                = None;
+      state                    = None;
+      sources                  = None;
+      deadlocks                = None;
+      deadlock_attractor       = None;
+      deadlock_attractor_weak  = None;
+      hopeful                  = None;
+      local_deadlock           = None;
+      reachable                = None;
+      unreachable              = None;
+      safe                     = None;
+      hazardous                = None;
+      overflow                 = None;
+      reachable_overflow       = None;
+      critical_section         = None;
+      printable_list_of_conflicts = None;
+      (*cset   = None;*)
+      (*maximal_dipaths = None;*)
+      local_deadlock_with_parameter = None; (* Meaningless default value AC.empty ~d:0 () *)
+      (*cech_complex = None*)
+    }
+
+  (* TODO: state as first argument!!! *)
+
+  (* The optional argument akgs stands for "already known geometric
+     semantics" *)
+
+  let forbidden ?(local=false) ?runpro ?akgs syntactical_semantics =
+    let termination_message s =
+    (*
+      let msg =
+      match s with
+      | "switch semaphore" -> if syntactical_semantics.AbstractSyntax.sem_switch_tbl = Mos.empty then "done\n" else ""
+      | "quantitative semaphore" -> if syntactical_semantics.AbstractSyntax.sem_quantitative_tbl = Mos.empty then "done\n" else ""
+      | "recursive mutex" -> if syntactical_semantics.AbstractSyntax.mtx_recursive_set = Sos.empty then "done\n" else ""
+      | "switch mutex" -> if syntactical_semantics.AbstractSyntax.mtx_switch_set = Sos.empty then "done\n" else ""
+      | "normal mutex" -> if syntactical_semantics.AbstractSyntax.mtx_normal_set = Sos.empty then "done\n" else ""
+      | "monitor" -> if syntactical_semantics.AbstractSyntax.mntset = Sos.empty then "done\n" else ""
+      | "queue" -> if syntactical_semantics.AbstractSyntax.filtbl = Mos.empty then "done\n" else ""
+      | "stack" -> if syntactical_semantics.AbstractSyntax.piltbl = Mos.empty then "done\n" else ""
+      | "synchronization" -> if syntactical_semantics.AbstractSyntax.syntbl = Mos.empty then "done\n" else ""
+      | _ ->
+      let s = "termination_message: unexpected case " ^ s in
+      print_endline s;
+      failwith s
+      in
+      let msg = "" in
+      print_string msg
+    *)()
+    in
+    let akgs =
+      match akgs with
+      | None -> default ()
+      | Some x -> x
+    in
+    if akgs.forbidden = None then (* The forbidden area has not been determined yet *)
+      akgs.forbidden <- Some
+        (
+	  print_endline "Computing the forbidden area generated by:";
+	  (
+	    try
+	      let aux =
+	        [
+		  (
+		    let from_mutices = print_string " - treating switch semaphores: please wait...\n" ; flush_all () ;
+		      Forbidden.switch_semaphore syntactical_semantics
+		    in termination_message "switch semaphore";from_mutices
+		  );
+		  (
+		    let from_mutices = print_string " - treating quantitative semaphores: please wait...\n" ; flush_all () ;
+		      Forbidden.quantitative_semaphore syntactical_semantics
+		    in termination_message "quantitative semaphore";from_mutices
+		  );
+		  (
+		    let from_mutices = print_string " - treating recursive mutices: please wait...\n" ; flush_all () ;
+		      Forbidden.recursive_mutex syntactical_semantics
+		    in termination_message "recursive mutex";from_mutices
+		  );
+		  (
+		    let from_mutices = print_string " - treating normal mutices: please wait...\n" ; flush_all () ;
+		      Forbidden.normal_mutex syntactical_semantics
+		    in termination_message "normal mutex";from_mutices
+		  );
+		  (
+		    let from_mutices = print_string " - treating switch mutices: please wait...\n" ; flush_all () ;
+		      Forbidden.switch_mutex syntactical_semantics
+		    in termination_message "switch mutex";from_mutices
+		  );
+		  (
+		    let from_synchros = print_string " - treating synchronization barriers: please wait...\n" ; flush_all () ;
+		      Forbidden.synchronization syntactical_semantics
+		    in termination_message "synchronization";from_synchros
+		  );
+		  (
+		    let from_monitors = print_string " - treating monitors: please wait...\n" ; flush_all () ;
+		      Forbidden.monitor syntactical_semantics
+		    in termination_message "monitor";from_monitors
+		  );
+		  (
+		    let from_queues = print_string " - treating queues: please wait...\n" ; flush_all () ;
+		      Forbidden.file_starvation syntactical_semantics
+		    in termination_message "queue";from_queues
+		  );
+		  (
+		    let from_stacks = print_string " - treating stacks: please wait...\n" ; flush_all () ;
+		      Forbidden.pile_starvation syntactical_semantics
+		    in termination_message "stack";from_stacks)
+	        ]
+	      in
+	      print_endline "Forbidden area computed" ;
+	      AC.compress
+	        (
+		  List.fold_left AC.join (List.hd aux) (List.tl aux)
+	        )
+	    with
+	    | x -> (print_endline "Problem during the calculation of the forbidden area." ; raise x)
+	  )
+        );
+    let aux = get_some akgs.forbidden in
+    if local then AC.base aux else aux
+
+  let state ?runpro ?akgs syntactical_semantics =
+    let akgs = match akgs with
+      | None -> default ()
+      | Some local_parameters -> local_parameters
+    in
+    let _ =
+      if akgs.state = None (* The state area has not been determined yet *)
+      then
+        (
+	  print_string "Computing the space of states: please wait...\n" ; flush_all () ;
+	  akgs.state <- Some (AC.complement (AC.compress (forbidden ?runpro ~akgs syntactical_semantics))) ;
+	  print_endline "Space of states computed" ; flush_all ()
+        )
+    in
+    get_some akgs.state
+
+  (*let cech_complex ?runpro ?akgs syntactical_semantics =
+    let akgs = match akgs with
+      | None -> default ()
+      | Some cech_complex -> cech_complex
+    in
+    let _ =
+      if akgs.cech_complex = None (* The Čech complex has not been determined yet *)
+      then
+        (
+	  print_string "Computing Čech complex of the space of states: please wait...\n" ; flush_all () ;
+	  akgs.cech_complex <- Some (AC.cech_complex (AC.compress (state ?runpro ~akgs syntactical_semantics))) ;
+	  print_endline "Čech complex computed" ; flush_all ()
+        )
+    in
+    get_some akgs.state*)
+
+  (*let maximal_dipaths ?runpro ?akgs syntactical_semantics =
+    let akgs = match akgs with
+      | None -> default ()
+      | Some local_parameters -> local_parameters
+    in
+    let _ =
+      (
+        if akgs.maximal_dipaths = None (* The maximal dipaths have not been determined yet *)
+        then
+	  (
+	    print_string "Computing the list of maximal dipaths: please wait..." ; flush_all () ;
+            akgs.maximal_dipaths <- Some (Co.exact_dihomotopy_classes (Co.clean (Co.dihomotopy_classes (state ?runpro ~akgs syntactical_semantics))))
+	  )
+        else
+	  ()
+      )
+    in
+    get_some akgs.maximal_dipaths*)
+
+  (*let cset_state ?runpro ?akgs syntactical_semantics =
+    let akgs = match akgs with
+      | None -> default ()
+      | Some local_parameters -> local_parameters
+    in
+    let _ =
+      if akgs.cset = None
+      then
+        akgs.cset <- Some (CS.make (forbidden ?runpro ~akgs syntactical_semantics))
+    in
+    get_some akgs.cset*)
+
+  let deadlock_attractor ?runpro ?akgs syntactical_semantics =
+    let akgs = match akgs with
+      | None -> default ()
+      | Some local_parameters -> local_parameters
+    in
+    let _ =
+      if akgs.deadlock_attractor = None
+      then
+        (
+	  print_endline "Computing the deadlock attractor: please wait..." ; flush_all () ;
+	  akgs.deadlock_attractor <- Some (AC.deadlock_attractor (state ?runpro ~akgs syntactical_semantics)) ;
+	  print_endline "Deadlock attractor computed"
+        )
+    in
+    get_some akgs.deadlock_attractor
+
+  let deadlock_attractor_weak ?runpro ?akgs syntactical_semantics =
+    let akgs = match akgs with
+      | None -> default ()
+      | Some local_parameters -> local_parameters
+    in
+    let _ =
+      if akgs.deadlock_attractor_weak = None
+      then
+        (
+	  print_endline "Computing the deadlock attractor (applying the Concur 98 algorithm): please wait..." ; flush_all () ;
+	  akgs.deadlock_attractor_weak <- Some (AC.deadlock_attractor_weak (forbidden ?runpro ~akgs syntactical_semantics)) ;
+	  print_endline "Deadlock attractor computed (applying the Concur 98 algorithm)"
+        )
+    in
+    get_some akgs.deadlock_attractor_weak
+
+  let deadlocks ?runpro ?akgs syntactical_semantics =
+    let akgs = match akgs with
+      | None -> default ()
+      | Some local_parameters -> local_parameters
+    in
+    let _ =
+      if akgs.deadlocks = None
+      then
+        (
+	  print_endline "Computing the set of deadlocks: please wait..." ; flush_all () ;
+	  akgs.deadlocks <- Some (AC.remove_useless_empty_brick (AC.deadlocks (state ?runpro ~akgs syntactical_semantics))) ;
+	  print_endline "Set of deadlocks computed"
+        )
+    in
+    get_some akgs.deadlocks
+
+  let sources ?runpro ?akgs syntactical_semantics =
+    let akgs = match akgs with
+      | None -> default ()
+      | Some local_parameters -> local_parameters
+    in
+    let _ =
+      if akgs.sources = None
+      then
+        (
+	  print_endline "Computing the set of sources: please wait..." ; flush_all () ;
+	  akgs.sources <- Some (AC.sources (state ?runpro ~akgs syntactical_semantics)) ;
+	  print_endline "Set of sources computed"
+        )
+    in
+    get_some akgs.sources
+
+  let hopeful ?runpro ?akgs syntactical_semantics =
+    let akgs = match akgs with
+      | None -> default ()
+      | Some local_parameters -> local_parameters
+    in
+    let _ =
+      if akgs.hopeful = None
+      then
+        (
+	  print_string "Computing the hopeful area: please wait..." ; flush_all () ;
+	  akgs.hopeful <- Some (AC.complement (deadlock_attractor ?runpro ~akgs syntactical_semantics)) ;
+	  print_endline "Hopeful area computed"
+        )
+      else
+        ()
+    in
+    get_some akgs.hopeful
+
+  let local_deadlock_attractor ?runpro ?akgs syntactical_semantics =
+    let akgs = match akgs with
+      | None -> default ()
+      | Some local_parameters -> local_parameters
+    in
+    let _ =
+      if akgs.local_deadlock = None
+      then
+        akgs.local_deadlock <- Some (AC.deadlock_attractor (AC.base (state ?runpro ~akgs syntactical_semantics)))
+      else
+        ()
+    in
+    get_some akgs.local_deadlock
+
+  let local_deadlock_with_parameter ?runpro ?akgs n syntactical_semantics =
+    let akgs = match akgs with
+      | None -> default ()
+      | Some local_parameters -> local_parameters in
+    (
+      let dimension = AC.dimension (state ?runpro ~akgs syntactical_semantics) in (* [ 0 ; 1 ; ... ; dimension-1 ] *)
+      let current = ref (Array.to_list (Array.init n (fun x -> x))) in
+      let scurrent = ref (Common.IntSet.from_list !current) in
+      let answer = ref (AC.empty ~d:dimension ()) in
+      (
+	try
+	  while !answer = (AC.empty ~d:dimension ()) do
+	    (
+	      scurrent := Common.IntSet.from_list !current;
+	      answer := AC.local_deadlock_attractor (Common.IntSet.from_list !current) (get_some (akgs.state))
+	    );
+	    current := (*Globals.*)Algebra.WordsOverIntegers.next !current (dimension-1)
+	  done
+	  ;
+	  (akgs.local_deadlock_with_parameter <- Some !answer)
+	with
+        (*
+	  | Globals.Dead_end -> (print_endline "Warning: Global.Dead_end was raised [Geometric_models]";akgs.local_deadlock_with_parameter <- Some !answer)
+        *)
+	| Exit -> (akgs.local_deadlock_with_parameter <- Some !answer)
+      )
+      ;
+      !answer (* akgs.local_deadlock_with_parameter *)
+    )
+
+  let reachable ?runpro ?akgs syntactical_semantics =
+    let akgs = match akgs with
+      | None -> default ()
+      | Some local_parameters -> local_parameters
+    in
+    let _ =
+      if akgs.reachable = None
+      then
+        (
+	  print_string "Computing the reachable area: please wait..." ; flush_all () ;
+	  akgs.reachable <- Some (AC.normalize (AC.reachable (state ?runpro ~akgs syntactical_semantics))) ;
+	  print_endline "Reachable area computed"
+        )
+      else
+        ()
+    in
+    get_some akgs.reachable
+
+  let unreachable ?runpro ?akgs syntactical_semantics =
+    let akgs = match akgs with
+      | None -> default ()
+      | Some local_parameters -> local_parameters
+    in
+    if akgs.unreachable = None then
+      (
+	print_string "Computing the unreachable area: please wait..." ; flush_all () ;
+	akgs.unreachable <- Some (AC.meet (state ~akgs syntactical_semantics) (AC.complement (reachable ?runpro ~akgs syntactical_semantics))) ;
+	print_endline "Unreachable area computed"
+      );
+    get_some akgs.unreachable
+
+  let overflow ?runpro ?akgs syntactical_semantics =
+    let akgs = match akgs with
+      | None -> default ()
+      | Some local_parameters -> local_parameters
+    in
+    if akgs.overflow = None then
+      (
+	print_string "Computing the overflow area: please wait..." ; flush_all () ;
+	akgs.overflow <- Some
+	  (
+	    AC.meet
+	      (state ?runpro ~akgs syntactical_semantics)
+	      (
+		AC.normalize
+		  (
+		    AC.join
+		      (Forbidden.file_overflow ?runpro syntactical_semantics)
+		      (Forbidden.pile_overflow ?runpro syntactical_semantics)
+		  )
+	      )
+	  );
+	print_endline "Overflow area computed"
+      );
+    get_some akgs.overflow
+
+  let reachable_overflow ?runpro ?akgs syntactical_semantics =
+    let akgs = match akgs with
+      | None -> default ()
+      | Some local_parameters -> local_parameters
+    in
+    let _ =
+      if akgs.reachable_overflow = None then
+        (
+	  print_string "Computing the reachable overflow area: please wait...";
+          flush_all ();
+	  akgs.reachable_overflow <- Some
+	    (
+	      AC.meet
+	        (reachable ?runpro ~akgs syntactical_semantics)
+	        (overflow ?runpro ~akgs syntactical_semantics)
+	    );
+	  print_endline "Reachable overflow area computed"
+        )
+    in
+    get_some akgs.reachable_overflow
+
+  let safe ?runpro ?akgs syntactical_semantics =
+    let akgs = match akgs with
+      | None -> default ()
+      | Some local_parameters -> local_parameters
+    in
+    let _ =
+      if akgs.safe = None
+      then
+        (
+	  print_string "Computing the safe area: please wait..." ; flush_all () ;
+	  akgs.safe <- Some (AC.normalize (AC.infinity_attractor (state ?runpro ~akgs syntactical_semantics)));
+	  print_endline "Safe area computed"
+        )
+    in
+    get_some akgs.safe
+
+  let hazardous ?runpro ?akgs syntactical_semantics =
+    let akgs = match akgs with
+      | None -> default ()
+      | Some local_parameters -> local_parameters
+    in
+    let _ =
+      if akgs.hazardous = None then
+        (
+	  print_string "Computing the hazardous area: please wait...";
+          flush_all ();
+	  akgs.hazardous <- Some (AC.normalize (AC.might_go_deadlock (state ?runpro ~akgs syntactical_semantics)));
+	  print_endline "Hazardous area computed"
+        )
+    in
+    get_some akgs.hazardous
+
+  let critical_section_area ?runpro ?akgs syntactical_semantics =
+    let akgs = match akgs with
+      | None -> default ()
+      | Some local_parameters -> local_parameters
+    in
+    let _ =
+      if akgs.critical_section = None then
+        (
+	  print_string "Computing the critical section: please wait...\n";
+          flush_all ();
+	  akgs.critical_section <-
+	    (fst(Forbidden.conflict ~out:true ?runpro ~forbidden:(forbidden ?runpro ~akgs syntactical_semantics) syntactical_semantics));
+	  print_endline "Critical section computed" ;
+          flush_all ()
+        )
+    in
+    get_some akgs.critical_section
+
+  let critical_section ?runpro ?akgs syntactical_semantics =
+    let akgs = match akgs with
+      | None -> default ()
+      | Some local_parameters -> local_parameters
+    in
+    snd (Forbidden.conflict ~out:false ?runpro ~forbidden:(forbidden ~akgs syntactical_semantics) syntactical_semantics)
+
+end

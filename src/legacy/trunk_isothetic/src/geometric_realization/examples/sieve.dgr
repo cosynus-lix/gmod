@@ -1,0 +1,15 @@
+sieve =
+"
+o [0,+oo] north ;
+o [0,+oo] south ;
+east ]0,+oo] o ;
+west [0,+oo] o ;
+north [0,+oo] west ;
+west [0,+oo] south ;
+south [0,+oo[ east ;
+east ]0,+oo] north
+"
+
+departure = "north ]0,+oo[ east"
+
+result = departure >> sieve

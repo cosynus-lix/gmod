@@ -1,0 +1,3 @@
+space = "a ]1,7[ b"
+origin = "a {7} b"
+future = origin >> space

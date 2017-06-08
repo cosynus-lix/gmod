@@ -1,0 +1,6 @@
+#mtx a b c
+procs:
+pa = P(a).P(c).V(c).V(a)
+pb = P(b).P(c).V(c).V(b)
+init:
+pa pb pa pb

@@ -1,0 +1,7 @@
+#sem 3 a b c d
+procs:
+p1 = P(c).P(a).P(b).V(b).P(d).V(d).V(c).V(a)
+p2 = P(b).P(d).P(a).V(a).P(c).V(c).V(d).V(b)
+p3 = P(a).P(b).V(a).V(b).P(c).P(d).V(c).V(d)
+init:
+p1 p2 p3

@@ -1,0 +1,6 @@
+#queue 2 a
+procs:
+sender   = S(a,{Gimme a break 1}).S(a,{Gimme a break 2}).S(a,{Gimme a break 3})
+receiver = R(a,x).R(a,x).R(a,x)
+init:
+sender receiver

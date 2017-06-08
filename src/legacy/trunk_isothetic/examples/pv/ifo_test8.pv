@@ -1,0 +1,7 @@
+#stack 2 zeta
+procs:
+p1 = R(zeta)
+p2 = R(zeta)
+p3 = R(zeta)
+init:
+p1 p2 p3

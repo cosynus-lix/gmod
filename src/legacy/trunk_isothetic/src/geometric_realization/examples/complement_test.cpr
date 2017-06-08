@@ -1,0 +1,17 @@
+torus = "a [0,+oo[ a * b [0,+oo[ b"
+
+square = "a [1,2[ a * b [1,2[ b"
+
+cross = "a [1,4[ a * b [2,3[ b" | "a [2,3[ a * b [1,4[ b"
+
+space = torus \ square
+
+swiss_flag = torus \ cross
+
+origin = "a {1} a * b {1} b"
+
+sifflet_support = "a [0,+oo] b ; b [0,+oo] b * c [0,+oo] d"
+
+hole = "a [1,+oo] b * c [1,2[ d" | "b [0,1] [2,+oo] b * c [1,2[ d"
+
+sifflet = sifflet_support \ hole

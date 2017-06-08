@@ -1,0 +1,7 @@
+support = "a KR+ b ; b S¹ b * c KR+ d"
+
+hole = "a [1,+oo] b ; b [2,1] b * c [1,2[ d"
+
+sifflet = support \ hole
+
+sifflet2 = "a KR+ b ; b S¹ b * c KR+ d" \ "a [1,+oo] b ; b [2,1] b * c [1,2[ d"

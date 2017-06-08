@@ -1,0 +1,9 @@
+#mtx a b c
+
+procs:
+p = C(p1)+[x=1]+C(p2)+[x=2]+C(p3)
+p1 = @(x,1)
+p2 = @(x,2)
+p3 = @(x,3)
+
+init:

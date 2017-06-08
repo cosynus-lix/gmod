@@ -1,0 +1,329 @@
+COMPILER = ocamlopt
+PARSER = ocamlyacc
+LEXER = ocamllex
+
+PV_SEMANTICS = pv-semantics/
+SPECLIST = ../speclist_maker/
+
+all: oplate
+
+sig.cmi: sig.mli
+	$(COMPILER) -c sig.mli
+
+Area.cmi: sig.cmi Area.mli
+	$(COMPILER) -c Area.mli
+
+algebra.cmi: sig.cmi algebra.mli
+	$(COMPILER) -c algebra.mli
+
+algebra.cmx: sig.cmi algebra.cmi algebra.ml
+	$(COMPILER) -c -I +ocamlgraph algebra.ml
+
+half_line.cmi: sig.cmi half_line.mli
+	$(COMPILER) -c half_line.mli
+
+half_line.cmx: sig.cmi half_line.cmi half_line.ml
+	$(COMPILER) -c half_line.ml
+
+interval.cmi: sig.cmi interval.mli
+	$(COMPILER) -c interval.mli
+
+interval.cmx: interval.cmi interval.ml
+	$(COMPILER) -c interval.ml
+
+arc.cmi: sig.cmi arc.mli
+	$(COMPILER) -c arc.mli
+
+arc.cmx: arc.cmi arc.ml
+	$(COMPILER) -c arc.ml
+
+mix.cmi: sig.cmi mix.mli
+	$(COMPILER) -c mix.mli
+
+mix.cmx: mix.cmi mix.ml
+	$(COMPILER) -c mix.ml
+
+Cube.cmi: interval.cmi Cube.mli
+	$(COMPILER) -c Cube.mli
+
+Cube.cmx: Cube.cmi Cube.ml
+	$(COMPILER) -c Cube.ml
+
+Torus.cmi: arc.cmi Torus.mli
+	$(COMPILER) -c Torus.mli
+
+Torus.cmx: Torus.cmi Torus.ml
+	$(COMPILER) -c Torus.ml
+
+Cylinder.cmi: mix.cmi Cylinder.mli
+	$(COMPILER) -c Cylinder.mli
+
+Cylinder.cmx: Cylinder.cmi Cylinder.ml
+	$(COMPILER) -c Cylinder.ml
+
+AreaOverCube.cmi: Cube.cmi Area.cmi AreaOverCube.mli
+	$(COMPILER) -c AreaOverCube.mli
+
+AreaOverCube.cmx: algebra.cmx AreaOverCube.cmi AreaOverCube.ml
+	$(COMPILER) -c AreaOverCube.ml
+
+AreaOverTorus.cmi: Torus.cmi Area.cmi AreaOverTorus.mli
+	$(COMPILER) -c AreaOverTorus.mli
+
+AreaOverTorus.cmx: algebra.cmx AreaOverTorus.cmi AreaOverTorus.ml
+	$(COMPILER) -c AreaOverTorus.ml
+
+AreaOverCylinder.cmi: Torus.cmi Area.cmi AreaOverCylinder.mli
+	$(COMPILER) -c AreaOverCylinder.mli
+
+AreaOverCylinder.cmx: algebra.cmx AreaOverCylinder.cmi AreaOverCylinder.ml
+	$(COMPILER) -c AreaOverCylinder.ml
+
+covering.cmi: Area.cmi AreaOverCube.cmi covering.mli
+	$(COMPILER) -c covering.mli
+
+covering.cmx: algebra.cmx Cylinder.cmx covering.cmi covering.ml
+	$(COMPILER) -c -I +ocamlgraph covering.ml
+
+semantics.cmi: common.cmx Area.cmi semantics.mli
+	$(COMPILER) -c semantics.mli
+
+semantics.cmx: semantics.cmi semantics.ml
+	$(COMPILER) -c semantics.ml
+
+forbidden.cmi: buzy_section.cmx buzy_matrix.cmx Area.cmi AreaOverCube.cmi forbidden.mli
+	$(COMPILER) -c forbidden.mli
+
+forbidden.cmx: forbidden.cmi interpreter.cmx forbidden.ml
+	$(COMPILER) -c forbidden.ml
+
+interpreter.cmi: common.cmx semantics.cmi Area.cmi interpreter.mli
+	$(COMPILER) -c interpreter.mli
+
+interpreter.cmx: interpreter.cmi interpreter.ml
+	$(COMPILER) -c interpreter.ml
+
+concur2005.cmx: Cube.cmx concur2005.ml
+	$(COMPILER) -c concur2005.ml
+
+geometric_model.cmx: concur2005.cmx semantics.cmx forbidden.cmx geometric_model.ml
+	$(COMPILER) -c geometric_model.ml
+
+buzy_section.cmx: sig.cmi semantics.cmx buzy_section.ml
+	$(COMPILER) -c buzy_section.ml
+
+buzy_matrix.cmx: sig.cmi  semantics.cmx buzy_section.cmx buzy_matrix.ml
+	$(COMPILER) -c buzy_matrix.ml
+
+glyph.cmi: glyph.mli
+	$(COMPILER) -c glyph.mli
+
+glyph.cmx: glyph.cmi glyph.ml
+	$(COMPILER) -c glyph.ml
+
+common.cmx: common.ml
+	$(COMPILER) -c common.ml
+
+parser_pv.mli: parser_pv.mly
+	$(PARSER) parser_pv.mly
+
+parser_pv.ml: parser_pv.mly
+	$(PARSER) parser_pv.mly
+
+parser_pv.cmi: parser_pv.mli sig.cmi semantics.cmi
+	$(COMPILER) -c parser_pv.mli
+
+parser_pv.cmx: parser_pv.ml semantics.cmx parser_pv.cmi
+	$(COMPILER) -c parser_pv.ml
+
+lexer_pv.ml: lexer_pv.mll
+	ocamllex lexer_pv.mll
+
+lexer_pv.cmx: lexer_pv.ml parser_pv.cmx
+	$(COMPILER) -c lexer_pv.ml
+
+$(SPECLIST)SpeclistMaker.cmx: common.cmx $(SPECLIST)SpeclistMaker.ml
+	$(COMPILER) -c $(SPECLIST)SpeclistMaker.ml
+
+option_user_manual.cmx: option_user_manual.ml settings.cmx globals.cmx color.cmx
+	$(COMPILER) -c $<
+
+globals.cmx: globals.ml glyph.cmx common.cmx
+	$(COMPILER) -c $<
+
+flag.cmx: flag.ml
+	$(COMPILER) -c $<
+
+color.cmx: color.ml settings.cmx common.cmx
+	$(COMPILER) -c $<
+
+boolean.cmi: boolean.mli common.cmx
+	$(COMPILER) -c $<
+
+boolean.cmx: boolean.ml common.cmx boolean.cmi
+	$(COMPILER) -c $<
+
+settings.cmi: settings.mli
+	$(COMPILER) -c $<
+
+settings.cmx: settings.ml common.cmx settings.cmi
+	$(COMPILER) -c $<
+
+simploid.cmi: simploid.mli common.cmx
+	$(COMPILER) -c $<
+
+simploid.cmx: simploid.ml common.cmx simploid.cmi
+	$(COMPILER) -c $<
+
+hypergraph.cmi: hypergraph.mli common.cmx
+	$(COMPILER) -c $<
+
+hypergraph.cmx: hypergraph.ml common.cmx hypergraph.cmi
+	$(COMPILER) -c $<
+
+lexer_cubical_area_over_integer.ml: lexer_cubical_area_over_integer.mll
+	$(LEXER) $<
+
+lexer_cubical_area_over_integer.cmx: lexer_cubical_area_over_integer.ml parser_cubical_area_over_integer.cmx
+	$(COMPILER) -c $<
+
+parser_cubical_area_over_integer.ml: parser_cubical_area_over_integer.mly
+	$(PARSER) $<
+
+parser_cubical_area_over_integer.mli: parser_cubical_area_over_integer.mly
+	$(PARSER) $<
+
+parser_cubical_area_over_integer.cmi: parser_cubical_area_over_integer.mli type.cmx
+	$(COMPILER) -c $<
+
+parser_cubical_area_over_integer.cmx: parser_cubical_area_over_integer.ml type.cmx color.cmx \
+	parser_cubical_area_over_integer.cmi
+	$(COMPILER) -c $<
+
+lexer_torical_area_over_integer.ml: lexer_torical_area_over_integer.mll
+	$(LEXER) $<
+
+lexer_torical_area_over_integer.cmx: lexer_torical_area_over_integer.ml parser_torical_area_over_integer.cmx
+	$(COMPILER) -c $<
+
+parser_torical_area_over_integer.ml: parser_torical_area_over_integer.mly
+	$(PARSER) $<
+
+parser_torical_area_over_integer.mli: parser_torical_area_over_integer.mly
+	$(PARSER) $<
+
+parser_torical_area_over_integer.cmi: parser_torical_area_over_integer.mli type.cmx
+	$(COMPILER) -c $<
+
+parser_torical_area_over_integer.cmx: parser_torical_area_over_integer.ml type.cmx color.cmx \
+	parser_torical_area_over_integer.cmi
+	$(COMPILER) -c $<
+
+lexer_cylindrical_area_over_integer.ml: lexer_cylindrical_area_over_integer.mll
+	$(LEXER) $<
+
+lexer_cylindrical_area_over_integer.cmx: lexer_cylindrical_area_over_integer.ml parser_cylindrical_area_over_integer.cmx
+	$(COMPILER) -c $<
+
+parser_cylindrical_area_over_integer.ml: parser_cylindrical_area_over_integer.mly
+	$(PARSER) $<
+
+parser_cylindrical_area_over_integer.mli: parser_cylindrical_area_over_integer.mly
+	$(PARSER) $<
+
+parser_cylindrical_area_over_integer.cmi: parser_cylindrical_area_over_integer.mli type.cmx
+	$(COMPILER) -c $<
+
+parser_cylindrical_area_over_integer.cmx: parser_cylindrical_area_over_integer.ml type.cmx color.cmx \
+	parser_cylindrical_area_over_integer.cmi
+	$(COMPILER) -c $<
+
+lexer_config.ml: lexer_config.mll
+	$(LEXER) $<
+
+lexer_config.cmx: lexer_config.ml parser_config.cmx
+	$(COMPILER) -c $<
+
+parser_config.ml: parser_config.mly
+	$(PARSER) $<
+
+parser_config.mli: parser_config.mly
+	$(PARSER) $<
+
+parser_config.cmi: parser_config.mli type.cmx
+	$(COMPILER) -c $<
+
+parser_config.cmx: parser_config.ml type.cmx color.cmx \
+	parser_config.cmi
+	$(COMPILER) -c $<
+
+calculator.cmx: calculator.ml type.cmx parser_cubical_area_over_integer.cmx lexer_cubical_area_over_integer.cmx \
+	parser_torical_area_over_integer.cmx lexer_torical_area_over_integer.cmx parser_cylindrical_area_over_integer.cmx \
+	lexer_cylindrical_area_over_integer.cmx globals.cmx color.cmx
+	$(COMPILER) -c $<
+
+analyzer.cmx: analyzer.ml type.cmx trace.cmx semantics.cmx interpreter.cmx color.cmx parser_pv.cmx lexer_pv.cmx
+	$(COMPILER) -c $<
+
+trace.cmi: trace.mli type.cmx semantics.cmi
+	$(COMPILER) -c $<
+
+trace.cmx: trace.ml type.cmx simploid.cmx hypergraph.cmx geometric_model.cmx \
+    common.cmx boolean.cmx trace.cmi
+	$(COMPILER) -c $<
+
+type.cmx: type.ml Torus.cmx mix.cmx interval.cmx half_line.cmx geometric_model.cmx forbidden.cmx Cylinder.cmx Cube.cmx \
+	covering.cmx concur2005.cmx common.cmx color.cmx buzy_section.cmx buzy_matrix.cmx AreaOverTorus.cmx \
+	AreaOverCylinder.cmx AreaOverCube.cmx arc.cmx 
+	$(COMPILER) -c -I +ocamlgraph $<
+
+path_extract.cmx: path_extract.ml type.cmx semantics.cmx common.cmx
+	$(COMPILER) -c $<
+
+display.cmx: display.ml type.cmx settings.cmx semantics.cmx path_extract.cmx option_user_manual.cmx interpreter.cmx \
+	globals.cmx geometric_model.cmx common.cmx color.cmx calculator.cmx analyzer.cmx algebra.cmx
+	$(COMPILER) -c $<
+
+command_line_options.cmx: command_line_options.ml type.cmx \
+	settings.cmx semantics.cmx option_user_manual.cmx interpreter.cmx globals.cmx flag.cmx display.cmx common.cmx \
+	color.cmx analyzer.cmx
+	$(COMPILER) -c $<
+
+oplate: common.cmx glyph.cmx algebra.cmx semantics.cmx settings.cmx color.cmx option_user_manual.cmx globals.cmx flag.cmx \
+	half_line.cmx interval.cmx arc.cmx mix.cmx \
+	interpreter.cmx \
+	boolean.cmx \
+	simploid.cmx \
+	hypergraph.cmx \
+	parser_pv.cmx lexer_pv.cmx \
+	Cube.cmx Torus.cmx Cylinder.cmx AreaOverCube.cmx AreaOverTorus.cmx AreaOverCylinder.cmx \
+	buzy_section.cmx buzy_matrix.cmx \
+	forbidden.cmx \
+	covering.cmx \
+	concur2005.cmx \
+	geometric_model.cmx \
+	type.cmx \
+	path_extract.cmx \
+	trace.cmx \
+	analyzer.cmx \
+	parser_torical_area_over_integer.cmx lexer_torical_area_over_integer.cmx parser_cubical_area_over_integer.cmx \
+	lexer_cubical_area_over_integer.cmx parser_cylindrical_area_over_integer.cmx lexer_cylindrical_area_over_integer.cmx \
+	calculator.cmx \
+	display.cmx \
+	command_line_options.cmx parser_config.cmx lexer_config.cmx main.ml
+	$(COMPILER) -I +ocamlgraph -I $(SPECLIST) graph.cmxa unix.cmxa str.cmxa $^ -o oplate
+
+clean:
+	rm *.cmx *.cmi *.o $(SPECLIST)*.cmi $(SPECLIST)*.cmx $(SPECLIST)*.o \
+  parser_pv.ml parser_pv.mli parser_pv.cmx parser_pv.cmi \
+  lexer_pv.ml lexer_pv.cmx lexer_pv.cmi \
+  parser_config.ml parser_config.mli parser_config.cmx parser_config.cmi \
+  lexer_config.ml lexer_config.cmx lexer_config.cmi \
+  parser_cubical_area_over_integer.ml parser_cubical_area_over_integer.mli parser_cubical_area_over_integer.cmi parser_cubical_area_over_integer.cmx \
+  parser_torical_area_over_integer.ml parser_torical_area_over_integer.mli parser_torical_area_over_integer.cmi parser_torical_area_over_integer.cmx \
+  parser_cylindrical_area_over_integer.ml parser_cylindrical_area_over_integer.mli parser_cylindrical_area_over_integer.cmi parser_cylindrical_area_over_integer.cmx \
+  lexer_cubical_area_over_integer.ml lexer_cubical_area_over_integer.cmi lexer_cubical_area_over_integer.cmx \
+  lexer_torical_area_over_integer.ml lexer_torical_area_over_integer.cmi lexer_torical_area_over_integer.cmx \
+  lexer_cylindrical_area_over_integer.ml lexer_cylindrical_area_over_integer.cmi lexer_cylindrical_area_over_integer.cmx \
+  oplate
+  

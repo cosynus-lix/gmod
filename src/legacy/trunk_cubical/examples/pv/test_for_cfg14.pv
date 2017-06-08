@@ -1,0 +1,6 @@
+#queue 7 q
+procs:
+sender = S(q)
+receiver = R(q)
+init:
+sender | receiver	

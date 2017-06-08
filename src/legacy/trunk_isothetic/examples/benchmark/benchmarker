@@ -1,0 +1,131 @@
+#! /home/nicolas/.opam/4.01.0/bin/utop
+#load "unix.cma"
+
+let tests_to_perform = ref ["2.2";"2.3";"2.4";"2.5";"2.6";"2.7";"3.2";"3.3";"4.2";"4.3";"4.4";"4,5";"5.2";"6.2";"7.2"]
+(*performing the whole collection of tests takes around 1h10m*)
+
+let cwd = Sys.getcwd ()
+
+let output_filename = ref None
+
+(*
+let default_output_filename , default_output_channel = Filename.open_temp_file ~temp_dir:cwd "benchmark." ".log"
+*)
+
+let set_the_output_filename s = output_filename := Some s
+
+let pids = ref []
+
+let temp_files = ref []
+
+let file_descriptors_to_be_closed = ref []
+
+(* nonfactoring 6.2 takes around 4 min and nonfactoring 7.2 takes around 50 min.
+Yet most of the execution time is devoted to complement computation.*)
+
+let time_cmd = "time"
+
+let geomreal = "geomreal"
+
+let time_format = ref
+"
+%C
+%D – Average size of the process's unshared data area, in Kilobytes
+%E – Elapsed real (wall clock) time used by the process, in [hours:]minutes:seconds
+%K – Average total (data+stack+text) memory use of the process, in Kilobytes
+%M – Maximum resident set size of the process during its lifetime, in Kilobytes
+%P – Percentage of the CPU that this job got.  This is just user + system times divided by the total running time
+%S – Total number of CPU-seconds used by the system on behalf of the process (in kernel mode), in seconds
+%U – Total number of CPU-seconds that the process used directly (in user mode), in seconds
+%p – Average unshared stack size of the process, in Kilobytes
+%t – Average resident set size of the process, in Kilobytes
+%x – Exit status of the command
+"
+
+let fac algo_name s =
+  let fac_file = Filename.temp_file "fac." ".pv" in
+  let nonfac_file = Filename.temp_file "nonfac." ".pv" in
+  let fac_log = Filename.open_temp_file "fac." ".log" in
+  let nonfac_log = Filename.open_temp_file "nonfac." ".log" in
+  let () =
+    Printf.fprintf (snd    fac_log) "factorizing groups %s\n" s ;
+    Printf.fprintf (snd nonfac_log) "nonfactorizing groups %s\n" s in
+  let () = temp_files :=
+    fac_file :: nonfac_file :: (fst fac_log) :: (fst nonfac_log) :: !temp_files in
+  let fac_log_descr    = Unix.descr_of_out_channel (snd    fac_log) in
+  let nonfac_log_descr = Unix.descr_of_out_channel (snd nonfac_log) in
+  let () =
+    if Sys.command (Printf.sprintf "generator --factorizing-groups %s > %s" s fac_file) <> 0
+    then print_endline ("Test " ^ s ^ " crashed") ; flush stdout in
+  let () =
+    if Sys.command (Printf.sprintf "generator --nonfactorizing-groups %s > %s" s nonfac_file) <> 0
+      then print_endline ("Test " ^ s ^ " crashed") ; flush stdout in
+	let pid_fac = Unix.(create_process time_cmd
+    [|
+      time_cmd ; "--append" ; "--output" ; fst fac_log ; "--format" ; !time_format ;
+      geomreal ; algo_name ; fac_file |]
+    stdin fac_log_descr stderr) in
+  let () = file_descriptors_to_be_closed := fac_log_descr :: !file_descriptors_to_be_closed in
+	let pid_nonfac = Unix.(create_process time_cmd
+    [|
+      time_cmd ; "--append" ; "--output" ; fst nonfac_log ; "--format" ; !time_format ;
+      geomreal ; algo_name ; nonfac_file |]
+    stdin nonfac_log_descr stderr) in
+  let () = file_descriptors_to_be_closed := nonfac_log_descr :: !file_descriptors_to_be_closed in
+  pids := pid_fac :: pid_nonfac :: !pids
+
+let fac_all algo_name () =
+  let () = List.iter (fac algo_name) !tests_to_perform in
+  let active_process = ref (List.length !pids) in
+  while !active_process > 0 do
+    let (pid , status) = Unix.wait () in
+    let () = Printf.printf "There %s %i %s still active\n"
+      (if !active_process > 1 then "are" else "is")
+      !active_process
+      (if !active_process > 1 then "processes" else "process") ; flush stdout in
+    if List.mem pid !pids then decr active_process
+  done ;
+  print_endline "All processes are done"
+
+let fac_one algo_name s =
+  tests_to_perform := [s] ;
+  fac_all algo_name ()
+
+let speclist = Arg.align
+  [
+    "-o"         , Arg.String set_the_output_filename , " set the output file name" ;
+    "-fac"       , Arg.String (fac_one "-fac"  ) , " factorizing using the Balabonski-Haucourt algorithm" ;
+    "-fac-all"   , Arg.Unit   (fac_all "-fac"  ) , " idem but runs all the tests instead of a specific one" ;
+    "-ffac"      , Arg.String (fac_one "-ffac" ) , " factorizing using the Ninin algorithm after removing obviously redundant blocks" ;
+    "-ffac-all"  , Arg.Unit   (fac_all "-ffac" ) , " idem but runs all the tests instead of a specific one" ;
+    "-sffac"     , Arg.String (fac_one "-sffac") , " factorizing using the Ninin algorithm after normalizing the forbidden area" ;
+    "-sffac-all" , Arg.Unit   (fac_all "-sffac") , " idem but runs all the tests instead of a specific one" ;
+    "-uffac"     , Arg.String (fac_one "-uffac") , " factorizing using the Ninin algorithm from the raw forbidden area" ;
+    "-uffac-all" , Arg.Unit   (fac_all "-uffac") , " idem but runs all the tests instead of a specific one" ;
+    "-format"    , Arg.Set_string time_format    , " format the result of time according to the given format – see time man page"
+  ]
+
+let anon_fun _ = ()
+
+let usage_msg = "Benchmark for the -fac option of geomreal"
+
+let () =
+  if Array.length Sys.argv <> 1
+  then (
+    Arg.parse speclist anon_fun usage_msg ;
+    List.iter Unix.close !file_descriptors_to_be_closed ;
+    if List.exists (fun x -> Filename.check_suffix x ".log") !temp_files
+      then (
+        let output_filename = match !output_filename with
+          | Some name -> name
+          | None -> Filename.temp_file ~temp_dir:(Sys.getcwd ()) "benchmark." ".log" in
+        let cmd = Printf.sprintf "cat %s/*.log > %s" (Filename.get_temp_dir_name ()) output_filename in
+        if Sys.command cmd  <> 0
+        then Printf.printf "command %S has crashed\n" cmd) ;
+    List.iter
+      (fun s ->
+        let cmd = Printf.sprintf "rm %s" s in
+        let exit_code = Sys.command cmd in
+        if exit_code <> 0
+          then Printf.printf "unbale to remove file %s\n" s)
+      !temp_files)

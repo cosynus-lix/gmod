@@ -1,0 +1,20 @@
+A = "a [1,2] b;a [2,3] c"
+B = "x [4,5] y;x [7,9] z"
+
+P_fac = A×B
+
+norm_P_fac = ¬¬P_fac
+
+
+C = "a [1,2] b ; a     c"
+D = "a b ; a [2,3] c"
+E = "x [4,5] y ; x z"
+F = "x y ; x [7,9] z"
+
+
+P_dev = C×E ⋃ D×E ⋃ C×F ⋃ D×F
+
+
+compl_P_dev = ¬¬P_dev
+
+fac = fac.P_dev

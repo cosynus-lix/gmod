@@ -1,0 +1,3 @@
+space = "a [0,7] b"
+start = "b"
+past = start < space

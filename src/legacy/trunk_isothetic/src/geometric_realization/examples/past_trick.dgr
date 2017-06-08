@@ -1,0 +1,5 @@
+space1 = "a   [7,+oo[ b ; b R+ c"
+space2 = "a [0,7]   b ; b R+ c"
+start = "b {3} c"
+past1 = start < space1
+past2 = start < space2

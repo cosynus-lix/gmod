@@ -1,0 +1,8 @@
+#sem 3 a
+#mtx b
+procs:
+p1 = P(a).V(a).P(b).V(b)
+p2 = P(a).V(a).P(b).V(b)
+p3 = P(a).V(a).P(b).V(b)
+init:
+p1 p2 p3

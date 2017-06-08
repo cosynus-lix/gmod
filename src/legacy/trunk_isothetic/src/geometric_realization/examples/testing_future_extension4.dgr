@@ -1,0 +1,5 @@
+start = "a [0,+oo[ b ; b c ; b"
+
+end = "a b ; b ]0,+oo] c ; b"
+
+future = start >> end

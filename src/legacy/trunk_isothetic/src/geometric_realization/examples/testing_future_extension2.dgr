@@ -1,0 +1,8 @@
+g1 = "a alpha {1} a";
+
+g2 = 
+"
+a alpha [0,+oo] a ;
+a beta [0,+oo] a ;
+a gamma [0,+oo] a
+"

@@ -1,0 +1,6 @@
+#sem 3 a
+procs:
+p1 = P(a).V(a)
+p2 = P(a).V(a).P(a).V(a)
+init:
+p2 p2 p2

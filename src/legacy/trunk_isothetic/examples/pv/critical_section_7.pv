@@ -1,0 +1,5 @@
+procs:
+	p = x:=0
+	q = y:=x
+init:
+	p|q		

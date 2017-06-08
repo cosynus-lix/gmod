@@ -1,0 +1,5 @@
+procs:
+a=C(b)
+b=C(c)
+c=C(a)
+init:

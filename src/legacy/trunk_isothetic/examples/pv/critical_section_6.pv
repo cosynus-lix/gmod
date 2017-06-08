@@ -1,0 +1,8 @@
+#semq 2 a b c
+
+procs:
+p1 = P(a).@(x,0).P(b).@(y,1).V(a).V(b)
+p2 = P(b).@(y,1).P(c).@(z,2).V(b).V(c)
+p3 = P(c).@(z,2).P(a).@(x,0).V(c).V(a)
+init:
+p1 p2 p3

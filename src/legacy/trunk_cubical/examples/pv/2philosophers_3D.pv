@@ -1,0 +1,7 @@
+#mtx a b
+procs:
+p0 = ()
+p1 = P(a).P(b).V(a).V(b)
+p2 = P(b).P(a).V(b).V(a)
+usrRoot:
+p0|p0|p0|p0|p0|p0|p0|p0|p0|p0|p0|p0|p0|p1|p2

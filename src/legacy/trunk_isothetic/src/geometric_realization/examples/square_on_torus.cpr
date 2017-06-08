@@ -1,0 +1,5 @@
+circle = "o S¹ o"
+torus = circle*circle
+arc = "o [1,2[ o"
+hole = arc*arc
+space = torus\hole

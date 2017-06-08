@@ -1,0 +1,5 @@
+#fifo f 10
+procs:
+sender = S() 
+
+init:

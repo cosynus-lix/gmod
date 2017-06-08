@@ -1,0 +1,7 @@
+#stack 2 a
+#synchronization 2 b
+procs:
+p1 = S(a).S(a).W(b).S(a).S(a)
+p2 = R(a).R(a).R(a).W(b).R(a)
+init:
+p1 p2

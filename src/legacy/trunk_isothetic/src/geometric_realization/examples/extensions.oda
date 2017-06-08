@@ -1,0 +1,7 @@
+#halfline
+start = [1,2]
+end =  ]2,3]
+future = start >> end
+start2 = [1,4]
+end2 = ]1,4[
+future2 = start2 >> end2

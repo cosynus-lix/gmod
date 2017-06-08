@@ -1,0 +1,6 @@
+#mtx a b
+procs:
+p = P(b).P(a).V(a).P(a).V(a).V(b)
+q = P(a).P(b).V(b).P(b).V(b).V(a)
+init:
+p q

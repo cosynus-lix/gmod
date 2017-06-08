@@ -1,0 +1,6 @@
+#mutex a b
+procs:
+p1 = P(a).P(b).V(b).V(a).C(p1)
+p2 = P(b).P(a).V(a).V(b).C(p2)
+init:
+p1 p2

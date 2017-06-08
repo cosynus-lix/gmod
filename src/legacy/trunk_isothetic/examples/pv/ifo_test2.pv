@@ -1,0 +1,7 @@
+#stack 2 a
+#mutex b c
+procs:
+p1 = S(a).S(a).S(a).S(a).P(b).P(c).V(c).V(b)
+p2 = R(a).R(a).R(a).R(a).P(c).P(b).V(b).V(c)
+init:
+p1 p2

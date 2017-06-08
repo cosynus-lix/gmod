@@ -1,0 +1,29 @@
+
+g1 = "a" ;
+
+g1bis =
+"
+i arrow a ;
+b arrow e1 ;
+c arrow e2 ;
+a arrow b ;
+b arrow {7} c ;
+c arrow a ;
+"
+;
+
+g2 = 
+"
+i arrow [0,+oo] a ;
+b arrow [0,+oo] e1 ;
+c arrow [0,+oo] e2 ;
+a arrow [0,+oo] b ;
+b arrow [0,+oo] c ;
+c arrow [0,+oo] a ;
+";
+
+g3 = g1 >> g2 ;
+
+g4 = "a some_arrow ]5,7] b" ;
+
+g5 = "a a a"

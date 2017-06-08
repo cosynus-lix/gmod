@@ -1,0 +1,6 @@
+origin = "o {0} o"
+circle = "o S¹ o"
+space = circle \ origin
+start = "o {1} o"
+future = start > space
+past = start < space

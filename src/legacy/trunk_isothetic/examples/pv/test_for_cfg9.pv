@@ -1,0 +1,7 @@
+#mtx a b c
+
+procs:
+p = (@(x,0)+[x=1]+@(x,1)+[x=2]+@(x,2)).C(q)
+q = P(a).V(a)
+
+init:

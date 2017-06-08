@@ -1,0 +1,7 @@
+start = "a"
+
+end = "a ]0,+oo[ a"
+
+future = start >> end
+
+past = end << start

@@ -1,0 +1,5 @@
+#semaphore 2 a b c
+#process p = P(a).P(b).V(b).V(a)
+#process q = P(b).P(c).V(c).V(b)
+#process r = P(c).P(a).V(a).V(c)
+#init p q r

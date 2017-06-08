@@ -1,0 +1,14 @@
+fork = 
+"
+initial branching ;
+branching ]0,+oo] left ;
+branching ]0,+oo] right ;
+"
+
+departure =
+"
+initial alpha [0,+oo[ branching ;
+branching {2} left
+"
+
+result = departure >> fork

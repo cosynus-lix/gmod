@@ -1,0 +1,5 @@
+#queue 2 a
+procs:
+p = S(a,{Gimme a break}).R(a,x)
+init:
+p p

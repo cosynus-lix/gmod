@@ -1,0 +1,6 @@
+#mtx a b
+procs:
+p = P(a).V(a).C(p)+[x⩽7]+C(q)
+q = P(b).V(b).C(q)
+init:
+p q

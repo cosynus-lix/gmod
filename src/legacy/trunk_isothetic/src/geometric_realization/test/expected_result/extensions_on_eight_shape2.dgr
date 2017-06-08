@@ -1,0 +1,7 @@
+origin = "o"
+alpha1 = "o alpha {1} o"
+alpha2 = "o alpha {2} o"
+eight = "o alpha S¹ o;o beta S¹ o"
+space = "o alpha S¹\{1} o;o beta S¹ o"
+future = "o alpha [2,1[ o;o beta S¹ o"
+past = "o alpha ]1,2] o;o beta o"

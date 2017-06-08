@@ -1,0 +1,11 @@
+B = 
+"
+o [0,+oo] a ;
+o [0,+oo] b ;
+o [0,+oo] c ;
+"
+A = "o"
+;
+cmpAB = (A ⩽ B)
+;
+z = ¬cmpAB

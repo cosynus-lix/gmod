@@ -1,0 +1,4 @@
+origin = "o"
+dummy = "o S¹ o"
+space = dummy \ origin
+a = "a b"

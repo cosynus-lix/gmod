@@ -1,0 +1,6 @@
+g = 
+"one {1} middle ;
+two {2} middle ;
+three {3} middle"
+
+h = \g

@@ -1,0 +1,7 @@
+compact_segment = "a R+ | {+oo} b"
+halfline = "a R+ b"
+circle = "o S¹ o"
+interior_of_compact_segment = in.compact_segment
+closure_of_compact_segment = cl.compact_segment
+interior_of_halfline_ = in.halfline
+closure_of_halfline = cl.halfline

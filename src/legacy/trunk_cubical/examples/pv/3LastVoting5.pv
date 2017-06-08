@@ -1,0 +1,58 @@
+% on suppose coord = 0
+
+#mtx m0 m1 m2
+%#sem 3 term
+#syn 3 s1
+#syn 3 s2
+#syn 3 s3
+#syn 3 s4
+#queue 3 q1 q2 q3
+% la mise à jour de compteurs pour les queues pourra se faire lorsqu'on modifie celles-ci
+
+procs:
+%%%%%%%%%%%%%%%%%%%%%%%%% PROCESS0 %%%%%%%%%%%%%%%%%%%%%%%%%
+
+initp0 = (@(pr0, false) + @(pr0, true)).@(ts0, 0)
+
+round1p0 = P(m0).(@(tmp, 0).@(idx, 0).@(card, 0).(@(card, card + 1).(@(tmp, ts0).@(idx, 0) + [tmp<=ts0] + void)).(@(card, card + 1).(@(tmp, ts1).@(idx, 1) + [tmp<=ts1] + void)).(@(card, card + 1).(@(tmp, ts2).@(idx, 2) + [tmp<=ts2] + void))).(@(vote0, pr0).@(commit0, true) + [2<=card] + void).V(m0)
+
+round2p0 = P(m0).(@(pr0, vote0).@(ts0, 3)).V(m0)
+
+round3p0 = P(m0).((@(card, 0)).(@(card, card + 1) + [(ts0==3)] + void).(@(card, card + 1) + [(ts1==3)] + void).(@(card, card + 1) + [(ts2==3)] + void).(@(ready0, true) + [2<=card] + void)).V(m0)
+
+round4p0 = P(m0).((@(d0, vote0)) + [ready0] + void).V(m0)
+
+p0  = initp0.W(s1).round1p0.W(s2)%.round2p0.W(s3).round3p0.W(s4).round4p0
+
+%%%%%%%%%%%%%%%%%%%%%%%%% PROCESS1 %%%%%%%%%%%%%%%%%%%%%%%%%
+
+initp1 = (@(pr1, false) + @(pr1, true)).@(ts1, 0)
+
+round1p1 = void
+
+round2p1 = P(m1).(@(pr1, vote0).@(ts0, 3)).V(m1)
+
+round3p1 = void
+
+round4p1 = P(m1).((@(d1, vote0)) + [ready0] + void).V(m1)
+
+p1  = initp1.W(s1).round1p1.W(s2)%.round2p1.W(s3).round3p1.W(s4).round4p1
+
+%%%%%%%%%%%%%%%%%%%%%%%%% PROCESS2 %%%%%%%%%%%%%%%%%%%%%%%%%
+
+initp2 = (@(pr2, false) + @(pr2, true)).@(ts2, 0)
+
+round1p2 = void
+
+round2p2 = P(m2).(@(pr2, vote0).@(ts2, 3)).V(m2)
+
+round3p2 = void
+
+round4p2 = P(m2).((@(d2, vote0)) + [ready0] + void).V(m2)
+
+p2  = initp2.W(s1).round1p2.W(s2)%.round2p2.W(s3).round3p2.W(s4).round4p2
+
+%%%%%%%%%%%%%%%%%%%%%%%% EXECUTION %%%%%%%%%%%%%%%%%%%%%%%%%
+
+init:
+p0 p1 p2

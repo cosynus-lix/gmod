@@ -1,0 +1,7 @@
+compact_segment = "a [0,+oo] b"
+halfline = "a [0,+oo[ b"
+circle = "o S¹ o"
+interior_of_compact_segment = "a [0,+oo] b"
+closure_of_compact_segment = "a [0,+oo] b"
+interior_of_halfline_ = "a [0,+oo[ b"
+closure_of_halfline = "a [0,+oo] b"

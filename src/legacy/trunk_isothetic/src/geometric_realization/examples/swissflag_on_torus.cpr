@@ -1,0 +1,8 @@
+large = "a [1,4[ a"
+small = "a [2,3[ a"
+horizontal = large*small
+vertical = small*large
+hole = horizontal | vertical
+swissflag = \hole
+origin = "a {1} a * a {1} a"
+future = (origin >> swissflag)

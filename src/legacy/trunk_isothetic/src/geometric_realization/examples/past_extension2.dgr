@@ -1,0 +1,3 @@
+circle = "o S¹\{0} o"
+origin = "o {1} o"
+past = origin > circle

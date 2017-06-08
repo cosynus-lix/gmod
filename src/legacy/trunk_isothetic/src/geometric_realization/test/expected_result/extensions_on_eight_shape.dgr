@@ -1,0 +1,6 @@
+origin = "o"
+eight = "o alpha S¹ o ; o beta S¹ o"
+space = "o alpha S¹\{0} o ; o beta S¹\{0} o"
+start = "o alpha {1} o"
+future = "o alpha [1,0[ o ; o beta o"
+past = "o alpha ]0,1] o ; o beta o"

@@ -1,0 +1,3 @@
+w = "a c ; b ]0,+oo] c"
+pcl_w = pcl.w
+pcl_w2 = w << cl.w

@@ -1,0 +1,6 @@
+#syn 2 s
+procs:
+p1 = W(s)
+p2 = W(s)
+init:
+p1 p2

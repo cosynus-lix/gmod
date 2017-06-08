@@ -1,0 +1,8 @@
+#S¹
+origin = {0};
+circle = S¹;
+space = circle \ origin;
+start = {1};
+future = start >> space;
+past = start << space
+

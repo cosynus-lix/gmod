@@ -1,0 +1,12 @@
+merge =
+"left [0,+oo] merging;
+right [0,+oo] merging;
+merging [0,+oo] final;
+-phantom ;
+"
+
+origin = "merging {3} final"
+
+result = origin << merge
+
+

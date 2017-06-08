@@ -1,0 +1,739 @@
+\documentclass[article,11pt]{amsbook}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage[T1]{fontenc}
+\usepackage{times}
+\usepackage{latexsym}
+\usepackage{stmaryrd}
+\usepackage[usenames]{color}
+
+\usepackage{graphicx}
+\DeclareGraphicsExtensions{.eps,.ps,.eps.gz,.ps.gz,jpg}
+\graphicspath{{.}}
+
+\usepackage[mathscr]{euscript}
+%--------------------------------------------------------------------
+\usepackage{amssymb,amsmath}
+\usepackage{amsthm}
+\usepackage{array}
+%\usepackage[matrix,curve,arrox,tips,frame]{xy}
+\usepackage[all]{xy}
+% \usepackage{pstricks}
+\usepackage{epsfig}
+%--------------------------------------------------------------------
+\definecolor{violet}{rgb}{1,0,1}
+%--------------------------------------------------------------------
+\def\wrn#1{\textcolor{red}{#1}}
+\def\hil#1{\textcolor{blue}{#1}}
+\def\goh#1{\textcolor{green}{#1}}
+\def\voh#1{\textcolor{violet}{#1}}
+\def\bv#1{{\bf\texttt{#1}}}
+%--------------------------------------------------------------------
+\newtheorem{definition}{Definition}
+\newtheorem{lemma}{Lemma}
+\newtheorem{proposition}{Proposition}
+\newtheorem{theorem}{Theorem}
+\newtheorem{corollary}{Corollary}
+\newtheorem{remark}{Remark}
+\newtheorem{conjecture}{Conjecture}
+%--------------------------------------------------------------------
+% \newcommand{\proof}{\noindent {\underline{\sc Proof}}}
+%--------------------------------------------------------------------
+\def\ora#1{\overrightarrow{#1}}
+%--------------------------------------------------------------------
+\def\alcool{\texttt{ALCOOL} }
+\def\miel{\texttt{MIEL} }
+\def\P{\texttt{P}}
+\def\V{\texttt{V}}
+\def\linux{{\sf LINUX} }
+\def\unix{{\sf UNIX} }
+\def\macosx{{\sf Mac OSX} }
+\def\windows{{\sf Windows} }
+\def\nvidia{{\sf NVidia} }
+\def\edf{{\sf EDF} }
+\def\posix{{\sf POSIX} }
+\def\vxworks{{\sf VxWorks} }
+\def\opengl{{\sf OpenGL} }
+\def\lablgl{{\sf LablGL} }
+\def\cea{{\sf CEA} }
+\def\c{{\sf C} }
+\def\ocaml{{\sf Ocaml} }
+\def\ocamlgraph{{\sf Ocamlgraph} }
+\def\geomview{{\sf Geomview} }
+\def\pgftikz{{\sf Pgf/Tikz} }
+\def\pdflatex{{\sf pdflatex} }
+\def\pv{{\sf PV} }
+\def\inria{{\sf INRIA} }
+%--------------------------------------------------------------------
+% BNF description tokens
+%--------------------------------------------------------------------
+\def\idf{\texttt{\scriptsize\em id}}
+\def\pid{\texttt{\scriptsize P({\em id})}}
+\def\vid{\texttt{\scriptsize V({\em id})}}
+\def\wid{\texttt{\scriptsize W({\em id})}}
+\def\proc{{\hil{\texttt{\scriptsize proc}}}}
+\def\proci{{\hil{\texttt{\scriptsize proc1}}}}
+\def\procii{{\hil{\texttt{\scriptsize proc2}}}}
+\def\condition{{\hil{\texttt{\scriptsize condition}}}}
+\def\name{{\hil{\texttt{\scriptsize name}}}}
+\def\namei{{\hil{\texttt{\scriptsize name1}}}}
+\def\nameii{{\hil{\texttt{\scriptsize name2}}}}
+\def\valpv{{\hil{\texttt{\scriptsize value}}}}
+\def\message{{\hil{\texttt{\scriptsize message}}}}
+\def\numb{{\hil{\texttt{\scriptsize number}}}}
+\def\arith{\hil{\texttt{arithmetic}}}
+\def\ruledef#1{\voh{\underline{\texttt{#1}}}}
+\def\rulecall#1{\hil{{\texttt{#1}}}}
+\def\kw#1{\wrn{\texttt{#1}}}
+\def\definer{\texttt{ := }}
+\def\notify#1{{\scriptsize
+\kw{N(}\rulecall{{#1}}\kw{)}}}
+\def\notifyall#1{{\scriptsize
+\kw{A(}\rulecall{{#1}}\kw{)}}}
+\def\wait{{\scriptsize
+\kw{W(}\rulecall{name}\kw{)}}}
+\def\lockmtx#1{{\scriptsize
+\kw{P(}\rulecall{{#1}}\kw{)}}}
+\def\unlkmtx{{\scriptsize
+\kw{V(}\rulecall{name}\kw{)}}}
+\def\sendmess#1#2{{\scriptsize
+\kw{S(}\rulecall{{#1}}\kw{,\{}\rulecall{{#2}}\kw{\})}}}
+\def\recvmess{{\scriptsize
+\kw{R(}\rulecall{name1}\kw{,}\rulecall{name2}\kw{)}}}
+\def\loadval{{\scriptsize \kw{@(}\rulecall{value}\kw{,}\rulecall{name}\kw{)}}}
+%--------------------------------------------------------------------
+\def\ifthel{{\scriptsize \rulecall{proc1}\kw{+[}\rulecall{bool}\kw{]+}\rulecall{proc2}}}
+\def\ifthelnb{{\scriptsize \rulecall{proc1}\kw{+}\rulecall{proc2}}}
+%--------------------------------------------------------------------
+\def\ker#1{{\sf ker}{#1}}
+\def\Tzero{{\sf T}_{\!0}}
+\def\Tone{{\sf T}_{\!1}}
+\def\sng#1{\{{#1}\}}
+\def\csng#1{\overline{\sng{#1}}}
+\def\downward#1{\downarrow\!{#1}}
+\def\upward#1{\uparrow\!{#1}}
+\def\sat#1{{\sf sat}({#1})}
+\def\Filt#1{{\sf Filt}({#1})}
+\def\OFilt#1{{\sf OFilt}({#1})}
+\def\idt#1{{\sf id}_{{#1}}}
+\def\opp#1{\big({#1}\big)^{\sf op}}
+\def\overcirc#1{\overset{\circ}{{#1}}}
+\def\int#1{{\sf int}({#1})}
+\def\clo#1{{\sf clo}({#1})}
+\def\patch#1{{\sf patch}({#1})}
+\def\upp#1{{\sf upper}({#1})}
+\def\low#1{{\sf lower}({#1})}
+%--------------------------------------------------------------------
+\def\pathCX{\overrightarrow{P}^{\sf (C)}\big(X\big)}
+\def\pathCDX{\overrightarrow{P}^{\sf (C')}\big(DX\big)}
+\def\ttn{[2]^{[n]}}
+\def\ttnpo{[2]^{[n+1]}}
+\def\ttm{[2]^{[m]}}
+\def\digere#1{\upharpoonleft\!\!{#1}\!\!\downharpoonright}
+\def\snze{\{0\}}
+\def\cosh#1{{#1}^!}
+\def\graph#1{{\sf graph}({#1})}
+\def\src#1{{\sf s}({#1})}
+\def\tgt#1{{\sf t}({#1})}
+\def\img#1{{\sf im}({#1})}
+\def\dom#1{{\sf dom}({#1})}
+\def\cod#1{{\sf cod}({#1})}
+\def\stIone{\overrightarrow{\I}_{\!1}}
+\def\stInpo{\overrightarrow{\I}_{\!n+1}}
+\def\stIr{\overrightarrow{\I}_{\!r}}
+\def\stIs{\overrightarrow{\I}_{\!s}}
+\def\dsIone{\uparrow\!\!\I_1}
+\def\dsIr{\uparrow\!\!\I_r}
+\def\dsIs{\uparrow\!\!\I_s}
+\def\iUX{\overset{\circ}{U(X)}}
+\def\iUXu{\overset{\circ}{U(X_1)}}
+\def\iUXd{\overset{\circ}{U(X_2)}}
+\def\dpX{\overrightarrow{P}(X)}
+\def\dpXz{\overrightarrow{P}(X_0)}
+\def\dpXu{\overrightarrow{P}(X_1)}
+\def\dpXd{\overrightarrow{P}(X_2)}
+\def\dq{\overrightarrow{q}}
+\def\dqX{\overrightarrow{q_X}}
+\def\dqY{\overrightarrow{q_Y}}
+\def\dpDX{\overrightarrow{P}\big(D(X)\big)}
+\def\dpIX{\overrightarrow{P}(I(X))}
+\def\fc{\overrightarrow{\pi}_{\!\!\!1}}
+\def\fg{{\pi}_{\!1}}
+\def\fgX{{\pi}_{\!1}(X)}
+\def\fgX{{\pi}_{\!1}(X)}
+\def\fgY{{\pi}_{\!1}(Y)}
+\def\fgf{{\pi}_{\!1}(f)}
+\def\picoshX{\overrightarrow{\pi}_{\!\!\!1}(\cosh{X})}
+\def\piC{\overrightarrow{\pi}^{\sf (C)}_{\!\!\!1}}
+\def\piCp{\overrightarrow{\pi}^{\sf (C')}_{\!\!\!1}}
+\def\piX{\overrightarrow{\pi}_{\!\!\!1}(X)}
+\def\piCX{\overrightarrow{\pi}^{\sf (C)}_{\!\!\!1}(X)}
+\def\piCDX{\overrightarrow{\pi}^{\sf (C')}_{\!\!\!1}(DX)}
+\def\piY{\overrightarrow{\pi}_{\!\!\!1}(Y)}
+\def\pif{\overrightarrow{\pi}_{\!\!\!1}(f)}
+\def\piXi{\overrightarrow{\pi}_{\!\!\!1}(X')}
+\def\piXz{\overrightarrow{\pi}_{\!\!\!1}(X_0)}
+\def\piXu{\overrightarrow{\pi}_{\!\!\!1}(X_1)}
+\def\piXd{\overrightarrow{\pi}_{\!\!\!1}(X_2)}
+\def\piDX{\overrightarrow{\pi}_{\!\!\!1}\big(D(X)\big)}
+\def\piIX{\overrightarrow{\pi}_{\!\!\!1}\big(I(X)\big)}
+\def\piSX{\overrightarrow{\pi}_{\!\!\!1}\big(S(X)\big)}
+\def\piSXi{\overrightarrow{\pi}_{\!\!\!1}\big(S(X')\big)}
+\def\piDSXi{\overrightarrow{\pi}_{\!\!\!1}\big(D\circ S(X')\big)}
+\def\A{{\mathbb{A}}}
+\def\C{{\mathbb{C}}}
+\def\I{{\mathbb{I}}}
+\def\K{{\mathbb{K}}}
+\def\N{{\mathbb{N}}}
+\def\Q{{\mathbb{Q}}}
+\def\R{{\mathbb{R}}}
+\def\Z{{\mathbb{Z}}}
+\def\Amaj{{\mathcal A}}
+\def\Bmaj{{\mathcal B}}
+\def\Cmaj{{\mathcal C}}
+\def\Dmaj{{\mathcal D}}
+\def\Fmaj{{\mathcal F}}
+\def\Imaj{{\mathcal I}}
+\def\Kmaj{{\mathcal K}}
+\def\Mmaj{{\mathcal M}}
+\def\Nmaj{{\mathcal N}}
+\def\Omaj{{\mathcal O}}
+\def\Pmaj{{\mathcal P}}
+\def\Qmaj{{\mathcal Q}}
+\def\Smaj{{\mathcal S}}
+\def\Umaj{{\mathcal U}}
+\def\open#1{{\Omaj}({#1})}
+\def\Ralg{{\sf Alg}$_{_R}$}
+\def\CSet{{\sf CSet}}
+\def\SSet{{\sf SSet}}
+\def\Kalg{{\sf Alg}$_{_\K}$}
+\def\Rng{{\sf Rng}} % Rings
+\def\Mon{{\sf Mon}} % Monoids
+\def\Rmod{{\sf Mod}$_{_R}$} % Modules
+\def\Pre{{\sf Pre}} % Preordered cets
+\def\Cat{{\sf Cat}} % Small categories
+\def\Cau{{\sf Cauchy}} % Cauchy complete (small) categories
+\def\Set{{\sf Set}} % Sets
+\def\Grph{{\sf Grph}} % Graphs
+\def\Gr{{\sf Gr}} % Groups
+\def\Grd{{\sf Grd}} % Groupoids
+\def\Strm{{\sf Str}} % Streams
+\def\coreStrm{{\sf S\overline{tr}}} % Streams
+\def\preStrm{{\sf preStr}} % Streams
+\def\dTop{{\sf dTop}} % d-Spaces
+\def\coredTop{{\sf dT\overline{op}}} % d-Spaces
+\def\Top{{\sf Top}} % Topological spaces
+\def\Ke{{\sf Ke}} % k-spaces 
+\def\CG{{\sf CG}} % Compactly Generated spaces
+\def\Haus{{\sf H}} % Hausdorff topological spaces
+\def\PoSet{{\sf PSet}} % Partially ordered sets
+\def\PoTop{{\sf PTop}} % Partially ordered topological spaces
+\def\RTop{{\sf RTop}} % Topological spaces with relation
+\def\WoTop{{\sf WT}} % Weakly ordered topological spaces
+\def\Rel{{\sf Re}} % Binary relations
+\def\rngC{R[{\Cmaj}]}
+\def\rngD{R[{\Dmaj}]}
+\def\ZC{\Z[{\Cmaj}]}
+\def\KC{\K[{\Cmaj}]}
+\def\RC{\R[{\Cmaj}]}
+\def\KD{\K[{\Dmaj}]}
+\def\OBC{{\sf Ob}({\Cmaj})}
+\def\MOC{{\sf Mo}({\Cmaj})}
+\def\MOD{{\sf Mo}({\Dmaj})}
+\def\MOCa{{\sf Mo}({\Cmaj}_1)}
+\def\MOCb{{\sf Mo}({\Cmaj}_2)}
+\def\MCA{{\sf C}({\Amaj})}
+\def\alphanot{\alpha_{\scriptscriptstyle 0}}
+\def\SCrng{S_{\Cmaj}^{(R)}}
+\def\SCZ{S_{\Cmaj}^{(\Z)}}
+\def\SCK{S_{\Cmaj}^{(\K)}}
+\def\SCQ{S_{\Cmaj}^{(\Q)}}
+\def\SCR{S_{\Cmaj}^{(\R)}}
+\def\SCC{S_{\Cmaj}^{(\C)}}
+\def\ssbeq{\sqsubseteq}
+\def\sspeq{\sqsupseteq}
+%--------------------------------------------------------------------
+\title{ALCOOL\\User Manual}
+\author{\small\sf Emmanuel Haucourt}
+%--------------------------------------------------------------------
+\begin{document}
+%\begin{abstract}
+%\end{abstract}
+\maketitle
+\tableofcontents
+%--------------------------------------------------------------------
+\chapter{Introduction}
+\section{A bit of History}
+\subsection{Scientific Origins}
+In 1968, Edsger Wybe Dijkstra exposed his ideas upon Concurrency Theory
+in \cite{DEW68}. In particular he introduced a toy language he called
+the \pv language. The only available instructions are \P\ and \V\ which
+respectively stand for {\em pakken} (take) and {\em vrijlaten}
+(release). Roughly speaking, this language allows the description of a
+program/system in which several processes/agents try to access common
+resources. The input language of the \alcool software is actually an
+extension of the \pv language.
+
+The notion of progress graph in among the important ideas presented
+\cite{DEW68}, it implicitly claims concurrent programs are suitably
+represented by geometrical shapes satisfying some specific
+properties. This idea is explicited later by Scott D. Carson and Paul
+F. Reynolds Jr in \cite{CR87} and Vaughan Pratt in
+\cite{PV00}. Concretely they claim that holes in the geometrical shape
+modelizing a concurrent program actually represent the lack of resource
+that may occur during its execution. 
+
+Since the purpose of Algebraic Topology is to detect holes, it was
+ natural to take it as a way of adressing issues met in Concurrency.
+ However computer scientists remarked topology was not enough and
+ quickly came to the idea that a notion of direction had to equip the
+ geometrical shape representing a concurrent program \cite{FGGHPRR00},
+ the first steps towards Directed Algebraic Topology were made and its
+ relation to Concurrency established. Actually several formalisms have
+ been introduced so far, for more details see
+ \cite{FGR06,GM03,KSPhD,KS09} or their common ancestor \cite{NL65}. It
+ is interesting to remark the partially ordered spaces \cite{NL65} first
+ appeared in the early fourties \cite{ES41} and their study were
+ motivated by a branch of mathematics which is far from any
+ consideration about Concurrency Theory.
+
+\subsection{Development}
+Driven by the need for safe softwares, the R\&D department of the \edf\
+group (the main french electricity provider) funded the \alcool project
+from 2001 to 2010. The original goal was to develop a software which
+would analyze source code written in language \c and using the \posix\
+library. Such programs are thus made of several threads/tasks. From a
+more general point of view, \alcool was designed to deal with
+Concurrency hence to analyze programs written in the more abstract \pv\
+language. The software \miel, also developed at \cea, has been created
+to translate \c+\posix source code into a \pv language one. The first
+prototype of \alcool had been developed in \c language until 2005. Then
+it was completely rewritten using \ocaml and provided with a
+mathematical engine (an \ocaml library) handling the geometrical
+models. As far as possible, this library implements the latest
+development of the Directed Algebraic Topology, which is the theory upon
+which \alcool is based.
+\section{What \alcool is designed for}
+We give a quick and informal overview of the kind of problems that
+\alcool can tackle. Taking a \pv program $P$ as an input \alcool is able
+to answer the following questions and provide the following pieces of
+information:
+
+1) The raw output of \alcool is a geometrical shape which represents the
+space of states of the program. In dimension $2$ that is to say when $P$
+is made of $2$ processes, the graphical representation of this model is
+human readable and furnish an intuitive description of the behaviour of
+$P$.
+
+2) Executions of $P$ leading to a state from which no process of $P$ can
+progress anymore. Such a state is called a deadlock, \alcool actually
+provides the set of all deadlocks of $P$. One can also ask \alcool to
+focus on some specific processes. For example, if $P$ consists of $3$
+processes, \alcool can find the states such that the second and third
+processes cannot progress anymore, regardless of the behaviour of the
+first one. A state is said to be unreachable if no execution of $P$ can
+reach it. \alcool can return the set of unreachable states of $P$. From
+a theoretical point of view, Unreachable States and Deadlocks are
+actually ``dual'': their roles are swapped if the flow of time is
+reversed.
+
+3) Does $P$ admit a {\em factorization}. Here is an instance of the
+problem: suppose that $P$ consists of $3$ processes such that any
+resource required by the first one can be shared by $3$ processes at
+least. Therefore the execution of first process does not interfer with
+the execution of the two other ones. \alcool is able to detect this
+situation and return which processes should be grouped together. \alcool
+is actually able to detect much more intricate situations of
+factorization. This feature is extremely important for it may split the
+analysis of a single large block of processes into several analyses of
+much smaller systems. The factorization algorithm complexity is actually
+exponential into the number of processes. Yet, if $P$ can be factorized
+into several small groups of processes, then the algorithm quickly finds
+them. This behaviour is to compare with the prime decomposition
+algorithm: if $n\in\N$ is the product of several small prime numbers,
+then the factorization procedure does not take much time. Our
+preconception is if $P$ is well-conceived then it should admit a
+factorization into several small systems.
+
+4) Draw the list of all classes of execution trace. The mathematical
+notion of directed homotopy between directed paths allows \alcool to
+reduce the number of execution traces to be checked. In particular
+\alcool can return an execution trace leading to some unwanted state.
+The trace is actually lifted on the \pv program, yet, the communication
+between \miel and \alcool also provide a lifted path on the \c\
+source code.
+
+5) \alcool can provide the list of read/write conflicts on a share
+variable and tells where they do occur.\\
+
+\noindent In general, \alcool provide many pieces of information about
+the phenomena due to Concurrency and likely to occur during an execution
+of $P$.
+\section{Installation}
+The procedure for installing \alcool on your personal computer. Most of
+them are probably done on your machine. \alcool is currently published
+as an archive containing the \ocaml sources so you have to compile
+them. Yet everything has been done to ease the procedure. Unfortunately
+the full-fledged distribution currently run on \linux systems only.
+\subsection{Requirements} All the librairies you need to compile \alcool\!.
+
+ - \ocaml distribution (version 3.11 at least).
+
+ - \ocamlgraph library.
+
+ - {\em The autotools} (they are presumably already installed)
+   that is to say \texttt{autoconf}, \texttt{automake}, \texttt{libtool}
+   \texttt{ocaml-tools}
+
+ - \geomview in order to enjoy the 3D view programs having 3
+   running processes.
+
+ - \pdflatex and \pgftikz in order to enjoy the 2D view programs
+   having 2 running processes.\\
+
+\noindent
+\linux: unless otherwise stated, any required installation can be done
+   using the package manager provided by the popoular \linux\
+   distributions like {\sf Ubuntu}, {\sf Debian}, {\sf Mandriva}, {\sf
+   Suze} etc.\\
+
+\noindent
+\macosx: Not available yet.\\\ \\
+\windows: Not available yet.
+%
+\subsection{Troubleshooting}Some known problems and the way they can be
+solved.
+
+\noindent
+ - You run the command \texttt{./oplate -gui} but nothing happens and
+   the shell does not return anything.
+
+This may be due to the \opengl library: it seems that some \nvidia
+devices are not fully compatible with \lablgl (the \ocaml/\opengl
+binding). If you can live without gui then just omit the option
+\texttt{-gui}. Otherwise you can disable the \lablgl library from the
+\texttt{Makefile} file replacing the line
+
+\texttt{ifneq "lablgtk2-gl.gtkgl" "no"} 
+
+\noindent by 
+
+\texttt{ifneq "no" "no"}
+
+%--------------------------------------------------------------------
+\chapter{The PV Language}
+\section{Grammar}
+%--------------------------------------------------------------------
+The grammar of the \pv language is not firmly normalized. Yet we try to
+keep the following description as close as possible to the grammar of
+the language actually recognize by the current version of \alcool\!.
+%--------------------------------------------------------------------
+\subsection{Lexical Convention}
+In the following description, \name\ is a string of characters taken
+among the lowercases, uppercases, digits and the ``special'' characters
+\wrn{\texttt{\_}} and \wrn{\texttt{\$}}. Blanks {\em are not allowed}
+and the first character should not be a digit. In addition, \numb\ is a
+nonempty string of digits while \message\ is a string of
+characters taken {\em without restriction} among the lowercases,
+uppercases, digits and the following symbols
+
+ \kw{. , ; : - ? ! ( ) [ ]}
+
+\noindent
+Blanks are also allowed. Formally:\\
+
+{\scriptsize
+\hil{\texttt{digit}}:=\texttt{\{'\wrn{0}'-'\wrn{9}'\}}
+
+\hil{\texttt{lowercase}}:=\texttt{\{'\wrn{a}'-'\wrn{z}'\}}
+
+\hil{\texttt{uppercase}}:=\texttt{\{'\wrn{A}'-'\wrn{Z}'\}}
+
+\hil{\texttt{alpha}}:= \hil{\texttt{lowercase}} $\big|$ \hil{\texttt{uppercase}}
+
+%\hil{\texttt{accentué}}:= \texttt{\{'\wrn{à}' '\wrn{â}' '\wrn{é}' '\wrn{è}' '\wrn{ê}' '\wrn{ë}' '\wrn{ï}' '\wrn{î}' '\wrn{ö}' '\wrn{ô}' '\wrn{û}' '\wrn{ù}'\}}
+
+\hil{\texttt{alphanum}}:=\hil{\texttt{digit}} $\big|$ \hil{\texttt{lowercase}} $\big|$ \hil{\texttt{uppercase}}
+
+\hil{\texttt{special}}:=\texttt{\{'\wrn{\_}' '\wrn{\$}'\}}
+
+\hil{\texttt{other}}:=\texttt{\{' ' '\wrn{:}' '\wrn{.}' '\wrn{,}' '\wrn{;}' '\wrn{-}' '\wrn{?}' '\wrn{!}' '\wrn{(}' '\wrn{)}' '\wrn{[}' '\wrn{]}\}}
+
+\name:= $\big($\hil{\texttt{alpha}} $\big|$ \hil{\texttt{special}}$\big)^+\cdot\big($\hil{\texttt{alphanum}} $\big|$ \hil{\texttt{special}}$\big)^\ast$
+
+\numb:=$\big($\hil{\texttt{digit}}$\big)^+$
+
+\hil{\texttt{message}}:= $\big($\hil{\texttt{alphanum}} $\big|$ \hil{\texttt{special}} $\big|$ \hil{\texttt{other}}$\big)^\ast$
+}\\
+
+\noindent In the following description, the keywords of the language are
+\wrn{red}, the construction rule calls are \hil{blue} and the
+construction rule definition are \voh{violet}.  Instruction may be
+separated by a dot \texttt{\wrn{.}} or a colon
+\kw{:}. In the current version of \alcool\!,
+both notation are equivalent. However, in the future versions, we would
+like to consider a sequence of instructions separated by a colon
+\kw{:} as atomic.
+
+\noindent Besides, we will implement a (very simple) static type
+checker, so \alcool will return, for example, an error if an instruction
+\sendmess{x}{message}\ is met while \rulecall{x}\ was declared as a mutex :
+indeed \rulecall{x} should be a pile or a file.\newpage
+
+\noindent 
+\subsection{BNF description} We describe the grammar of the \pv
+language.\\\ \\
+{\scriptsize
+\ruledef{listofnames}\definer\name{$\big|$}\name\texttt{
+}\rulecall{listofnames}\\\ \\
+\ruledef{header}\definer\\
+\kw{\#semaphore }$[$\numb$]$\texttt{ }\rulecall{listofnames}{$\big|$}
+\kw{\#sem }$[$\numb$]$\texttt{ }\rulecall{listofnames}{$\big|$}\\
+\kw{\#file }$[$\numb$]$\texttt{ }\rulecall{listofnames}{$\big|$}
+\kw{\#fifo }$[$\numb$]$\texttt{ }\rulecall{listofnames}{$\big|$}\\
+\kw{\#pile }$[$\numb$]$\texttt{ }\rulecall{listofnames}{$\big|$}
+\kw{\#lifo }$[$\numb$]$\texttt{ }\rulecall{listofnames}{$\big|$}\\
+\kw{\#synchronization }$[$\numb$]$\texttt{ }\rulecall{listofnames}{$\big|$}
+\kw{\#syn }$[$\numb$]$\texttt{ }\rulecall{listofnames}{$\big|$}\\
+\kw{\#mutex }\rulecall{listofnames}{$\big|$}
+\kw{\#mtx }\rulecall{listofnames}{$\big|$}\\
+\kw{\#mutex\_recursive }\rulecall{listofnames}{$\big|$}
+\kw{\#mtxr }\rulecall{listofnames}{$\big|$}\\
+\kw{\#mutex\_normal }\rulecall{listofnames}{$\big|$}
+\kw{\#mtxn }\rulecall{listofnames}{$\big|$}\\
+\kw{\#mutex\_errorcheck }\rulecall{listofnames}{$\big|$}
+\kw{\#mtxrec }\rulecall{listofnames}{$\big|$}\\
+\kw{\#monitor }\rulecall{listofnames}{$\big|$}
+\kw{\#mntr }\rulecall{listofnames}{$\big|$}\hil{{\texttt{header}}}
+\\\ \\
+\ruledef{equations}\definer\rulecall{name}\kw{ = }\rulecall{procesus}{$\big|$}
+\rulecall{name}\kw{ = }\rulecall{procesus}\kw{;}\rulecall{equations}
+\\ \ \\
+\ruledef{processus}\definer\\
+\kw{\#void}{$\big|$}
+\rulecall{instruction}{$\big|$}
+\rulecall{instruction}\kw{.}\rulecall{processus}{$\big|$}
+\rulecall{instruction}\kw{:}\rulecall{processus}
+\\ \ \\
+\ruledef{instruction}\definer\\
+\kw{P(}\name\kw{)}{$\big|$}
+\kw{V(}\name\kw{)}{$\big|$}
+\kw{C(}\name\kw{)}{$\big|$}
+\kw{F(}\name\kw{)}{$\big|$}
+\kw{W(}\name\kw{)}{$\big|$}
+\kw{N(}\name\kw{)}{$\big|$}
+\kw{A(}\name\kw{)}{$\big|$}\\
+%\kw{s(}\name\kw{)}\kw{\{}\hil{{\texttt{message}}}\kw{\}}{$\big|$}
+\kw{S(}\name\kw{,\{}\hil{{\texttt{message}}}\kw{\})}{$\big|$}
+\kw{R(}\name\kw{,}\name\kw{)}{$\big|$}
+\kw{M(}\name\kw{,}\name\kw{)}{$\big|$}\\
+\kw{@(}\name\kw{,}\hil{{\texttt{arithmetic}}}\kw{)}{$\big|$}
+\rulecall{branching}
+\\ \ \\
+\ruledef{branching}\definer\rulecall{processus}{$\big|$}
+\rulecall{processus}\kw{+[}\rulecall{boolean}\kw{]+}\rulecall{branching}{$\big|$}
+\rulecall{processus}\kw{+}\rulecall{branching}
+\\ \ \\
+\ruledef{arithmetic}\definer\\
+\name{$\big|$}\numb{$\big|$}
+\kw{abs }\arith{$\big|$}
+\kw{-}\arith{$\big|$}\\
+\arith\kw{+}\arith{$\big|$}
+\arith\kw{*}\arith{$\big|$}\\
+\arith\kw{-}\arith{$\big|$}
+\arith\kw{/}\arith
+\\\ \\
+\ruledef{boolean}\definer\\
+\rulecall{name}{$\big|$}\kw{true}{$\big|$}\kw{false}{$\big|$}\kw{?}{$\big|$}\kw{not
+}\hil{\texttt{{boolean}}}{$\big|$}
+\hil{\texttt{{boolean}}}\kw{\&}\hil{\texttt{{boolean}}}{$\big|$}\hil{\texttt{{boolean}}}\kw{|}\hil{\texttt{{boolean}}}{$\big|$}\\
+\arith\kw{==}\arith{$\big|$}
+\arith\kw{<=}\arith{$\big|$}\\
+\arith\kw{<>}\arith
+\\\ \\
+\ruledef{lincombofnames}\definer$[$\rulecall{numb}$[$\kw{*}$]]$\texttt{ }\rulecall{name}\texttt{ }{$\big|$}\texttt{ }
+$[$\rulecall{numb}$[$\kw{*}$]]$\texttt{ }\rulecall{name}$[$\kw{|}$]$\rulecall{lincombofnames}\\ \ \\
+%
+\ruledef{programs}\texttt{:=}\\
+\rulecall{header}\\
+$\big($\kw{processes:}$\big|$\kw{procs:}$\big)$\ \ \rulecall{equations}\\
+$\big($\kw{INIT:}$\big|$\kw{Init:}$\big|$\kw{init:}$\big|$\kw{usrRoot:}$\big)$\
+\ \rulecall{lincombofnames}
+%$\Big[$\rulecall{name}$\big($[\kw{|}]\rulecall{name}$\big)^\ast$$\Big]$
+}
+\section{Semantics}
+The intuitive runtime semantics of the built-in synchronization
+primitives of the \pv language.
+\subsection{Mutex and Semaphore}Intuitively a {\em mutex} is a lock
+implementing the alternative {\em vacant}/{\em occupied}. A {\em
+semaphore} implements a set of tokens that cannot be distinguished from
+the others. The process $\pi$ executing the instruction \lockmtx{name}\
+takes a token of the semaphore \name\ or put a lock on the mutex
+\name. If all the tokens of the semaphore \name\ are already held, the
+requiring process is suspended until some token \name\ is
+released. Depending on the options specified in the declaration of
+\name\ a process may hold several tokens of the semaphore \name. If the
+mutex \name\ is occupied by another process, $\pi$ is suspended until
+\name\ is unlocked. However if \name has been locked by $\pi$, the the
+instruction \lockmtx{name}\ is ignored. In other words, a semphore of
+arity $2$ does not behave like a mutex. While the former behaves like a
+\posix ``fast'' mutex, the second one behaves like a \posix
+``recursive'' mutex. If \name\ is a semaphore, the process $\pi$
+executing the instruction \unlkmtx\ releases a token of the semaphore if
+it holds one, otherwise the instruction is ignored. If \name\ is a
+mutex, the process $\pi$ executing the instruction \unlkmtx\ unlocks the
+mutex \name\ if $\pi$ is the process which locked it, otherwise the
+instruction is ignored.
+\subsection{Stack and Queue}
+The instruction \sendmess{name}{message}\ sends the message \message\ to
+    the pile (stack) or file (queue) named \name. If the arity of \name\
+    is $n$ and if \name\ already contains $n$ messages, then the oldest
+    one is lost, that is to say the one at the bottom of the pile or at
+    the head of the file depending on the nature of \name. This
+    instruction never stops the process which executes it.
+
+If \namei\ is not empty, the instruction \recvmess\ remove the message on
+the top of the pile \namei\ (or at the head of the file \namei) the put
+it in the "variable" \nameii. On the contrary, if \namei\ is empty, the
+process is suspended until some message arrive in \namei. If several
+processes are waiting for a message from \namei, there is no
+deterministic way to decide which one will receive it. This message is
+taken by any of the processes waiting for it.
+\subsection{Synchronization Barrier}
+Each process has two states with respect to each synchronization barrier
+\name\ of arity $n$ : it is either waiting behind the barrier or
+not. When a process executes the instruction \wait it is suspended
+``waiting behind the barrier \name'' until $n$ processes gets blocked by
+the barrier \name, then the barriers are raised up and all the processes
+which were blocked by the barrier \name\ simultaneously restart.
+\subsection{Monitor}
+The identifiers \namei\ and \nameii\ should refer to some monitor and
+  some mutex respectively. When a process $\pi$ executes this
+  instruction, it unlocks the mutex \namei\ (nothing happens if the
+  process $\pi$ does not hold the mutex) and {\em simultaneously} stops
+  its execution and restarts as soon as $\pi$ receives a signal from the
+  monitror \namei. When the signal is received, the process $\pi$ try to
+  lock the mutex \nameii, $\pi$ behaves as if it tried to execute
+  \lockmtx{name2}. In particular, the mutex \nameii\ freed by $\pi$ may
+  be locked by another process before $\pi$ received the signal from the
+  monitor \namei. In this case $\pi$ gets stopped waiting for the mutex
+  \nameii\ to be unlocked right after it received the signal. However
+  the signal from the monitor \namei\ cannot reach the process $\pi$
+  between the moment when $\pi$ unlocks the mutex \nameii and the moment
+  when $\pi$ starts to wait for the signal \namei, indeed both actions
+  are performed simultaneously. When the instruction \notify{\name} is
+  executed, one of the processes listening to \name\ receives a signal,
+  the choice of this process is not deterministic. On the contrary, when
+  the instruction \notifyall{\name} is executed, all the processes
+  listening to \name\ receive a signal.\\
+
+The preceding semantics is close to the \vxworks specification, yet we
+would like to follow an easier one.
+%--------------------------------------------------------------------
+\subsection{Variable and Values} The instruction \loadval\ loads the
+value \valpv\ in the variable \name.  May cause troubles if running on a
+system equiped with an \nvidia graphic card. In this case you should
+forbid the use of the \opengl library during the compilation of \alcool
+(see the Troubleshooting section).
+%--------------------------------------------------------------------
+\subsection{Conditional Branching} When the process $\pi$ executes the
+instruction \ifthel\ the process \proci\ is executed if \condition\ is
+satisfied otherwise it is the process \procii. The form \ifthelnb\ is
+also allowed and means that either \proci\ or \procii\ will be executed,
+the choice being nondeterministic. Not that the operator \ifthel\ is
+associative and commutative though \ifthelnb\ is so. Actually any finite
+sum is allowed, in this case the process on the left hand side of the
+{\em first} satisfied condition (if any) is executed, otherwise the last
+process is executed.
+\subsection{Operator binding precedence}
+The sequence operator \kw{$\cdot$} binds tighter that the branching
+operator \kw{+} which binds tighter than the parallel composition \kw{|}
+for example the following program
+\[
+\kw{P(}\rulecall{a}\kw{).V(}\rulecall{a}\kw{)+P(}\rulecall{b}\kw{).V(}\rulecall{b}\kw{)|}\kw{P(}\rulecall{a}\kw{).V(}\rulecall{a}\kw{)+P(}\rulecall{b}\kw{).V(}\rulecall{b}\kw{)}     
+\]
+should be understood as\\
+\[
+\kw{\Big(\big(P(}\rulecall{a}\kw{).V(}\rulecall{a}\kw{)\big)+\big(P(}\rulecall{b}\kw{).V(}\rulecall{b}\kw{)\big)\Big)\Big|}\kw{\Big(\big(P(}\rulecall{a}\kw{).V(}\rulecall{a}\kw{)\big)+\big(P(}\rulecall{b}\kw{).V(}\rulecall{b}\kw{)\big)\Big)}
+\]
+
+%--------------------------------------------------------------------
+\chapter{The \alcool software}
+\section{Graphical User Interface}
+The graphical user interface of \alcool is obtained running the command
+\bv{oplate -gui}.
+\section{Command Line}\noindent
+The list of all the options recognized by \alcool.
+
+\subsection{\texttt{-display}}. Use \bv{-d} as a shortcut. The display option
+specifies which information you want from the \alcool software. The
+option takes a list of suboptions without blanks and separated by
+commas. The suboptions are:
+
+\bv{forbidden} or \bv{frb} the forbidden area of the program.
+
+\bv{state} or \bv{st} the state space of the program.
+
+\bv{reachable} overapproximation of the subspace of states that might be reached by an execution trace.
+
+\bv{unreachable} underapproximation of the subspace of states that
+cannot be reached by an execution trace.
+
+\bv{safe} underapproximation of the subspace of states from which any
+execution trace does not meet deadlock state.
+
+\bv{hazardous} overapproximation of the subspace of states from which
+some execution trace might reach a deadlock state.
+
+\bv{overflow} overapproximation of the subspace of states wherein one
+observes a stack/queue overflow, hence a message loss.
+
+\bv{deadlock-attractor} or \bv {dla} overapproximation of the subspace of states from which
+some execution trace might reach a deadlock state.
+
+\bv{2d {\em n}} or \bv {2D {\em n}} provides a 2D view of the areas. This option is
+valid for PV programs having exactly 2 running processes, one dimension
+per process. The integer \bv{\em n} provides the scale of the picture.
+
+\bv{2d+ {\em n}} or \bv {2D+ {\em n}}. Same as \bv{2d {\em n}} but the overflow area
+is also displayed using transparency.
+
+\bv{3d} or \bv {3D} provides a 3D view of the areas to display. This
+option is valid for PV programs having exactly 3 running processes, one
+dimension per process.
+\\
+
+\noindent Example: \texttt{oplate -d frb} \texttt{\em file.pv} displays
+the forbidden area of the pv program contained in the file \texttt{\em file.pv}.
+%
+\section{Environment}\noindent
+Internal parameters that alter the way \alcool works.
+\subsection{\texttt{-terminal-color-on}} Enables the use
+of colors on terminal output. Use \bv {tc-on} as a shortcut.
+\subsection{\texttt{-terminal-color-off}} Disables the use
+of colors on terminal output. Use \bv {tc-off} as a shortcut.
+\subsection{\texttt{-gui}} Run \alcool under its graphical user
+interface. May cause troubles if running on a system equiped with an
+\nvidia graphic card. 
+\subsection{\texttt{-unroll gatling {\em n}}} This option is rather
+technical and has been introduced in order to deal with program
+including an {\em initialization sequence} that is to say some process
+spawning the processes the program is actually made of. Roughly speaking
+it executes the first instruction of the first process then the first
+instruction of second process and so on until $n$ instructions have been
+executed. The semantics of this option is actually not clear in
+general. In some sense it chooses some scheduling among all the possible
+ones forgetting about the others. Its purpose is to go through trivial
+initialization sequence. If a branching instruction is met, the ``most
+likely to cause trouble'' branch is chosen. No satisfactory semantics
+can be given to the preceding assertion though it makes sense in the
+simple cases the option has been implementd for.
+%--------------------------------------------------------------------
+\bibliographystyle{plain} \bibliography{my_usual_bibliography}
+\end{document}
+% --------------------------------------------------------------------
+% End of Document
+% --------------------------------------------------------------------
+
+
+\rulecall{processus}\kw{+[}\hil{{\texttt{boolean}}}\kw{]}$\Big($\kw{+}\rulecall{processus}\kw{+[}\hil{{\texttt{boolean}}}\kw{]}$\Big)^\ast$\kw{+}\rulecall{processus}\kw{)}

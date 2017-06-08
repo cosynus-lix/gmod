@@ -1,0 +1,12 @@
+#mtx a b c d
+
+procs:
+pa = P(a).V(a)
+pb = P(b).V(b)
+pc = P(c).V(c)
+pd = P(d).V(d)
+
+pe = ()
+
+init:
+pe pe pe pe pe pe pe pe pe

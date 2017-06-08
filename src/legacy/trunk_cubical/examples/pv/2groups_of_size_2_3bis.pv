@@ -1,0 +1,7 @@
+#mtx a b
+#sem 2 c
+procs:
+p = P(a).P(c).V(c).V(a)
+q = P(b).P(c).V(c).V(b)
+init:
+2p 2q

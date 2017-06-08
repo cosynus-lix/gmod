@@ -1,0 +1,5 @@
+#mtx a b
+procs:
+p = P(a) + P(b)
+init:
+p

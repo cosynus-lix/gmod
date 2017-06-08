@@ -1,0 +1,6 @@
+#mtx a b c
+procs:
+u = P(a).V(a).(C(v)+[x=1]+C(w))
+v = P(b).V(b)
+w = P(c).V(c)
+init:

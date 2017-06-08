@@ -1,0 +1,8 @@
+#mtx a b c
+procs:
+init = x:=1.y:=2.z:=3.F(p1).F(p2).F(p3)
+p1 = P(a).P(b).(x := y).V(a).V(b)
+p2 = P(b).P(c).(y := z).V(b).V(c)
+p3 = P(c).P(a).(z := x).V(c).V(a)
+init:
+init

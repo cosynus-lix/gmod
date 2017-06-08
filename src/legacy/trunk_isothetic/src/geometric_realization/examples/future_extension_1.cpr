@@ -1,0 +1,19 @@
+open_square = " a ]0,1[ b * a ]0,1[ b * a {0} b "
+
+pole = " a {0} b * a {0} b * a [0,1] b "
+
+future = open_square >> pole
+
+open_unit_segment = " a ]0,1[ b "
+
+future_2 = open_unit_segment >> (c.open_unit_segment)
+
+future_3 = ¬future_2
+
+future_4 = ¬future_3
+
+start = "a [0,+oo] b ; b c ; b "
+
+end = "a b ; b ]0,+oo] c "
+
+future_5 = start >> end

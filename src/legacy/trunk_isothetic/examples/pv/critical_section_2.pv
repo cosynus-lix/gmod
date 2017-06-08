@@ -1,0 +1,5 @@
+procs:
+p = @(x,0)
+q = @(x,1)
+init:
+p q

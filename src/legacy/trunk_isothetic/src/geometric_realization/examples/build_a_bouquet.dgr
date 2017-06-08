@@ -1,0 +1,5 @@
+b1 = "o a [0,+oo] o"
+b2 = "o b [0,+oo] o"
+b3 = "o c [0,+oo] o"
+b4 = "o d [0,+oo] o"
+bouquet = b1 | b2 | b3 | b4

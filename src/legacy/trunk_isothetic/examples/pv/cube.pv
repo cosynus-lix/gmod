@@ -1,0 +1,5 @@
+#sem 3 a
+procs:
+p = P(a).V(a)
+init:
+3p

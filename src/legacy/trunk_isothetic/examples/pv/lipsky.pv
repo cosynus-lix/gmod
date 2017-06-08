@@ -1,0 +1,8 @@
+#mtx u v w x y z
+procs:
+p1 = P(x).P(y).P(z).V(x).P(w).V(z).V(y).V(w)
+p2 = P(u).P(v).P(x).V(u).P(z).V(v).V(x).V(z)
+p3 = P(y).P(w).V(y).P(u).V(w).P(v).V(u).V(v)
+
+init:
+p1 p2 p3

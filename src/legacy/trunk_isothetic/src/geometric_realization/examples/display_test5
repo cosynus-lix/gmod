@@ -1,0 +1,14 @@
+bidouille = 
+"
+x y ;
+a amazon {2} b ;
+c d ;
+berlingot ;
+-haribo
+"
+*
+"
+x [4,5] y ;
+u [0,+oo] v ;
+u ]0,+oo[ u ;
+"

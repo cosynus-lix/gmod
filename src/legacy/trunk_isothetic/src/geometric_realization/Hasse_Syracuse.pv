@@ -1,0 +1,4 @@
+#process p = (x:=7).C(q)
+#process q = C(r)+[(x<>1)]+()
+#process r = (x:=x/2.C(q))+[((x mod 2) = 0)]+(x:=3*x+1.C(q))
+#init p

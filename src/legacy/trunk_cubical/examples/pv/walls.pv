@@ -1,0 +1,5 @@
+#synchronization 2 a b
+procs:
+p = W(a).W(b)
+init:
+p p p

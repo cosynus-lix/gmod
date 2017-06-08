@@ -1,0 +1,5 @@
+#S¹
+circle = S¹\{0}
+origin = {1}
+coorigin = }1 2 3{
+past = origin < circle

@@ -1,0 +1,5 @@
+a = "a [0,1] b"
+b = a×a
+c = a×a×a
+d = fac.b
+e = fac.c

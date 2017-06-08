@@ -1,0 +1,6 @@
+#monitor m
+procs:
+p1 = A(m)
+p2 = M(m)
+init:
+p1 p2

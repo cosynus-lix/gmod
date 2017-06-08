@@ -1,0 +1,17 @@
+#mtx  a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12
+procs:
+p1 = P(a0).P(a1).V(a0).V(a1)
+p2 = P(a1).P(a2).V(a1).V(a2)
+p3 = P(a2).P(a3).V(a2).V(a3)
+p4 = P(a3).P(a4).V(a3).V(a4)
+p5 = P(a4).P(a5).V(a4).V(a5)
+p6 = P(a5).P(a6).V(a5).V(a6)
+p7 = P(a6).P(a7).V(a6).V(a7)
+p8 = P(a7).P(a8).V(a7).V(a8)
+p9 = P(a8).P(a9).V(a8).V(a9)
+p10 = P(a9).P(a10).V(a9).V(a10)
+p11 = P(a10).P(a11).V(a10).V(a11)
+p12 = P(a11).P(a12).V(a11).V(a12)
+p13 = P(a12).P(a0).V(a12).V(a0)
+init:
+p0 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12

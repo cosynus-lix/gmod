@@ -1,0 +1,4 @@
+#mtx a
+#proc p = P(a).V(a)
+#init p p
+

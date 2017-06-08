@@ -1,0 +1,9 @@
+#mtx a
+
+procs:
+p = P(a).@(x,0).V(a)
+q = P(a).@(x,1).V(a)
+r = P(a).@(x,2).V(a)
+
+init:
+p q r

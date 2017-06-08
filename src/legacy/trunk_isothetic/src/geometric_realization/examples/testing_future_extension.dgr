@@ -1,0 +1,16 @@
+g1 =
+"
+a alpha {1} b ;
+b alpha b ;
+b alpha c
+"
+;
+g2 =
+"
+a alpha [1,+oo[ b ;
+b alpha ]0,+oo[ b ;
+b alpha ]0,1] c ;
+b
+"
+;
+g3 = g1 >> g2

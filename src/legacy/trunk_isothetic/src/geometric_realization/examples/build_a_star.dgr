@@ -1,0 +1,6 @@
+b1 = "o [0,+oo] a"
+b2 = "o [0,+oo] b"
+b3 = "o [0,+oo] c"
+b4 = "o [0,+oo] d"
+b5 = "o [0,+oo] e"
+star = b1 | b2 | b3 | b4 | b5

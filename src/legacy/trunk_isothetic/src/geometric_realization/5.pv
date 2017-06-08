@@ -1,0 +1,5 @@
+#process
+  p = x := 1 . C(q) . x := 2
+  q = x := 3
+#init
+  p q

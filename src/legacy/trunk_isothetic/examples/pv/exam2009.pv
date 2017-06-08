@@ -1,0 +1,6 @@
+#mtx a b c d
+procs:
+p1 = P(a).P(b).P(c).V(c).V(a).P(d).V(d).V(b)
+p2 = P(d).P(c).P(b).V(b).V(d).P(a).V(a).V(c)
+init:
+p1 p2

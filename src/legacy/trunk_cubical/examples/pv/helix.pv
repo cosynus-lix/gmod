@@ -1,0 +1,10 @@
+#sem 3 a b c d
+
+procs:
+X=P(a).P(b).P(c).V(a).P(d).V(b).V(c).V(d)
+Y=P(b).P(a).P(d).V(b).P(c).V(a).V(d).V(c)
+Z=P(a).V(a).P(b).V(b).P(d).V(d).P(c).V(c)
+
+init:
+
+X Y Z

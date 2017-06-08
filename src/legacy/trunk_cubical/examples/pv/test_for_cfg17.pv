@@ -1,0 +1,7 @@
+#synchronization x
+
+procs:
+p = W(x).C(p)
+	
+init:
+	2p

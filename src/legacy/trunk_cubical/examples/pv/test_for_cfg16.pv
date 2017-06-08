@@ -1,0 +1,9 @@
+#mtx a
+#fifo r1 r2
+procs:
+	p = P(a).V(a).S(r1).R(r2).C(p)
+	q = R(r1).P(a).V(a).S(r2).C(q)
+	
+init:
+	p | q
+

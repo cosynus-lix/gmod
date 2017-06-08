@@ -1,0 +1,5 @@
+#mtx a b c
+procs:
+a_fork = (P(a).V(a))+[true]+(P(b).V(b))+[true]+(P(c).V(c))
+init:
+a_fork

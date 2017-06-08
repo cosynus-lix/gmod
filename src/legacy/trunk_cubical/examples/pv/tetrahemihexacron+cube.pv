@@ -1,0 +1,7 @@
+#semq 2 a
+#semq 3 b
+procs:
+p = P(b).P(a).V(a).V(b)
+init:
+p p p
+

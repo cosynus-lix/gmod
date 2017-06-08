@@ -1,0 +1,6 @@
+#mtx a b c d
+procs:
+process_1 = P(a).P(b).V(b).V(a).P(c).P(d).V(d).V(c)
+process_2 = P(d).P(c).V(c).V(d).P(b).P(a).V(a).V(b)
+init:
+process_1 | process_2

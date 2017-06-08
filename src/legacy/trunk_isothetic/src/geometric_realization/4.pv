@@ -1,0 +1,9 @@
+#mutex a b
+#mtx b a
+#semaphore 3 c d e 
+#sem 4 f g h
+#sync 3 i j
+#synchronization 7 k l m
+#process p = P(a).V(a)
+#process q = W(i)
+#init 2p 3q

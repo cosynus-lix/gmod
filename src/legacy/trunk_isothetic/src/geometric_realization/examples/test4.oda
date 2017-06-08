@@ -1,0 +1,5 @@
+#R+
+point = {2} {4}
+area = [3,5] {2} ]7,9[
+cmp = point ⩽ area
+cmp2 = ]5,6] < [5,6]

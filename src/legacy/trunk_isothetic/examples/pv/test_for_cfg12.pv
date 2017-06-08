@@ -1,0 +1,3 @@
+procs:
+p=C(p)+[?]+C(p)+[?]+C(p)
+init:

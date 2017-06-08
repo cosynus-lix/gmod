@@ -1,0 +1,28 @@
+unit =  "a [0,1[ b"
+full =  "a [0,+oo] b"
+queue = "a [4,+oo] b"
+
+a = unit  × full  × unit  × full 
+b = unit  × full  × queue × full 
+c = unit  × full  × full  × unit 
+d = unit  × full  × full  × queue
+e = queue × full  × unit  × full 
+f = queue × full  × queue × full 
+g = queue × full  × full  × unit 
+h = queue × full  × full  × queue 
+i = full  × unit  × unit  × full 
+j = full  × unit  × queue × full 
+k = full  × unit  × full  × unit 
+l = full  × unit  × full  × queue 
+m = full  × queue × unit  × full 
+n = full  × queue × queue × full 
+o = full  × queue × full  × unit 
+p = full  × queue × full  × queue
+
+space = a ⋃ b ⋃ c ⋃ d ⋃ e ⋃ f ⋃ g ⋃ h ⋃ i ⋃ j ⋃ k ⋃ l
+
+compl_space = ¬space
+
+norm_space = ¬compl_space
+
+fac = fac.space

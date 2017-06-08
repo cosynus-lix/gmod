@@ -1,0 +1,17 @@
+somearea = 
+"a {0} {1} b ;
+b  [0,5[ ]10,+oo]  b ;
+x ; -y
+"
+*
+"c [5,7] d"
+
+complement = \somearea
+
+bicomplement = \\somearea
+
+bidouille = 
+"
+a b;
+c d;
+"

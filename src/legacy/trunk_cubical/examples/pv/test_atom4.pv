@@ -1,0 +1,9 @@
+#syn 2 a
+#syn 2 b
+#syn 2 c
+procs:
+p1 = W(a).W(c)
+p2 = W(b).W(a)
+p3 = W(c).W(b)
+init:
+p1 p2 p3

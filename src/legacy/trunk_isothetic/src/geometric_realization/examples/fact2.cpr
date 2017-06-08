@@ -1,0 +1,11 @@
+a1 = "a [0,1] b"
+a2 = "a [2,3] b"
+a3 = "a [4,5] b"
+a = a1 ⋃ a2 ⋃ a3
+b = a×a
+c = a×a×a
+d = a1×a2⋃a1×a3⋃a2×a2⋃a2×a3
+
+fac1 = fac.b
+fac2 = fac.c
+fac3 = fac.d

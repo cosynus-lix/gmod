@@ -1,0 +1,55 @@
+#mutex locks
+#mutex locks_4
+#mutex locks_8
+#mutex locks_12
+#mutex locks_16
+
+% Thread jobs_4
+jobs_4 = mt_jobs_4_32
+mt_jobs_4_64 = mt_jobs_4_32
+mt_jobs_4_32 =
+((P(locks).P(locks_8).V(locks_8).V(locks).mt_jobs_4_64
+))
+
+
+% Thread jobs
+jobs = mt_jobs_32
+mt_jobs_64 = mt_jobs_32
+mt_jobs_32 =
+((P(locks_16).P(locks_4).V(locks_4).V(locks_16).mt_jobs_64
+))
+
+
+% Thread jobs_16
+jobs_16 = mt_jobs_16_32
+mt_jobs_16_64 = mt_jobs_16_32
+mt_jobs_16_32 =
+((P(locks_12).P(locks).V(locks).V(locks_12).mt_jobs_16_64
+))
+
+
+% Thread jobs_12
+jobs_12 = mt_jobs_12_32
+mt_jobs_12_64 = mt_jobs_12_32
+mt_jobs_12_32 =
+((P(locks_8).P(locks_16).V(locks_16).V(locks_8).mt_jobs_12_64
+))
+
+
+% Thread jobs_8
+jobs_8 = mt_jobs_8_32
+mt_jobs_8_64 = mt_jobs_8_32
+mt_jobs_8_32 =
+((P(locks_4).P(locks_12).V(locks_12).V(locks_4).mt_jobs_8_64
+))
+
+
+
+% Thread main
+main = mt_main_48
+mt_main_65 = ()
+mt_main_48 = ((F(jobs).F(jobs_4).F(jobs_8).F(jobs_12).F(jobs_16).mt_main_48) + mt_main_65)
+
+
+%Start
+init: main

@@ -1,0 +1,4 @@
+#synchronization 3 a b c d
+#process p = W(a)
+#process q = W(b)
+#init 3p q

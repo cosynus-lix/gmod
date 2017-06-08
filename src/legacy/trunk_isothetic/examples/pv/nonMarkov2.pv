@@ -1,0 +1,5 @@
+#mtx a b
+procs:
+p = (P(a) + P(a)) . V(a)
+init:
+p

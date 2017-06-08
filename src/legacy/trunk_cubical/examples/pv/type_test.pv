@@ -1,0 +1,10 @@
+procs:
+test1 = void + [true] + void		% OK
+test2 = void + [x=y] + void		% OK
+test3 = void + [x<=y] + void		% OK 
+test4 = void + [x=2] + void		% KO : Type mismatch
+test5 = void + [x<=2] + void		% KO : Type mismatch
+test6 = void + [x==2] + void		% KO : Invalid word ==
+
+init:
+test1

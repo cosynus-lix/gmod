@@ -1,0 +1,12 @@
+some_area = 
+"a {0} {1} b ;
+b [0,5[ ]7,+oo] b ;
+x ; -y"
+
+
+
+
+complement = \some_area
+
+
+bicomplement = \\some_area

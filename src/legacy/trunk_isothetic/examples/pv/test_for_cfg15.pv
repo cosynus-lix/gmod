@@ -1,0 +1,4 @@
+#mutex a
+procs:
+p = P(a).(V(a)+[x<=7]+C(p))
+init:

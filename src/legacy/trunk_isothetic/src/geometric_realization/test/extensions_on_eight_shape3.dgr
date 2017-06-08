@@ -1,0 +1,9 @@
+origin = "o"
+alpha1 = "o alpha {1} o"
+alpha2 = "o alpha {2} o"
+alpha3 = "o alpha {3} o"
+punctures = alpha1 | alpha3
+eight = "o alpha S¹ o ; o beta S¹ o"
+space = eight \ punctures
+future = alpha2 >> space
+past = alpha2 << space

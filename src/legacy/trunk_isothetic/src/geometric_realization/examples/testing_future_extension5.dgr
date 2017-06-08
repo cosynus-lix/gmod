@@ -1,0 +1,5 @@
+start = "a [1,2] b"
+
+end = "a ]2,3] b"
+
+future = start >> end
