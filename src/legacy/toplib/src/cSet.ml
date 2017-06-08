@@ -1,0 +1,15 @@
+module C = Space.Make(Prebox) 
+type o = Prebox.t 
+type 'a t = 'a C.t
+exception Dimension_mismatch = C.Dimension_mismatch
+let null = C.null
+let standard = C.standard
+let map = C.map
+let union = C.union
+let quotient = C.quotient
+let cubes = C.topes
+let solve = C.solve
+let dim = C.dim
+let mem = C.mem
+let fold = C.fold
+let tex = C.tex

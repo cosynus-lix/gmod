@@ -1,0 +1,13 @@
+type t = int
+let succ n = n+1
+let pred n = if n>0 then n-1 else raise Not_found
+let sum m n = m+n
+let prod m n = m*n
+let zero = 0
+let one = 1
+let mag i = abs i
+let sgn n = n
+let max m n = max m n
+let min m n = min m n
+let compare m n = m - n
+let tex n = string_of_int (sgn n)
