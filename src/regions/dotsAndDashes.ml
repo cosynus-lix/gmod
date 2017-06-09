@@ -1,7 +1,162 @@
-(* Implements the Boolean algebra of finite unions of connected subsets of the 
-positive half-line/circle. *)
+(** Implements the Boolean algebra finite unions of connected subsets of the 
+positive half-line/circle together with topological and directed operators. The 
+later behaviour depends on whether one considers subsets of the half-line or 
+subsets of the circle.*)
 
-module Make(B:Bound.S) =
+module type S = sig
+
+type value
+val ( < ) : value -> value -> bool
+val ( > ) : value -> value -> bool
+val ( <= ) : value -> value -> bool
+val ( >= ) : value -> value -> bool
+exception Undefined
+val zero : value
+(*
+type bound = Opn of B.t | Iso of B.t | Cls of B.t | Pun of B.t
+val rvb : bound -> B.t
+val reverse_bound : bound -> bound
+val close_bound : bound -> bound
+val open_bound : bound -> bound
+val bob : bound -> bool
+val alter_parity : bound -> bool
+*)
+type t
+(*
+val action : (B.t -> B.t) -> bound list -> bound list
+*)
+val string_of : t -> string
+(*
+val unbounded_connected_component_must_be_added :
+  bound list -> bound list -> bool
+val value_of_last_bound : bound list -> B.t
+val value_of_the_first_bound : bound list -> B.t
+val is_valid : bound list -> bool
+*)
+val is_empty : t -> bool
+val is_not_empty : t -> bool
+val is_full : t -> bool
+val is_not_full : t -> bool
+val contains_zero : t -> bool
+val does_not_contain_zero : t -> bool
+val contains_more_than_zero : t -> bool
+val contains_at_most_zero : t -> bool
+val lacks_at_most_zero : t -> bool
+val lacks_more_than_zero : t -> bool
+val parity : bool -> t -> bool
+val belongs_to : value -> t -> bool
+val empty : 'a list
+val full : t
+(*
+val iso : value -> bound
+val pun : value -> bound
+val cls : value -> bound
+val opn : value -> bound
+*)
+val make : t -> t
+val atom : value -> t
+val discrete : ?do_sort:bool -> value list -> t
+val coatom : value -> t
+val codiscrete : ?do_sort:bool -> value list -> t
+val interval : bool -> bool -> value -> value -> t
+val initial : bool -> value -> t
+val final : bool -> value -> t
+val cointerval : bool -> bool -> value -> value -> t
+val monotonic_map : (value -> value) -> t -> t
+val normalize : t -> t
+val complement : t -> t
+val binary_boolean_operator :
+  (bool -> bool -> bool) -> t -> t -> t
+val symmetric_difference : t -> t -> t
+val intersection : t -> t -> t
+val union : t -> t -> t
+val difference : t -> t -> t
+val exists : (bool -> bool -> bool) -> t -> t -> bool
+val for_all :
+  (bool -> bool -> bool) -> t -> t -> bool
+val is_included : t -> t -> bool
+val is_not_included : t -> t -> bool
+val compare : t -> t -> int
+val add_zero : t -> t
+val remove_zero : t -> t
+val first_connected_component :
+  ?flag:bool ref -> t -> t
+val last_connected_component : ?parity:bool -> t -> t
+(*
+val end_bound : ?lb:bound -> t -> bound
+val end_bound_below : value -> t -> bound
+val future_extension :
+  ?flag:bool ref -> t -> t -> t
+val unbounded_component : bound ref
+val kept : bound option ref
+val clear : unit -> unit
+val load : bound -> unit
+val unload : unit -> bound
+val clear_all : unit -> unit
+val past_extension :
+  ?circle_mode:bool -> t -> t -> t
+val future_closure :
+  ?circle_mode:bool -> t -> t * bool
+val past_closure : t -> t * bool
+*)
+  module type DirectedTopology = sig
+  val interior : t -> t
+  val closure : t -> t
+  val future_extension : t -> t -> t
+  val past_extension : t -> t -> t
+  end
+(*
+module HalfLine :
+  sig
+    val is_bounded : t -> bool
+    val is_not_bounded : t -> bool
+    val closure_contains_zero : t -> bool
+    val interior_contains_zero : t -> bool
+    val interior_does_not_contain_zero : t -> bool
+    val glb : t -> value
+    val lub : t -> value
+    val interior : t -> t
+    val closure :
+      ?unbounded_answer:bool ref -> t -> t
+    val boundary : t -> t
+    val string_of :
+      ?empty_set_denotation:string ->
+      ?infinity_denotation:string ->
+      ?open_infinity:bool -> t -> string
+    val future_extension :
+      ?flag:bool ref -> t -> t -> t
+    val future_closure : t -> t * bool
+    val past_extension : t -> t -> t
+  end
+module Circle :
+  sig
+    val closure_contains_zero : t -> bool
+    val boundary_contains_zero : t -> bool
+    val boundary_does_not_contain_zero : t -> bool
+    val interior_contains_zero : t -> bool
+    val interior_does_not_contain_zero : t -> bool
+    val string_of :
+      ?empty_set_denotation:string ->
+      ?full_set_denotation:string -> t -> string
+    val interior : t -> t
+    val closure : t -> t
+    val boundary : t -> t
+    val future_extension :
+      ?flag:bool ref -> t -> t -> t
+    val future_closure : t -> t * bool
+    val past_extension : t -> t -> t
+  end
+*)
+
+  module OnHalfLine:DirectedTopology
+
+  module OnCircle:DirectedTopology
+  
+end
+
+(* One-dimensional isothetic regions over the halfline and the circle *)
+
+module Make(B:Bound.S):S =
 struct
 
   type value = B.t
@@ -2379,5 +2534,381 @@ in the union of x and {p} *)
       | [] -> (unbounded := loading ; []) in
     let return = past_closure false ar in
     return , !unbounded
+
+  module type DirectedTopology = sig
+    val interior: t -> t
+    val closure: t -> t
+    val future_extension: t -> t -> t
+    val past_extension: t -> t -> t
+  end
+
+
+
+
+
+
+module OnHalfLine
+	=
+struct
+(*
+  include BooleanAlgebra(B)
+*)
+
+  (* Tests *)
+
+  let is_bounded a = parity true a
+
+  let is_not_bounded a = parity false a
+
+  let closure_contains_zero a =
+    match a with 
+      | x::_ -> rvb x = zero
+      | [] -> false
+  
+(*
+    try rvb (List.hd a) = zero
+    with Failure "hd" -> false
+*)
+
+  let interior_contains_zero a =
+    match a with 
+      | x::_ -> x = Cls zero
+      | [] -> false
+  
+(*
+    try List.hd a = Cls zero
+    with Failure "hd" -> false
+*)
+
+  let interior_does_not_contain_zero a =
+    match a with 
+      | x::_ -> x <> Cls zero
+      | [] -> true
+
+(*
+    try List.hd a <> Cls zero
+    with Failure "hd" -> true
+*)
+
+  let glb a = match a with
+    | b::a -> rvb b
+    | [] -> raise Undefined
+
+  let lub a =
+    let rec lub ?lb a =
+      match a with
+				| Cls x::a
+				| Opn x::a ->
+				  (
+				    match lb with
+				      | Some x -> lub a
+				      | None -> lub ~lb:x a
+				  )
+				| Iso x::a -> lub ~lb:x a
+				| Pun x::a -> lub a
+				| [] ->
+				  (
+				    match lb with
+				      | Some x -> x
+				      | None -> raise Undefined
+				  )
+    in
+    if a<>[] then lub a else zero
+
+  (* Warning: If zero belongs to some subset of the
+     topological space [0,+oo[ then zero also belong to its
+     interior *)
+
+  (* Topological operators *)
+
+  let interior a =
+    let rec interior a = match a with
+      | Iso _::a -> interior a
+      | Cls x::a -> Opn x::interior a
+      | b::a -> b::interior a
+      | [] -> []
+    in
+    match a with
+      | Cls x::a -> if x<>zero then Opn x::interior a else Cls zero::interior a
+      | _ -> interior a
+
+
+  let closure ?unbounded_answer a = (*enhanced version*)
+    let rec closure p a = match a with
+      | Pun _::a -> closure p a
+      | Opn x::a -> Cls x::closure (not p) a
+      | Iso _ as b::a -> b::closure p a
+      | Cls _ as b::a -> b::closure (not p) a
+      | [] -> (match unbounded_answer with | Some br -> br := p | _ -> ()); []
+    in
+    closure false a
+
+  let rec closure a = match a with (*basic version*)
+    | Pun _::a -> closure a
+    | Opn x::a -> Cls x::closure a
+    | b::a -> b::closure a
+    | [] -> []
+
+
+  let boundary a = match a with
+    | Cls x::a ->
+      if x<>zero
+      then
+	Iso x::List.map (fun b -> Iso (rvb b)) a
+      else
+	List.map (fun b -> Iso (rvb b)) a
+    | b::a -> Iso (rvb b)::List.map (fun b -> Iso (rvb b)) a
+    | [] -> []
+
+  let string_of ?(empty_set_denotation="Ø") ?(infinity_denotation="+oo") ?(open_infinity=true) a =
+    let rec string_of p a = match a with
+      |	Cls x::a ->
+					if p
+					then (B.string_of x)^(if a<>[] then "] " else "]")^(string_of (not p) a)
+					else "["^(B.string_of x)^","^(string_of (not p) a)
+      |	Opn x::a ->
+					if p
+					then (B.string_of x)^(if a<>[] then "[ " else "[")^(string_of (not p) a)
+					else "]"^(B.string_of x)^","^(string_of (not p) a)
+      |	Iso x::a -> "{"^(B.string_of x)^(if a <>[] then "} " else "}")^(string_of p a)
+      |	Pun x::a -> let b = B.string_of x in b^"[ ]"^b^","^(string_of p a)
+      | _ ->
+					if p
+					then if open_infinity then infinity_denotation^"[" else infinity_denotation^"]"
+					else if open_infinity then "" else " {"^infinity_denotation^"}" in
+    let answer = string_of false a in
+    if answer <> "" then answer else empty_set_denotation
+
+  let future_extension ?flag ar1 ar2 = future_extension ?flag ar1 ar2
+  let future_extension ar1 ar2 = future_extension ar1 ar2
+  let future_closure ar = future_closure ~circle_mode:false ar
+  let past_extension ar1 ar2 = past_extension ar1 ar2
+
+end(*HalfLine*)
+
+
+
+
+module OnCircle
+	=
+struct
+(*
+  include BooleanAlgebra(B)
+*)
+
+  (* Tests *)
+
+  let closure_contains_zero a =
+    parity false a || 
+    (match a with 
+      | x::_ -> rvb x = zero
+      | [] -> false)
+  
+    
+(*
+    (try rvb (List.hd a) = zero
+      with Failure "hd" -> false)
+    || parity false a
+*)
+
+	(*Added on Wednesday, the 23th of November 2011*)
+  (*Rewritten on Sunday, the 28th of May 2017*)
+  (*I'm a bit doubtful about this function e.g. [] or [Cls 1;Cls 2] *)
+	let boundary_contains_zero a =
+    match a with 
+      | x::_ -> (
+          x = Opn zero
+          || (rvb x <> zero && parity false a)
+          || (x = Cls zero && parity true a))
+      | [] -> false
+  
+(*
+		(try List.hd a = Opn zero with Failure "hd" -> false)
+    || ((try rvb (List.hd a) <> zero with Failure "hd" -> true) && parity false a)
+    || ((try List.hd a = Cls zero with Failure "hd" -> false) && parity true a)
+*)
+
+	(*Added on Wednesday, the 23th of November 2011*)
+	let boundary_does_not_contain_zero a =
+    match a with 
+      | x::_ -> (
+          x <> Opn zero
+          && (rvb x = zero || parity true  a)
+          && (x <> Cls zero || parity false a))
+      | [] -> true
+
+
+  let interior_contains_zero a =
+    parity false a && List.hd a = Cls zero
+
+  let interior_does_not_contain_zero a =
+    parity true a || List.hd a <> Cls zero
+
+  (* Display *)
+
+  let string_of ?(empty_set_denotation="Ø") ?(full_set_denotation="S¹")  a =
+    let raw_string_of = string_of a in
+    let last_bound = ref "" in
+    let rec string_of p a = match a with
+      | Cls x::a ->
+					if a <> []
+					then
+					  if p
+					  then (B.string_of x)^")"^(string_of false a)
+					  else " ("^(B.string_of x)^","^(string_of true a)
+					else
+					  if p
+					  then (B.string_of x)^")"
+					  else (last_bound := "("^(B.string_of x)^"," ;"")
+      | Opn x::a ->
+					if a <> []
+					then
+					  if p
+					  then (B.string_of x)^"("^(string_of false a)
+					  else " )"^(B.string_of x)^","^(string_of true a)
+					else
+					  if p
+					  then (B.string_of x)^"("
+					  else (last_bound := ")"^(B.string_of x)^"," ;"")
+      | Pun x::a ->
+					if a <> []
+					then (B.string_of x)^"( )"^(B.string_of x)^","^(string_of true a)
+					else (last_bound := ")"^(B.string_of x)^"," ; (B.string_of x)^"(")
+      | Iso x::a -> " {"^(B.string_of x)^"}"^(string_of false a)
+      | [] -> ""
+    in
+    match a with
+      | Iso x::a ->
+					let answer = string_of false a in
+					if !last_bound <> ""
+					then
+					  if x <> zero
+					  then !last_bound^(B.string_of zero)^"( {"^(B.string_of x)^"}"^answer
+					  else !last_bound^(B.string_of zero)^")"^answer
+					else
+					  "{"^(B.string_of x)^"}"^answer
+      | [Cls x] ->
+					if x<>zero
+					then Printf.sprintf "(%s,%s(" (B.string_of x) (B.string_of zero)
+					else full_set_denotation
+      | [Cls x;Pun y] ->
+					if x<>zero
+					then (Printf.sprintf ")%s,%s( (%s,%s(" (B.string_of y) (B.string_of zero) (B.string_of x) (B.string_of y))
+					else Printf.sprintf "%s\\{%s}" full_set_denotation (B.string_of y)
+      | Cls x::a ->
+					let answer = string_of true a in
+					if !last_bound <> ""
+					then
+					  if x <> zero
+					  then !last_bound^(B.string_of zero)^"( ("^(B.string_of x)^","^answer
+					  else !last_bound^answer
+					else "("^(B.string_of x)^","^answer
+      | [Opn x] ->
+					if x<>zero
+					then Printf.sprintf ")%s,%s(" (B.string_of x) (B.string_of zero)
+					else Printf.sprintf "%s\\{%s}" full_set_denotation (B.string_of x)
+      | Opn x::a ->
+					let answer = string_of true a in
+					if !last_bound <> ""
+					then
+					  if x <> zero
+					  then !last_bound^(B.string_of zero)^"( )"^(B.string_of x)^","^answer
+					  else !last_bound^(B.string_of zero)^"( )"^(B.string_of zero)^","^answer
+					else ")"^(B.string_of x)^","^answer
+      | [] -> empty_set_denotation
+      | _ ->
+	(
+	  Printf.sprintf
+	    "Invalid form: oda.ml: Circle.string_of: Pun x is not allowed at the head: %s"
+	    raw_string_of
+	)
+
+  (* Topological operators *)
+
+  let interior a =
+    let unbounded = ref false in
+    let rec interior u a = match a with
+      | Iso _::a -> interior u a
+      | Cls x::a | Opn x::a -> Opn x::interior (not u) a
+      | Pun x::a -> Pun x::interior u a
+      | [] -> unbounded:=u;[]
+    in
+    let answer = interior false a in
+    match a with
+      | Cls x::_ -> if x=zero && !unbounded then Cls x::(List.tl answer) else answer
+      | _ -> answer
+
+  let closure a =
+    let unbounded = ref false in
+    let rec closure u a = match a with
+      | Pun _::a -> closure u a
+      | Opn x::a | Cls x::a -> Cls x::closure (not u) a
+      | Iso x::a -> Iso x::closure u a
+      | [] -> unbounded:=u;[]
+    in
+    let answer = closure false a in
+    if !unbounded && (try List.hd answer <> Cls zero with | _ -> (print_endline "Iso zero should be added" ; false))
+    then Iso zero::answer
+    else answer
+
+  let boundary a =
+    let argument_contains_a_right_neighborhood_of_zero = ref false in
+    let inside = ref false in
+    let parity_update b = if alter_parity b then inside := not !inside in
+    let boundary = match a with
+      | Cls x::a -> inside := true;
+	if x<>zero
+	then
+	  Iso x::List.map (fun b -> parity_update b ; Iso (rvb b)) a
+	else
+	  (
+	    argument_contains_a_right_neighborhood_of_zero := true ;
+	    List.map (fun b -> parity_update b ; Iso (rvb b)) a
+	  )
+      | b::a -> parity_update b;
+	Iso (rvb b)::List.map (fun b -> parity_update b ; Iso (rvb b)) a
+      | [] -> []
+    in
+    if
+      (!inside && not !argument_contains_a_right_neighborhood_of_zero)
+      || (not !inside && !argument_contains_a_right_neighborhood_of_zero)
+    then Iso zero::boundary
+    else boundary
+
+  (* Directed operators *)
+
+  (*If at2 starts with [0,... and HalfLine.future_extension at1 at2 or
+    at1 is unbounded, then [0,... has to be "added" to the result. In
+    particular, it requires future_extension to be able to tell when
+    the result is unbounded. It is the case iff at2 is unbounded and
+    (the last bound of at1 is in touch with the last bound of
+    at2). This can be done by passing an optional reference to
+    HalfLine.future_extension.*)
+
+  let future_extension ?flag at1 at2 =
+    let set_flag b = match flag with
+      | Some flag -> flag := !flag || b
+      | _ -> () in
+    let flag = ref false in
+    let aux = future_extension ~flag at1 at2 in
+    let () = set_flag !flag in
+    if !flag && (List.hd at2 = Cls zero || List.hd at2 = Iso zero)
+    then union (first_connected_component at2) aux
+    else aux
+
+  let future_extension at1 at2 = future_extension at1 at2
+
+  let future_closure at = future_closure ~circle_mode:true at
+
+  (*If at1 or HalfLine.past_extension at1 at2 contains zero, then the
+    unbounded connected component of at2, if any, is included in the
+    result. In particular, it requires that HalfLine.past_extension to
+    be able to systematically add the unbounded connected component if
+    it is asked to. This can be done by using an option.*)
+
+  let past_extension at1 at2 =
+    past_extension ~circle_mode:(unbounded_connected_component_must_be_added at1 at2) at1 at2
+
+end(*Circle*)
 
 end (* BooleanAlgebra *)
