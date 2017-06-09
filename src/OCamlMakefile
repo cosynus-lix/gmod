@@ -361,7 +361,7 @@ export OCAML_FIND_LINKPKG
 export REAL_OCAMLFIND
 
 ifndef OCAMLDOC
-  OCAMLDOC := ocamldoc
+  OCAMLDOC := ocamldoc -charset utf-8
 endif
 export OCAMLDOC
 
