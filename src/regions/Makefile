@@ -1,8 +1,8 @@
 OCAMLMAKEFILE = ../OCamlMakefile
-SOURCES = bound.ml dotsAndDashes.ml
+SOURCES = bound.ml dashDot.ml
 RESULT = main
 ANNOTATE = true
-DOC_FILES = bound.ml dotsAndDashes.ml
+DOC_FILES = bound.ml dashDot.ml
 
 all: dnc
 

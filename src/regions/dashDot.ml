@@ -1,17 +1,27 @@
-(** Implements the Boolean algebra finite unions of connected subsets of the 
+(** Implements the Boolean algebra of finite unions of connected subsets of the 
 positive half-line/circle together with topological and directed operators. The 
 later behaviour depends on whether one considers subsets of the half-line or 
 subsets of the circle.*)
 
 module type S = sig
 
+  (** {2 Types}*)
+
   type value
   type t
 
+(** {2 Exceptions}*)
+
   exception Undefined
   
-  val zero : value
+  (** {2 Display} *)
+  
   val string_of : t -> string
+  
+  (** {2 Tests} *)  
+  
+  val is_included : t -> t -> bool
+  val is_not_included : t -> t -> bool
   val is_empty : t -> bool
   val is_not_empty : t -> bool
   val is_full : t -> bool
@@ -22,53 +32,104 @@ module type S = sig
   val contains_at_most_zero : t -> bool
   val lacks_at_most_zero : t -> bool
   val lacks_more_than_zero : t -> bool
-  val parity : bool -> t -> bool
   val belongs_to : value -> t -> bool
-  val empty : 'a list
-  val full : t
-  val make : t -> t
-  val atom : value -> t
-  val discrete : ?do_sort:bool -> value list -> t
-  val coatom : value -> t
-  val codiscrete : ?do_sort:bool -> value list -> t
-  val interval : bool -> bool -> value -> value -> t
-  val initial : bool -> value -> t
-  val final : bool -> value -> t
-  val cointerval : bool -> bool -> value -> value -> t
-  val normalize : t -> t
-  val complement : t -> t
   
-  (**
+  
+  
+  (** {2 Constants} *)
 
-    Given a function f: bool -> bool -> bool, the function
-    (binary_boolean_operator f), let's call it F, has type t -> t -> t
-    and its semantics is as follows: Given A₁:t and A₂:t we have
+  val zero: value
+  val empty : t
+  val full : t
+  
+  (** {2 Constructors} *)
+  
+  (** [atom v] is the singleton \{v\} *)
+  val atom : value -> t
+  
 
-    F(A₁,A₂) = \{x∊ℝ₊|f(i(x,A₁),i(x,A₂))\}
+  (** [discrete \[v1;...;vn\]] is the finite set \{v{_ 1},...,v{_ n}\}. The 
+  sequence must be strictly increasing, i.e. v{_1}<...<v{_n}.*)
+  val discrete : ?do_sort:bool -> value list -> t
+  
+  
+  (** [interval b1 b2 v1 v2] is the interval of points between v{_1} and v{_2}. 
+  
+  One should have v{_1}<v{_2}, the bounds being included or excluded depending 
+  of the values of b{_1} and b{_2} being [true] or [false].*)
+  val interval : bool -> bool -> value -> value -> t
+  
+  (** [coatom v] is a shorthand for [complement (atom v)] *)
+  val coatom : value -> t
+  
+  (** [codiscrete \[v1;...;vn\]] is a shorthand for [complement (discrete \[v1;...;vn\])] *)
+  val codiscrete : ?do_sort:bool -> value list -> t
+  
+  (** [cointerval b1 b2 v1 v2] is a shorthand for [complement (interval (not b1) (not b2) v1 v2)] *)
+  val cointerval : bool -> bool -> value -> value -> t
 
-    where i(x,A₁) = true iff x∊A₁ ; i(x,A₂) = true iff x∊A₂
-
-    In particular, all the usual binary operators ⋂ (intersection), ⋃
-    (union), \ (difference) and Δ (symmetric difference) are obtained
-    this way.
-
+  (** [initial b v] is the set of points below v.  
+  The right bound being included or excluded depending 
+  of the value of b being [true] or [false].
+  
+  It is also a shorthand for [interval true b zero v].*)
+  val initial : bool -> value -> t
+  
+  (** [final b v] is the set of points beyond v.  
+  The left bound being included or excluded depending 
+  of the value of b being [true] or [false]. 
+  
+  It is equal to [complement (initial (not b) v)]
   *)
-  val binary_boolean_operator :
-        (bool -> bool -> bool) -> t -> t -> t
-  val symmetric_difference : t -> t -> t
+  val final : bool -> value -> t
+  
+  
+  (** {2 Boolean operators} *)
+  
+  val complement : t -> t
   val intersection : t -> t -> t
   val union : t -> t -> t
   val difference : t -> t -> t
+  val symmetric_difference : t -> t -> t
+  
+  (** {2 Miscellaneous} *)
+  
+  (** Given a function [f: bool -> bool -> bool], the semantics of the function
+[binary_boolean_operator f], let's call it F, is as follows:
+ 
+given A₁:t and A₂:t we have
+
+    {C F(A₁,A₂) = \{ x∊ℝ₊ | f( i(x,A₁) , i(x,A₂) ) \} }
+
+where i(x,A₁) = true iff x∊A₁ ; i(x,A₂) = true iff x∊A₂.
+
+The usual binary operators ⋂ ({i intersection}), ⋃
+({i union}), \ ({i difference}) and Δ ({i symmetric difference}) are obtained
+that way.*)
+  val binary_boolean_operator :
+        (bool -> bool -> bool) -> t -> t -> t
+        
+  (** Given a function [f: bool -> bool -> bool], the semantics of the function 
+  [exists f], let's call it F, is as follows: 
+  for A₁:t and A₂:t, the value F(A₁,A₂) is true iff there {i exists} some 
+  x∊ℝ₊ such that f(i(x,A₁),i(x,A₂)) is true, where i(x,A₁) = true iff x∊A₁ ; i(x,A₂) = true iff x∊A₂.*)
   val exists : (bool -> bool -> bool) -> t -> t -> bool
+  
+  (** Given a function [f: bool -> bool -> bool], the semantics of the function 
+  [exists f], let's call it F, is as follows: 
+  for A₁:t and A₂:t, the value F(A₁,A₂) is true iff {i for all}  
+  x∊ℝ₊ f(i(x,A₁),i(x,A₂)) is true, where i(x,A₁) = true iff x∊A₁ ; i(x,A₂) = true iff x∊A₂.*)
   val for_all : (bool -> bool -> bool) -> t -> t -> bool
-  val is_included : t -> t -> bool
-  val is_not_included : t -> t -> bool
+  
+  (** Should be a linearization of [is_included]*)
   val compare : t -> t -> int
   val add_zero : t -> t
   val remove_zero : t -> t
   val first_connected_component :
     ?flag:bool ref -> t -> t
   val last_connected_component : ?parity:bool -> t -> t
+  
+(** {2 Directed topology}*)
   
   module type DirectedTopology = sig
     val interior : t -> t
@@ -572,18 +633,6 @@ struct
 
   let difference = binary_boolean_operator Pervasives.(>)
 
-  (**
-
-     Given a function f: bool -> bool -> bool, the function (exists
-     f), let's call it F, has type t -> t -> bool and its semantics is
-     as follows: Given A₁:t and A₂:t we have
-
-     F(A₁,A₂) = true iff {x∊ℝ₊|f(i(x,A₁),i(x,A₂))} ≠ Ø
-
-     where i(x,A₁) = true iff x∊A₁ ; i(x,A₂) = true iff x∊A₂
-
-  *)
-
   let exists test =
     let rec exists ar1 ar2 =
       match ar1,ar2 with
@@ -698,17 +747,6 @@ struct
 	    | true,true   -> true
 	    | false,false -> false
 
-  (*
-
-     Given a function f: bool -> bool -> bool, the function (for_all
-     f), let's call it F, has type t -> t -> bool and its semantics is
-     as follows: Given A₁:t and A₂:t we have
-
-     F(A₁,A₂) = true iff {x∊ℝ₊|¬f(i(x,A₁),i(x,A₂))} = Ø
-
-     where i(x,A₁) = true iff x∊A₁ ; i(x,A₂) = true iff x∊A₂
-
-  *)
 
   let for_all test =
     let rec for_all ar1 ar2 =

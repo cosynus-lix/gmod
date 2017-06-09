@@ -1,2 +1,0 @@
-\contentsline {section}{\numberline {1}Module {\tt {Bound}} : Least element.}{1}
-\contentsline {section}{\numberline {2}Module {\tt {DotsAndDashes}} : Implements the Boolean algebra finite unions of connected subsets of the positive half-line/circle together with topological and directed operators.}{1}
