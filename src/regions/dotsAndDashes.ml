@@ -5,158 +5,87 @@ subsets of the circle.*)
 
 module type S = sig
 
-type value
-val ( < ) : value -> value -> bool
-val ( > ) : value -> value -> bool
-val ( <= ) : value -> value -> bool
-val ( >= ) : value -> value -> bool
-exception Undefined
-val zero : value
-(*
-type bound = Opn of B.t | Iso of B.t | Cls of B.t | Pun of B.t
-val rvb : bound -> B.t
-val reverse_bound : bound -> bound
-val close_bound : bound -> bound
-val open_bound : bound -> bound
-val bob : bound -> bool
-val alter_parity : bound -> bool
-*)
-type t
-(*
-val action : (B.t -> B.t) -> bound list -> bound list
-*)
-val string_of : t -> string
-(*
-val unbounded_connected_component_must_be_added :
-  bound list -> bound list -> bool
-val value_of_last_bound : bound list -> B.t
-val value_of_the_first_bound : bound list -> B.t
-val is_valid : bound list -> bool
-*)
-val is_empty : t -> bool
-val is_not_empty : t -> bool
-val is_full : t -> bool
-val is_not_full : t -> bool
-val contains_zero : t -> bool
-val does_not_contain_zero : t -> bool
-val contains_more_than_zero : t -> bool
-val contains_at_most_zero : t -> bool
-val lacks_at_most_zero : t -> bool
-val lacks_more_than_zero : t -> bool
-val parity : bool -> t -> bool
-val belongs_to : value -> t -> bool
-val empty : 'a list
-val full : t
-(*
-val iso : value -> bound
-val pun : value -> bound
-val cls : value -> bound
-val opn : value -> bound
-*)
-val make : t -> t
-val atom : value -> t
-val discrete : ?do_sort:bool -> value list -> t
-val coatom : value -> t
-val codiscrete : ?do_sort:bool -> value list -> t
-val interval : bool -> bool -> value -> value -> t
-val initial : bool -> value -> t
-val final : bool -> value -> t
-val cointerval : bool -> bool -> value -> value -> t
-val monotonic_map : (value -> value) -> t -> t
-val normalize : t -> t
-val complement : t -> t
-val binary_boolean_operator :
-  (bool -> bool -> bool) -> t -> t -> t
-val symmetric_difference : t -> t -> t
-val intersection : t -> t -> t
-val union : t -> t -> t
-val difference : t -> t -> t
-val exists : (bool -> bool -> bool) -> t -> t -> bool
-val for_all :
-  (bool -> bool -> bool) -> t -> t -> bool
-val is_included : t -> t -> bool
-val is_not_included : t -> t -> bool
-val compare : t -> t -> int
-val add_zero : t -> t
-val remove_zero : t -> t
-val first_connected_component :
-  ?flag:bool ref -> t -> t
-val last_connected_component : ?parity:bool -> t -> t
-(*
-val end_bound : ?lb:bound -> t -> bound
-val end_bound_below : value -> t -> bound
-val future_extension :
-  ?flag:bool ref -> t -> t -> t
-val unbounded_component : bound ref
-val kept : bound option ref
-val clear : unit -> unit
-val load : bound -> unit
-val unload : unit -> bound
-val clear_all : unit -> unit
-val past_extension :
-  ?circle_mode:bool -> t -> t -> t
-val future_closure :
-  ?circle_mode:bool -> t -> t * bool
-val past_closure : t -> t * bool
-*)
+  type value
+  type t
+
+  exception Undefined
+  
+  val zero : value
+  val string_of : t -> string
+  val is_empty : t -> bool
+  val is_not_empty : t -> bool
+  val is_full : t -> bool
+  val is_not_full : t -> bool
+  val contains_zero : t -> bool
+  val does_not_contain_zero : t -> bool
+  val contains_more_than_zero : t -> bool
+  val contains_at_most_zero : t -> bool
+  val lacks_at_most_zero : t -> bool
+  val lacks_more_than_zero : t -> bool
+  val parity : bool -> t -> bool
+  val belongs_to : value -> t -> bool
+  val empty : 'a list
+  val full : t
+  val make : t -> t
+  val atom : value -> t
+  val discrete : ?do_sort:bool -> value list -> t
+  val coatom : value -> t
+  val codiscrete : ?do_sort:bool -> value list -> t
+  val interval : bool -> bool -> value -> value -> t
+  val initial : bool -> value -> t
+  val final : bool -> value -> t
+  val cointerval : bool -> bool -> value -> value -> t
+  val normalize : t -> t
+  val complement : t -> t
+  
+  (**
+
+    Given a function f: bool -> bool -> bool, the function
+    (binary_boolean_operator f), let's call it F, has type t -> t -> t
+    and its semantics is as follows: Given A₁:t and A₂:t we have
+
+    F(A₁,A₂) = \{x∊ℝ₊|f(i(x,A₁),i(x,A₂))\}
+
+    where i(x,A₁) = true iff x∊A₁ ; i(x,A₂) = true iff x∊A₂
+
+    In particular, all the usual binary operators ⋂ (intersection), ⋃
+    (union), \ (difference) and Δ (symmetric difference) are obtained
+    this way.
+
+  *)
+  val binary_boolean_operator :
+        (bool -> bool -> bool) -> t -> t -> t
+  val symmetric_difference : t -> t -> t
+  val intersection : t -> t -> t
+  val union : t -> t -> t
+  val difference : t -> t -> t
+  val exists : (bool -> bool -> bool) -> t -> t -> bool
+  val for_all : (bool -> bool -> bool) -> t -> t -> bool
+  val is_included : t -> t -> bool
+  val is_not_included : t -> t -> bool
+  val compare : t -> t -> int
+  val add_zero : t -> t
+  val remove_zero : t -> t
+  val first_connected_component :
+    ?flag:bool ref -> t -> t
+  val last_connected_component : ?parity:bool -> t -> t
+  
   module type DirectedTopology = sig
-  val interior : t -> t
-  val closure : t -> t
-  val future_extension : t -> t -> t
-  val past_extension : t -> t -> t
-  end
-(*
-module HalfLine :
-  sig
-    val is_bounded : t -> bool
-    val is_not_bounded : t -> bool
-    val closure_contains_zero : t -> bool
-    val interior_contains_zero : t -> bool
-    val interior_does_not_contain_zero : t -> bool
-    val glb : t -> value
-    val lub : t -> value
-    val interior : t -> t
-    val closure :
-      ?unbounded_answer:bool ref -> t -> t
-    val boundary : t -> t
-    val string_of :
-      ?empty_set_denotation:string ->
-      ?infinity_denotation:string ->
-      ?open_infinity:bool -> t -> string
-    val future_extension :
-      ?flag:bool ref -> t -> t -> t
-    val future_closure : t -> t * bool
-    val past_extension : t -> t -> t
-  end
-module Circle :
-  sig
-    val closure_contains_zero : t -> bool
-    val boundary_contains_zero : t -> bool
-    val boundary_does_not_contain_zero : t -> bool
-    val interior_contains_zero : t -> bool
-    val interior_does_not_contain_zero : t -> bool
-    val string_of :
-      ?empty_set_denotation:string ->
-      ?full_set_denotation:string -> t -> string
     val interior : t -> t
     val closure : t -> t
-    val boundary : t -> t
-    val future_extension :
-      ?flag:bool ref -> t -> t -> t
-    val future_closure : t -> t * bool
+    val future_extension : t -> t -> t
     val past_extension : t -> t -> t
   end
-*)
-
+  
   module OnHalfLine:DirectedTopology
-
+  
   module OnCircle:DirectedTopology
   
 end
 
 (* One-dimensional isothetic regions over the halfline and the circle *)
 
-module Make(B:Bound.S):S =
+module Make(B:Bound.S):(S with type value = B.t) =
 struct
 
   type value = B.t
@@ -210,14 +139,13 @@ struct
 
   type t = bound list
 
-  let action e a =
-    let action_on_bound b =
-      match b with
-      | Opn v -> Opn (e v)
-      | Iso v -> Iso (e v)
-      | Cls v -> Cls (e v)
-      | Pun v -> Pun (e v) in
-    List.map action_on_bound a
+  let monotonic_map f a =
+	  let f b = match b with
+			| Cls x -> Cls (f x)
+			| Opn x -> Opn (f x)
+			| Iso x -> Iso (f x)
+			| Pun x -> Pun (f x) in
+	  List.map f a
 
   (* Display *)
 
@@ -394,13 +322,6 @@ struct
       then [Cls B.least_regular_value; Pun x]
       else failwith "oda.ml: cointerval: the left bound must be greater than the right bound"
 
-  let monotonic_map f a =
-	  let f b = match b with
-			| Cls x -> Cls (f x)
-			| Opn x -> Opn (f x)
-			| Iso x -> Iso (f x)
-			| Pun x -> Pun (f x) in
-	  List.map f a
 
   (* The normal form is a sorted list of bounds *)
 
@@ -484,21 +405,6 @@ struct
       | [] -> full
       | Pun _::_ -> failwith "complement: this value has no semantics [Oda]"
 
-  (*
-
-    Given a function f: bool -> bool -> bool, the function
-    (binary_boolean_operator f), let's call it F, has type t -> t -> t
-    and its semantics is as follows: Given A₁:t and A₂:t we have
-
-    F(A₁,A₂) = {x∊ℝ₊|f(i(x,A₁),i(x,A₂))}
-
-    where i(x,A₁) = true iff x∊A₁ ; i(x,A₂) = true iff x∊A₂
-
-    In particular, all the usual binary operators ⋂ (intersection), ⋃
-    (union), \ (difference) and Δ (symmetric difference) are obtained
-    this way.
-
-  *)
 
   let binary_boolean_operator test =
     let rec binary_boolean_operator ar1 ar2 =
@@ -666,7 +572,7 @@ struct
 
   let difference = binary_boolean_operator Pervasives.(>)
 
-  (*
+  (**
 
      Given a function f: bool -> bool -> bool, the function (exists
      f), let's call it F, has type t -> t -> bool and its semantics is
