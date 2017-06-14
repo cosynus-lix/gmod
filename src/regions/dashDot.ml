@@ -16,64 +16,60 @@ module type S = sig
   
   (** {2 Display} *)
   
-  val string_of : t -> string
+  val string_of: t -> string
   
   (** {2 Tests} *)  
   
-  val is_included : t -> t -> bool
-  val is_not_included : t -> t -> bool
-  val is_empty : t -> bool
-  val is_not_empty : t -> bool
-  val is_full : t -> bool
-  val is_not_full : t -> bool
-  val contains_zero : t -> bool
-  val does_not_contain_zero : t -> bool
-  val contains_more_than_zero : t -> bool
-  val contains_at_most_zero : t -> bool
-  val lacks_at_most_zero : t -> bool
-  val lacks_more_than_zero : t -> bool
-  val belongs_to : value -> t -> bool
-  
-  
+  val is_included: t -> t -> bool
+  val is_not_included: t -> t -> bool
+  val is_empty: t -> bool
+  val is_not_empty: t -> bool
+  val is_full: t -> bool
+  val is_not_full: t -> bool
+  val contains_zero: t -> bool
+  val does_not_contain_zero: t -> bool
+  val contains_more_than_zero: t -> bool
+  val contains_at_most_zero: t -> bool
+  val lacks_at_most_zero: t -> bool
+  val lacks_more_than_zero: t -> bool
+  val belongs_to: value -> t -> bool
   
   (** {2 Constants} *)
 
   val zero: value
-  val empty : t
-  val full : t
+  val empty: t
+  val full: t
   
   (** {2 Constructors} *)
   
   (** [atom v] is the singleton \{v\} *)
-  val atom : value -> t
-  
+  val atom: value -> t
 
   (** [discrete \[v1;...;vn\]] is the finite set \{v{_ 1},...,v{_ n}\}. The 
   sequence must be strictly increasing, i.e. v{_1}<...<v{_n}.*)
-  val discrete : ?do_sort:bool -> value list -> t
-  
+  val discrete: ?do_sort:bool -> value list -> t
   
   (** [interval b1 b2 v1 v2] is the interval of points between v{_1} and v{_2}. 
   
   One should have v{_1}<v{_2}, the bounds being included or excluded depending 
   of the values of b{_1} and b{_2} being [true] or [false].*)
-  val interval : bool -> bool -> value -> value -> t
+  val interval: bool -> bool -> value -> value -> t
   
   (** [coatom v] is a shorthand for [complement (atom v)] *)
-  val coatom : value -> t
+  val coatom: value -> t
   
   (** [codiscrete \[v1;...;vn\]] is a shorthand for [complement (discrete \[v1;...;vn\])] *)
-  val codiscrete : ?do_sort:bool -> value list -> t
+  val codiscrete: ?do_sort:bool -> value list -> t
   
   (** [cointerval b1 b2 v1 v2] is a shorthand for [complement (interval (not b1) (not b2) v1 v2)] *)
-  val cointerval : bool -> bool -> value -> value -> t
+  val cointerval: bool -> bool -> value -> value -> t
 
   (** [initial b v] is the set of points below v.  
   The right bound being included or excluded depending 
   of the value of b being [true] or [false].
   
   It is also a shorthand for [interval true b zero v].*)
-  val initial : bool -> value -> t
+  val initial: bool -> value -> t
   
   (** [final b v] is the set of points beyond v.  
   The left bound being included or excluded depending 
@@ -81,16 +77,15 @@ module type S = sig
   
   It is equal to [complement (initial (not b) v)]
   *)
-  val final : bool -> value -> t
-  
+  val final: bool -> value -> t
   
   (** {2 Boolean operators} *)
   
-  val complement : t -> t
-  val intersection : t -> t -> t
-  val union : t -> t -> t
-  val difference : t -> t -> t
-  val symmetric_difference : t -> t -> t
+  val complement: t -> t
+  val meet: t -> t -> t
+  val join: t -> t -> t
+  val difference: t -> t -> t
+  val symmetric_difference: t -> t -> t
   
   (** {2 Miscellaneous} *)
   
@@ -113,34 +108,48 @@ that way.*)
   [exists f], let's call it F, is as follows: 
   for A₁:t and A₂:t, the value F(A₁,A₂) is true iff there {i exists} some 
   x∊ℝ₊ such that f(i(x,A₁),i(x,A₂)) is true, where i(x,A₁) = true iff x∊A₁ ; i(x,A₂) = true iff x∊A₂.*)
-  val exists : (bool -> bool -> bool) -> t -> t -> bool
+  val exists: (bool -> bool -> bool) -> t -> t -> bool
   
   (** Given a function [f: bool -> bool -> bool], the semantics of the function 
   [exists f], let's call it F, is as follows: 
   for A₁:t and A₂:t, the value F(A₁,A₂) is true iff {i for all}  
   x∊ℝ₊ f(i(x,A₁),i(x,A₂)) is true, where i(x,A₁) = true iff x∊A₁ ; i(x,A₂) = true iff x∊A₂.*)
-  val for_all : (bool -> bool -> bool) -> t -> t -> bool
+  val for_all: (bool -> bool -> bool) -> t -> t -> bool
   
   (** Should be a linearization of [is_included]*)
-  val compare : t -> t -> int
-  val add_zero : t -> t
-  val remove_zero : t -> t
-  val first_connected_component :
-    ?flag:bool ref -> t -> t
-  val last_connected_component : ?parity:bool -> t -> t
+  val compare: t -> t -> int
+  val add_zero: t -> t
+  val remove_zero: t -> t
+  val first_connected_component: ?flag:bool ref -> t -> t
+  val last_connected_component: ?parity:bool -> t -> t
   
 (** {2 Directed topology}*)
   
   module type DirectedTopology = sig
-    val interior : t -> t
-    val closure : t -> t
-    val future_extension : t -> t -> t
-    val past_extension : t -> t -> t
+    val interior: t -> t
+    (** [interior x] is the {i interior} of the set [x] with respect to the 
+    topology of the half-line/circle depending on the module from which it is 
+    called.*)
+    
+    val closure: t -> t
+    (** [closure x] is the {i closure} of the set [x] with respect to the 
+    topology of the half-line/circle depending on the module from which it is 
+    called.*)
+
+    val future_extension: t -> t -> t
+    (** [future_extension x y] is the set of points {i q} of [y] such that 
+    there exists a point {i p} of [x] such the interval/anticlockwise arc from 
+    {i p} to {i q} is contained in the union of [x] and [y].*)
+    
+    val past_extension: t -> t -> t
+    (** [past_extension x y] is the set of points {i q} of [y] such that 
+    there exists a point {i p} of [x] such the interval/anticlockwise arc from 
+    {i q} to {i p} is contained in the union of [x] and [y].*)
   end
   
-  module OnHalfLine:DirectedTopology
+  module HalfLine:DirectedTopology
   
-  module OnCircle:DirectedTopology
+  module Circle:DirectedTopology
   
 end
 
@@ -338,7 +347,9 @@ struct
 
   let atom x = [Iso x]
 
-  let discrete ?(do_sort=false) lx = List.map (fun x -> Iso x) (if do_sort then List.sort B.compare lx else lx)
+  let discrete ?(do_sort=false) lx = 
+    List.map (fun x -> Iso x) 
+      (if do_sort then List.sort B.compare lx else lx)
 
   let coatom x = if x=zero then [Opn zero] else [Cls zero; Pun x]
 
@@ -382,7 +393,6 @@ struct
       if x = y && (not a) && (not b)
       then [Cls B.least_regular_value; Pun x]
       else failwith "oda.ml: cointerval: the left bound must be greater than the right bound"
-
 
   (* The normal form is a sorted list of bounds *)
 
@@ -627,9 +637,9 @@ struct
 
   let symmetric_difference = binary_boolean_operator (<>)
 
-  let intersection = binary_boolean_operator (&&)
+  let meet = binary_boolean_operator (&&)
 
-  let union = binary_boolean_operator (||)
+  let join = binary_boolean_operator (||)
 
   let difference = binary_boolean_operator Pervasives.(>)
 
@@ -2491,7 +2501,7 @@ in the union of x and {p} *)
 
 
 
-module OnHalfLine
+module HalfLine
 	=
 struct
 (*
@@ -2633,7 +2643,7 @@ end(*HalfLine*)
 
 
 
-module OnCircle
+module Circle
 	=
 struct
 (*
@@ -2837,7 +2847,7 @@ struct
     let aux = future_extension ~flag at1 at2 in
     let () = set_flag !flag in
     if !flag && (List.hd at2 = Cls zero || List.hd at2 = Iso zero)
-    then union (first_connected_component at2) aux
+    then join (first_connected_component at2) aux
     else aux
 
   let future_extension at1 at2 = future_extension at1 at2
