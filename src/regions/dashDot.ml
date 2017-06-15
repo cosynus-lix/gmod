@@ -20,6 +20,7 @@ module type S = sig
   
   (** {2 Tests} *)  
   
+  val mem: value -> t -> bool
   val is_included: t -> t -> bool
   val is_not_included: t -> t -> bool
   val is_empty: t -> bool
@@ -32,7 +33,7 @@ module type S = sig
   val contains_at_most_zero: t -> bool
   val lacks_at_most_zero: t -> bool
   val lacks_more_than_zero: t -> bool
-  val belongs_to: value -> t -> bool
+  val mem: value -> t -> bool
   
   (** {2 Constants} *)
 
@@ -217,7 +218,7 @@ struct
 			| Pun x -> Pun (f x) in
 	  List.map f a
 
-  (* Display *)
+  (* String conversion *)
 
   let string_of a =
 	  let f b = match b with
@@ -314,17 +315,17 @@ struct
 		| Pun x :: a | Iso x :: a -> parity answer a
 		| [] -> answer
 
-  let belongs_to pt ar =
-    let rec belongs_to (p,ar) = match (p,ar) with
-      | (false,Opn x::ar) -> if x<pt then belongs_to (true,ar) else false
-      | (false,Cls x::ar) -> if x<pt then belongs_to (true,ar) else x=pt
-      | (true,Opn x::ar) -> if x<pt then belongs_to (false,ar) else x<>pt
-      | (true,Cls x::ar) -> if x<pt then belongs_to (false,ar) else true
-      | (_,Iso x::ar) -> if x<pt then belongs_to (false,ar) else x=pt
-      | (_,Pun x::ar) -> if x<pt then belongs_to (true,ar) else x<>pt
+  let mem pt ar =
+    let rec mem (p,ar) = match (p,ar) with
+      | (false,Opn x::ar) -> if x<pt then mem (true,ar) else false
+      | (false,Cls x::ar) -> if x<pt then mem (true,ar) else x=pt
+      | (true,Opn x::ar) -> if x<pt then mem (false,ar) else x<>pt
+      | (true,Cls x::ar) -> if x<pt then mem (false,ar) else true
+      | (_,Iso x::ar) -> if x<pt then mem (false,ar) else x=pt
+      | (_,Pun x::ar) -> if x<pt then mem (true,ar) else x<>pt
       | (p,[]) -> p
     in
-    belongs_to (false,ar)
+    mem (false,ar)
 
   (* Constructors *)
 
@@ -391,7 +392,7 @@ struct
 				else [if a then Cls x else Opn x]
     else
       if x = y && (not a) && (not b)
-      then [Cls B.least_regular_value; Pun x]
+      then [Cls zero; Pun x]
       else failwith "oda.ml: cointerval: the left bound must be greater than the right bound"
 
   (* The normal form is a sorted list of bounds *)
@@ -1016,10 +1017,11 @@ struct
      future_extension on the directed circle from the function
      future_extension on the directed half-line.*)
 
-  let future_extension ?flag ar1 ar2 =
-    let set_flag b = match flag with
-      | Some flag -> flag := !flag || b
-      | _ -> () in
+    let unbounded = ref false
+  
+    let set_flag b = 
+      unbounded := b
+  
     let rec future_extension loading ar1 ar2 = match ar1,ar2 with
       (* Opn vs Opn *)
       | (p1,Opn x::ar1' as x1),(p2,Opn y::ar2' as x2) ->
@@ -1473,20 +1475,30 @@ struct
             | Pun y -> Opn y
             | x     -> x
           ]
-        else [] in
-    future_extension false (false,ar1) (false,ar2)
+        else []
+        
+  let future_extension ?flag ar1 ar2 =      
+    let output = future_extension false (false,ar1) (false,ar2) in
+    let () = match flag with
+      | Some flag -> flag := !unbounded || !flag
+      | None -> () in
+    output
 
-  let unbounded_component = ref (Cls zero) (* dummy initial value *)
   let kept = ref None
+  
   let clear () = kept := None
+  
   let load b = kept := Some b
+  
   let unload () = match !kept with
     | Some b -> clear () ; b
     | None -> failwith "past_extension unexpected"
-  let clear_all () = unbounded_component := Cls zero;kept := None
-  let past_extension ?(circle_mode=false) ar1 ar2 =
-    let () = clear_all () in (* initialisation *)
-    let rec past_extension loading ar1 ar2 = match ar1,ar2 with
+    
+  let clear_all () = kept := None
+  
+  let circle_mode_flag = ref false
+
+  let rec past_extension loading ar1 ar2 = match ar1,ar2 with
       (* Cls vs Cls *)
       | (p1,Cls x::ar1' as x1),(p2,Cls y::ar2' as x2) ->
 	if p1
@@ -1499,10 +1511,10 @@ struct
 	      let k = !kept in
 	      if clear ();y<x
 	      then Cls y::past_extension false x1 (false,ar2')
-	      else
-		match k with
-		  | Some (Iso z) -> Cls z::Cls y::past_extension false (false,ar1') (false,ar2')
-		  | _ -> (Cls y::past_extension false (false,ar1') (false,ar2'))
+	      else (
+          match k with
+            | Some (Iso z) -> Cls z::Cls y::past_extension false (false,ar1') (false,ar2')
+            | _ ->                   Cls y::past_extension false (false,ar1') (false,ar2'))
 	  else (* Cls y local inf *)
 	    if x<y
 	    then
@@ -1510,7 +1522,7 @@ struct
 	      then unload ()::past_extension false (false,ar1') x2
 	      else past_extension false (false,ar1') x2
 	    else
-	      if circle_mode && ar2'=[]
+	      if !circle_mode_flag && ar2'=[]
 	      then [Cls y]
 	      else
 		if y<x
@@ -1522,22 +1534,22 @@ struct
 	    if x<y
 	    then
 	      if loading
-	      then
-		match !kept with
-		  | Some Iso z -> (clear ();Cls z::past_extension true (true,ar1') x2)
-		  | _ -> clear ();past_extension true (true,ar1') x2
-	      else
-		match !kept with
-		  | Some b -> (clear ();b::past_extension true (true,ar1') x2)
-		  | None -> past_extension true (true,ar1') x2
+	      then (
+          match !kept with
+            | Some Iso z -> clear ();Cls z::past_extension true (true,ar1') x2
+            | _ ->          clear ();       past_extension true (true,ar1') x2)
+	      else (
+          match !kept with
+            | Some b -> clear ();b::past_extension true (true,ar1') x2
+            | None ->               past_extension true (true,ar1') x2)
 	    else
 	      if y<x
 	      then
 		if loading
-		then
+		then (
 		  match !kept with
-		    | Some b -> (clear () ; b::past_extension false x1 (false,ar2'))
-		    | None   -> Cls y::past_extension false x1 (false,ar2')
+		    | Some b -> clear ();    b::past_extension false x1 (false,ar2')
+		    | None   ->          Cls y::past_extension false x1 (false,ar2'))
 		else
 		  match !kept with
 		    | Some Pun y' -> Opn y'::past_extension false x1 (false,ar2')
@@ -1556,7 +1568,7 @@ struct
 	    if x<y
 	    then (clear ();past_extension false (true,ar1') x2)
 	    else
-	      if circle_mode && ar2'=[]
+	      if !circle_mode_flag && ar2'=[]
 	      then [Cls y]
 	      else
 		if y<x
@@ -1588,7 +1600,7 @@ struct
 	      then unload ()::past_extension false (false,ar1') x2
 	      else past_extension false (false,ar1') x2
 	    else
-	      if circle_mode && ar2'=[]
+	      if !circle_mode_flag && ar2'=[]
 	      then [Opn y]
 	      else
 		if y<x
@@ -1632,7 +1644,7 @@ struct
 	    if x<y
 	    then (clear ();past_extension false (true,ar1') x2)
 	    else
-	      if circle_mode && ar2'=[]
+	      if !circle_mode_flag && ar2'=[]
 	      then [Opn y]
 	      else
 		if y<x
@@ -1661,7 +1673,7 @@ struct
 	      then (unload ())::past_extension false (false,ar1') x2
 	      else past_extension false (false,ar1') x2
 	    else
-	      if circle_mode && ar2'=[]
+	      if !circle_mode_flag && ar2'=[]
 	      then [Cls y]
 	      else
 		if y<x
@@ -1705,7 +1717,7 @@ struct
 	    if x<y
 	    then (clear ();past_extension false (true,ar1') x2)
 	    else
-	      if circle_mode && ar2'=[]
+	      if !circle_mode_flag && ar2'=[]
 	      then [Cls y]
 	      else
 		if y<x
@@ -1734,7 +1746,7 @@ struct
 	      then (unload ())::past_extension false (false,ar1') x2
 	      else past_extension false (false,ar1') x2
 	    else
-	      if circle_mode && ar2'=[]
+	      if !circle_mode_flag && ar2'=[]
 	      then [Opn y]
 	      else
 		if y<x
@@ -1782,7 +1794,7 @@ struct
 	    if x<y
 	    then (clear ();past_extension false (true,ar1') x2)
 	    else
-	      if circle_mode && ar2'=[]
+	      if !circle_mode_flag && ar2'=[]
 	      then [Opn y]
 	      else
 		if y<x
@@ -1797,7 +1809,7 @@ struct
 	  else
 	    if y<x
 	    then
-	      if circle_mode && ar2'=[]
+	      if !circle_mode_flag && ar2'=[]
 	      then [Pun y]
 	      else (clear ();Pun y::past_extension true x1 (true,ar2'))
 	    else
@@ -1814,19 +1826,19 @@ struct
               | [] -> true) 
           | [] -> false)
 		  then
-		    if circle_mode && ar2'=[]
+		    if !circle_mode_flag && ar2'=[]
 		    then [Pun y]
 		    else (clear (); Pun y::past_extension false (false,ar1') (true,ar2'))
 		  else
-		    if circle_mode && ar2'=[]
+		    if !circle_mode_flag && ar2'=[]
 		    then [Pun y]
 		    else (clear (); Opn y::past_extension false (false,ar1') (true,ar2'))
 		| Some (Iso z) ->
-		  if circle_mode && ar2'=[]
+		  if !circle_mode_flag && ar2'=[]
 		  then [Cls z;Pun y]
 		  else (clear ();Cls z::Opn y::past_extension false (false,ar1') (true,ar2'))
 		| _ ->
-		  if circle_mode && ar2'=[]
+		  if !circle_mode_flag && ar2'=[]
 		  then [Pun y]
 		  else (clear ();Opn y::past_extension false (false,ar1') (true,ar2'))
 	else (* Cls x local inf *)
@@ -1848,34 +1860,34 @@ struct
 	      then
 		match !kept with
 		  | Some b ->
-		    if circle_mode && ar2'=[]
+		    if !circle_mode_flag && ar2'=[]
 		    then [b;Opn y]
 		    else (load (Opn y);b::past_extension false x1 (true,ar2'))
 		  | None   ->
-		    if circle_mode && ar2'=[]
+		    if !circle_mode_flag && ar2'=[]
 		    then [Pun y]
 		    else Pun y::past_extension false x1 (true,ar2')
 	      else
 		match !kept with
 		  | Some Pun y' ->
-		    if circle_mode && ar2'=[]
+		    if !circle_mode_flag && ar2'=[]
 		    then [Opn y';Opn y]
 		    else (load (Opn y); Opn y'::past_extension false x1 (true,ar2'))
 		  | _ ->
-		    if circle_mode && ar2'=[]
+		    if !circle_mode_flag && ar2'=[]
 		    then [Opn y]
 		    else (load (Opn y);past_extension false x1 (true,ar2'))
 	    else
 	      if loading
 	      then
 		match !kept with
-		  | Some (Iso y') -> if circle_mode && ar2'=[] then [Cls y';Pun y] else (clear ();Cls y'::Pun y::past_extension true (true,ar1') (true,ar2'))
-		  | _             -> if circle_mode && ar2'=[] then [Pun y] else (clear ();Pun y::past_extension true (true,ar1') (true,ar2'))
+		  | Some (Iso y') -> if !circle_mode_flag && ar2'=[] then [Cls y';Pun y] else (clear ();Cls y'::Pun y::past_extension true (true,ar1') (true,ar2'))
+		  | _             -> if !circle_mode_flag && ar2'=[] then [Pun y] else (clear ();Pun y::past_extension true (true,ar1') (true,ar2'))
 	      else
 		(
 		  match !kept with
-		    | Some b -> if circle_mode && ar2'=[] then [b;Pun y] else (clear ();b::Pun y::past_extension true (true,ar1') (true,ar2'))
-		    | None -> if circle_mode && ar2'=[] then [Pun y] else (Pun y::past_extension true (true,ar1') (true,ar2'))
+		    | Some b -> if !circle_mode_flag && ar2'=[] then [b;Pun y] else (clear ();b::Pun y::past_extension true (true,ar1') (true,ar2'))
+		    | None -> if !circle_mode_flag && ar2'=[] then [Pun y] else (Pun y::past_extension true (true,ar1') (true,ar2'))
 		)
       (* Opn vs Pun *)
       | (p1,Opn x::ar1' as x1),(p2,Pun y::ar2' as x2) ->
@@ -1886,13 +1898,13 @@ struct
 	  else
 	    if y<x
 	    then
-	      if circle_mode && ar2'=[]
+	      if !circle_mode_flag && ar2'=[]
 	      then [Pun y]
 	      else (clear ();Pun y::past_extension true x1 (true,ar2'))
 	    else
 	      match !kept with
 		| Some (Iso z) ->
-		  if circle_mode && ar2'=[]
+		  if !circle_mode_flag && ar2'=[]
 		  then [Cls z;Pun y]
 		  else (clear ();Cls z::Opn y::past_extension false (false,ar1') (true,ar2'))
 		| _ -> (* None is actually the only case which happens *)
@@ -1908,11 +1920,11 @@ struct
               | [] -> true) 
           | [] -> false)
 		  then
-		    if circle_mode && ar2'=[]
+		    if !circle_mode_flag && ar2'=[]
 		    then [Pun y]
 		    else (clear (); Pun y::past_extension false (false,ar1') (true,ar2'))
 		  else
-		    if circle_mode && ar2'=[]
+		    if !circle_mode_flag && ar2'=[]
 		    then [Pun y]
 		    else (clear (); Opn y::past_extension false (false,ar1') (true,ar2'))
 	else (* Opn x local inf *)
@@ -1934,21 +1946,21 @@ struct
 	      then
 		match !kept with
 		  | Some b ->
-		    if circle_mode && ar2'=[]
+		    if !circle_mode_flag && ar2'=[]
 		    then [b;Opn y]
 		    else (load (Opn y);b::past_extension false x1 (true,ar2'))
 		  | None   ->
-		    if circle_mode && ar2'=[]
+		    if !circle_mode_flag && ar2'=[]
 		    then [Pun y]
 		    else Pun y::past_extension false x1 (true,ar2')
 	      else
 		match !kept with
 		  | Some Pun y' ->
-		    if circle_mode && ar2'=[]
+		    if !circle_mode_flag && ar2'=[]
 		    then [Opn y';Opn y]
 		    else (load (Opn y); Opn y'::past_extension false x1 (true,ar2'))
 		  | _ ->
-		    if circle_mode && ar2'=[]
+		    if !circle_mode_flag && ar2'=[]
 		    then [Opn y]
 		    else (load (Opn y);past_extension false x1 (true,ar2'))
 	    else
@@ -1956,7 +1968,7 @@ struct
 	      then
 		match !kept with
 		  | Some b ->
-		    if circle_mode && ar2'=[]
+		    if !circle_mode_flag && ar2'=[]
 		    then [b;Opn y]
 		    else (clear ();b::Opn y::past_extension true (true,ar1') (true,ar2'))
 		  | _             -> (clear ();Opn y::past_extension true (true,ar1') (true,ar2'))
@@ -1964,11 +1976,11 @@ struct
 		(
 		  match !kept with
 		    | Some b ->
-		      if circle_mode && ar2'=[]
+		      if !circle_mode_flag && ar2'=[]
 		      then [Opn y]
 		      else (clear ();Opn y::past_extension true (true,ar1') (true,ar2'))
 		    | None ->
-		      if circle_mode && ar2'=[]
+		      if !circle_mode_flag && ar2'=[]
 		      then [Opn y]
 		      else (Opn y::past_extension true (true,ar1') (true,ar2'))
 		)
@@ -2081,7 +2093,7 @@ struct
 	  if x<y
 	  then (clear ();past_extension false (false,ar1') x2)
 	  else
-	    if circle_mode && ar2'=[]
+	    if !circle_mode_flag && ar2'=[]
 	    then [Cls y]
 	    else
 	      if y<x
@@ -2127,7 +2139,7 @@ struct
 	  if x<y
 	  then (clear ();past_extension false (false,ar1') x2)
 	  else
-	    if circle_mode && ar2'=[]
+	    if !circle_mode_flag && ar2'=[]
 	    then [Opn y]
 	    else
 	      if y<x
@@ -2174,11 +2186,11 @@ struct
         | [] -> true)
       (*try clear () ; x <= rvb (List.hd ar2') with | Failure "hd" -> true*)
       then
-		    if circle_mode && ar2'=[]
+		    if !circle_mode_flag && ar2'=[]
 		    then [Opn y]
 		    else Opn y::past_extension false x1 (true,ar2')
 		  else
-		    if circle_mode && ar2'=[]
+		    if !circle_mode_flag && ar2'=[]
 		    then [Opn y]
 		    else past_extension false x1 (true,ar2')
 		else
@@ -2187,11 +2199,11 @@ struct
         | x2::_ -> x <= rvb x2
         | [] -> true)
       then
-		    if circle_mode && ar2'=[]
+		    if !circle_mode_flag && ar2'=[]
 		    then [Opn y]
 		    else (load (Opn y); past_extension false x1 (true,ar2'))
 		  else
-		    if circle_mode && ar2'=[]
+		    if !circle_mode_flag && ar2'=[]
 		    then
 		      [Opn y]
 		    else
@@ -2207,11 +2219,11 @@ struct
         | [] -> true)
 		
     then
-		  if circle_mode && ar2'=[]
+		  if !circle_mode_flag && ar2'=[]
 		  then [Opn y]
 		  else Opn y::past_extension false x1 (true,ar2')
 		else
-		  if circle_mode && ar2'=[]
+		  if !circle_mode_flag && ar2'=[]
 		  then [Opn y]
 		  else past_extension false x1 (true,ar2')
 	      | _ -> (* NB: the case Some Pun z never happens *)
@@ -2225,11 +2237,11 @@ struct
     
     
 		then
-		  if circle_mode && ar2'=[]
+		  if !circle_mode_flag && ar2'=[]
 		  then [Opn y]
 		  else (Opn y::past_extension false x1 (true,ar2'))
 		else
-		  if circle_mode && ar2'=[]
+		  if !circle_mode_flag && ar2'=[]
 		  then [Opn y]
 		  else (past_extension false x1 (true,ar2'))
 	  else (*x=y*)
@@ -2253,21 +2265,21 @@ struct
 		  then
 		    if clear ();loading
 		    then
-		      if circle_mode && ar2'=[]
+		      if !circle_mode_flag && ar2'=[]
 		      then [Pun y]
 		      else Pun y::past_extension false (false,ar1') (true,ar2')
 		    else
-		      if circle_mode && ar2'=[]
+		      if !circle_mode_flag && ar2'=[]
 		      then [b;Pun y]
 		      else b::Pun y::past_extension false (false,ar1') (true,ar2')
 		  else
 		    if clear ();loading
 		    then
-		      if circle_mode && ar2'=[]
+		      if !circle_mode_flag && ar2'=[]
 		      then [Pun y]
 		      else Opn y::past_extension false (false,ar1') (true,ar2')
 		    else
-		      if circle_mode && ar2'=[]
+		      if !circle_mode_flag && ar2'=[]
 		      then [b;Pun y]
 		      else b::Opn y::past_extension false (false,ar1') (true,ar2')
 		| Some (Iso z) ->
@@ -2283,15 +2295,15 @@ struct
               | [] -> true) 
           | [] -> false)
 		  then
-		    if circle_mode && ar2'=[]
+		    if !circle_mode_flag && ar2'=[]
 		    then [Cls z;Pun y]
 		    else (clear (); Cls z::Pun y::past_extension false (false,ar1') (true,ar2'))
 		  else
-		    if circle_mode && ar2'=[]
+		    if !circle_mode_flag && ar2'=[]
 		    then [Cls z;Pun y]
 		    else (clear (); Cls z::Opn y::past_extension false (false,ar1') (true,ar2'))
 		| _ -> (* NB: the case Some Pun z never happens *)
-		  if circle_mode && ar2'=[]
+		  if !circle_mode_flag && ar2'=[]
 		  then [Pun y]
 		  else
 		    if
@@ -2329,7 +2341,7 @@ struct
 	  (
 	    match !kept with
 	      | Some (Iso z as b) ->
-		if circle_mode
+		if !circle_mode_flag
 		then
 		  (
 		    if loading
@@ -2353,7 +2365,7 @@ struct
 	      | Some (Cls z as b)
 	      | Some (Opn z as b) ->
 
-		if circle_mode
+		if !circle_mode_flag
 		then
 		  (
 		    let aux =
@@ -2371,7 +2383,7 @@ struct
 		  if loading then [b] else []
 	      | Some (Pun z) -> if loading then [] else [Opn z]
 	      | _  ->
-		if circle_mode
+		if !circle_mode_flag
 		then
 		  (
 		    let aux =
@@ -2410,8 +2422,8 @@ struct
 	      | _ -> (* case None *)
 		(
 		  match last_connected_component (if p1 then Cls zero::z else z) with
-		    | [Iso x] -> if circle_mode then [] else [Cls x]
-		    | [_;d] -> if circle_mode then [] else [d]
+		    | [Iso x] -> if !circle_mode_flag then [] else [Cls x]
+		    | [_;d] -> if !circle_mode_flag then [] else [d]
 		    | _ -> []
 		)
 	  else
@@ -2446,7 +2458,10 @@ struct
 		)
 	      | None -> (load b;past_extension (alter_parity b) ((if alter_parity b then not p1 else p1),ar1') x2)
 	else []
-    in
+    
+  let past_extension ?(circle_mode=false) ar1 ar2 =
+    let () = circle_mode_flag := circle_mode in
+    let () = clear_all () in (* initialisation *)
     past_extension false (false,ar1) (false,ar2)
 
 (*
