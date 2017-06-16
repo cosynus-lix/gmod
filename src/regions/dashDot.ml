@@ -124,9 +124,14 @@ that way.*)
   val first_connected_component: ?flag:bool ref -> t -> t
   val last_connected_component: ?parity:bool -> t -> t
   
-(** {2 Directed topology}*)
+  (** {2 Directed topology}*)
   
   module type DirectedTopology = sig
+
+
+    val string_of: t -> string
+    (** Shape dependent string converter. *)
+
     val interior: t -> t
     (** [interior x] is the {i interior} of the set [x] with respect to the 
     topology of the half-line/circle depending on the module from which it is 
@@ -146,11 +151,23 @@ that way.*)
     (** [past_extension x y] is the set of points {i q} of [y] such that 
     there exists a point {i p} of [x] such the interval/anticlockwise arc from 
     {i q} to {i p} is contained in the union of [x] and [y].*)
+
   end
   
   module HalfLine:DirectedTopology
   
   module Circle:DirectedTopology
+  
+  (** {2 Under test}*)
+  
+  (** Alternative implementations of past_extension using future_extension 
+  and «time» reversing. *)
+  
+  val hl_future_extension: t -> t -> t
+  
+  val hl_past_extension: t -> t -> t
+  
+  val ci_past_extension: t -> t -> t
   
 end
 
@@ -161,13 +178,24 @@ struct
 
   type value = B.t
 
-  let (<) x y = B.compare x y < 0
+  let bound_compare = ref B.compare
+  
+  let original_order = ref true
+  
+  let reverse_bound_order () = 
+    let () = 
+      if !original_order
+      then bound_compare := fun v1 v2 -> -B.compare v1 v2
+      else bound_compare := B.compare in
+    original_order := not !original_order
 
-  let (>) x y = B.compare x y > 0
+  let (<) x y = !bound_compare x y < 0
 
-  let (<=) x y = B.compare x y <= 0
+  let (>) x y = !bound_compare x y > 0
 
-  let (>=) x y = B.compare x y >= 0
+  let (<=) x y = !bound_compare x y <= 0
+
+  let (>=) x y = !bound_compare x y >= 0
 
   exception Undefined
 
@@ -314,6 +342,8 @@ struct
 		| Opn x :: a | Cls x :: a -> parity (not answer) a
 		| Pun x :: a | Iso x :: a -> parity answer a
 		| [] -> answer
+
+  let is_unbounded a = parity false a
 
   let mem pt ar =
     let rec mem (p,ar) = match (p,ar) with
@@ -1476,7 +1506,9 @@ struct
             | x     -> x
           ]
         else []
-        
+  
+  let future_extension_aux = future_extension
+  
   let future_extension ?flag ar1 ar2 =      
     let output = future_extension false (false,ar1) (false,ar2) in
     let () = match flag with
@@ -2505,16 +2537,12 @@ in the union of x and {p} *)
     return , !unbounded
 
   module type DirectedTopology = sig
+    val string_of: t -> string
     val interior: t -> t
     val closure: t -> t
     val future_extension: t -> t -> t
     val past_extension: t -> t -> t
   end
-
-
-
-
-
 
 module HalfLine
 	=
@@ -2528,6 +2556,27 @@ struct
   let is_bounded a = parity true a
 
   let is_not_bounded a = parity false a
+
+  let string_of ?(empty_set_denotation="Ø") ?(infinity_denotation="+oo") ?(open_infinity=true) a =
+    let rec string_of p a = match a with
+      |	Cls x::a ->
+					if p
+					then (B.string_of x)^(if a<>[] then "] " else "]")^(string_of (not p) a)
+					else "["^(B.string_of x)^","^(string_of (not p) a)
+      |	Opn x::a ->
+					if p
+					then (B.string_of x)^(if a<>[] then "[ " else "[")^(string_of (not p) a)
+					else "]"^(B.string_of x)^","^(string_of (not p) a)
+      |	Iso x::a -> "{"^(B.string_of x)^(if a <>[] then "} " else "}")^(string_of p a)
+      |	Pun x::a -> let b = B.string_of x in b^"[ ]"^b^","^(string_of p a)
+      | _ ->
+					if p
+					then if open_infinity then infinity_denotation^"[" else infinity_denotation^"]"
+					else if open_infinity then "" else " {"^infinity_denotation^"}" in
+    let answer = string_of false a in
+    if answer <> "" then answer else empty_set_denotation
+
+  let string_of x = string_of x
 
   let closure_contains_zero a =
     match a with 
@@ -2618,6 +2667,11 @@ struct
     | b::a -> b::closure a
     | [] -> []
 
+  let future_extension ?flag ar1 ar2 = future_extension ?flag ar1 ar2
+  let future_extension ar1 ar2 = future_extension ar1 ar2
+  let future_closure ar = future_closure ~circle_mode:false ar
+  let past_extension ar1 ar2 = past_extension ar1 ar2
+
 
   let boundary a = match a with
     | Cls x::a ->
@@ -2629,33 +2683,7 @@ struct
     | b::a -> Iso (rvb b)::List.map (fun b -> Iso (rvb b)) a
     | [] -> []
 
-  let string_of ?(empty_set_denotation="Ø") ?(infinity_denotation="+oo") ?(open_infinity=true) a =
-    let rec string_of p a = match a with
-      |	Cls x::a ->
-					if p
-					then (B.string_of x)^(if a<>[] then "] " else "]")^(string_of (not p) a)
-					else "["^(B.string_of x)^","^(string_of (not p) a)
-      |	Opn x::a ->
-					if p
-					then (B.string_of x)^(if a<>[] then "[ " else "[")^(string_of (not p) a)
-					else "]"^(B.string_of x)^","^(string_of (not p) a)
-      |	Iso x::a -> "{"^(B.string_of x)^(if a <>[] then "} " else "}")^(string_of p a)
-      |	Pun x::a -> let b = B.string_of x in b^"[ ]"^b^","^(string_of p a)
-      | _ ->
-					if p
-					then if open_infinity then infinity_denotation^"[" else infinity_denotation^"]"
-					else if open_infinity then "" else " {"^infinity_denotation^"}" in
-    let answer = string_of false a in
-    if answer <> "" then answer else empty_set_denotation
-
-  let future_extension ?flag ar1 ar2 = future_extension ?flag ar1 ar2
-  let future_extension ar1 ar2 = future_extension ar1 ar2
-  let future_closure ar = future_closure ~circle_mode:false ar
-  let past_extension ar1 ar2 = past_extension ar1 ar2
-
 end(*HalfLine*)
-
-
 
 
 module Circle
@@ -2715,7 +2743,7 @@ struct
 
   (* Display *)
 
-  let string_of ?(empty_set_denotation="Ø") ?(full_set_denotation="S¹")  a =
+  let string_of ?(empty_set_denotation="Ø") ?(full_set_denotation="S¹") a =
     let raw_string_of = string_of a in
     let last_bound = ref "" in
     let rec string_of p a = match a with
@@ -2791,6 +2819,8 @@ struct
 	    "Invalid form: oda.ml: Circle.string_of: Pun x is not allowed at the head: %s"
 	    raw_string_of
 	)
+
+  let string_of x = string_of x
 
   (* Topological operators *)
 
@@ -2879,5 +2909,26 @@ struct
     past_extension ~circle_mode:(unbounded_connected_component_must_be_added at1 at2) at1 at2
 
 end(*Circle*)
+
+(*
+let string_of = fun x -> HalfLine.string_of x
+*)
+
+let hl_past_extension cr1 cr2 =
+  let () = print_endline "alternative past_extension" in
+  let unbounded1 = HalfLine.is_not_bounded cr1 in
+  let unbounded2 = HalfLine.is_not_bounded cr2 in
+  let loading = unbounded1 && unbounded2 in
+  let cr1' = List.rev cr1 in
+  let cr2' = List.rev cr2 in
+  let () = reverse_bound_order () in
+  let cr3' = future_extension_aux 
+    loading (unbounded1,cr1') (unbounded2,cr2') in
+  let () = reverse_bound_order () in
+  List.rev cr3'
+
+let ci_past_extension cr1 cr2 = assert false
+
+let hl_future_extension cr1 cr2 = assert false
 
 end (* BooleanAlgebra *)
