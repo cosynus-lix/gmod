@@ -1,7 +1,6 @@
 (* Cartesian Product of Directed Geometric Realization of Graphs *)
 (* CPODGROG.ml *)
-(* CEA, LIST *)
-(* Part of the ALCOOL project *)
+(* Part of the gMod project *)
 
 module Make(*Cartesian Products of Directed Geometric Realisations of Graphs*)
   (
