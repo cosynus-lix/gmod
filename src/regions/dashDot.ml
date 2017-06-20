@@ -163,8 +163,6 @@ that way.*)
   (** Alternative implementations of past_extension using future_extension 
   and «time» reversing. *)
   
-  val hl_future_extension: t -> t -> t
-  
   val hl_past_extension: t -> t -> t
   
   val ci_past_extension: t -> t -> t
@@ -266,7 +264,7 @@ struct
 			    | Cls x::b2::_ ->
 			      let rvbb1 = rvb b1 and rvbb2 = rvb b2 in
 			      x=zero && (rvbb1<rvbb2 || (rvbb1=rvbb2 && (bob b1 || bob b2)))
-			    | [Cls x] -> x=zero
+			    | [Cls x] -> x = zero
 			    | Iso x::_ -> x = zero && b1 = Opn zero
 			    | _ -> false)
       | [] -> false
@@ -2547,9 +2545,6 @@ in the union of x and {p} *)
 module HalfLine
 	=
 struct
-(*
-  include BooleanAlgebra(B)
-*)
 
   (* Tests *)
 
@@ -2583,30 +2578,15 @@ struct
       | x::_ -> rvb x = zero
       | [] -> false
   
-(*
-    try rvb (List.hd a) = zero
-    with Failure "hd" -> false
-*)
-
   let interior_contains_zero a =
     match a with 
       | x::_ -> x = Cls zero
       | [] -> false
-  
-(*
-    try List.hd a = Cls zero
-    with Failure "hd" -> false
-*)
 
   let interior_does_not_contain_zero a =
     match a with 
       | x::_ -> x <> Cls zero
       | [] -> true
-
-(*
-    try List.hd a <> Cls zero
-    with Failure "hd" -> true
-*)
 
   let glb a = match a with
     | b::a -> rvb b
@@ -2683,15 +2663,27 @@ struct
     | b::a -> Iso (rvb b)::List.map (fun b -> Iso (rvb b)) a
     | [] -> []
 
+  let rec connected_components a = match a with
+    | [] -> []
+    | [Opn x] 
+    | [Cls x] -> [a]
+    | Iso x :: a -> [Iso x] :: connected_components a
+    | Opn x :: Opn y :: a -> [Opn x ; Opn y] :: connected_components a
+    | Opn x :: Pun y :: a -> [Opn x ; Opn y] :: connected_components ((Opn y) :: a)
+    | Opn x :: Cls y :: a -> [Opn x ; Cls y] :: connected_components a
+    | Cls x :: Opn y :: a -> [Cls x ; Opn y] :: connected_components a
+    | Cls x :: Pun y :: a -> [Cls x ; Opn y] :: connected_components ((Opn y) :: a)
+    | Cls x :: Cls y :: a -> [Cls x ; Cls y] :: connected_components a
+    | _ -> invalid_arg "HalfLine.connected_components"
+  
+  
+
 end(*HalfLine*)
 
 
 module Circle
 	=
 struct
-(*
-  include BooleanAlgebra(B)
-*)
 
   (* Tests *)
 
@@ -2702,12 +2694,6 @@ struct
       | [] -> false)
   
     
-(*
-    (try rvb (List.hd a) = zero
-      with Failure "hd" -> false)
-    || parity false a
-*)
-
 	(*Added on Wednesday, the 23th of November 2011*)
   (*Rewritten on Sunday, the 28th of May 2017*)
   (*I'm a bit doubtful about this function e.g. [] or [Cls 1;Cls 2] *)
@@ -2719,12 +2705,6 @@ struct
           || (x = Cls zero && parity true a))
       | [] -> false
   
-(*
-		(try List.hd a = Opn zero with Failure "hd" -> false)
-    || ((try rvb (List.hd a) <> zero with Failure "hd" -> true) && parity false a)
-    || ((try List.hd a = Cls zero with Failure "hd" -> false) && parity true a)
-*)
-
 	(*Added on Wednesday, the 23th of November 2011*)
 	let boundary_does_not_contain_zero a =
     match a with 
@@ -2914,8 +2894,24 @@ end(*Circle*)
 let string_of = fun x -> HalfLine.string_of x
 *)
 
-let hl_past_extension cr1 cr2 =
-  let () = print_endline "alternative past_extension" in
+(* shape = true stands for half-line, shape = false stands for circle *)
+
+let past_extension shape cr1 cr2 =
+  let unbounded1 = HalfLine.is_not_bounded cr1 in
+  let unbounded2 = HalfLine.is_not_bounded cr2 in
+  let loading = (unbounded1 && unbounded2) || 
+    ((not shape) && unbounded_connected_component_must_be_added cr1 cr2 && unbounded2) in
+  let cr1' = List.rev cr1 in
+  let cr2' = List.rev cr2 in
+  let () = reverse_bound_order () in
+  let cr3' = future_extension_aux 
+    loading (unbounded1,cr1') (unbounded2,cr2') in
+  let () = reverse_bound_order () in
+  List.rev cr3'
+
+let hl_past_extension cr1 cr2 = past_extension true cr1 cr2
+(*
+  let () = print_endline "alternative hl past_extension" in
   let unbounded1 = HalfLine.is_not_bounded cr1 in
   let unbounded2 = HalfLine.is_not_bounded cr2 in
   let loading = unbounded1 && unbounded2 in
@@ -2926,9 +2922,22 @@ let hl_past_extension cr1 cr2 =
     loading (unbounded1,cr1') (unbounded2,cr2') in
   let () = reverse_bound_order () in
   List.rev cr3'
+*)
 
-let ci_past_extension cr1 cr2 = assert false
-
-let hl_future_extension cr1 cr2 = assert false
+let ci_past_extension cr1 cr2 = past_extension false cr1 cr2
+(*
+  let () = print_endline "alternative ci past_extension" in
+  let unbounded1 = HalfLine.is_not_bounded cr1 in
+  let unbounded2 = HalfLine.is_not_bounded cr2 in
+  let loading = (unbounded1 && unbounded2) || 
+    (unbounded_connected_component_must_be_added cr1 cr2 && unbounded2) in
+  let cr1' = List.rev cr1 in
+  let cr2' = List.rev cr2 in
+  let () = reverse_bound_order () in
+  let cr3' = future_extension_aux 
+    loading (unbounded1,cr1') (unbounded2,cr2') in
+  let () = reverse_bound_order () in
+  List.rev cr3'
+*)
 
 end (* BooleanAlgebra *)
