@@ -1,5 +1,9 @@
 module DD = DashDot.Make(Integer)
 
+module HL = DD.HalfLine
+
+module Ci = DD.Circle
+
 (* of_string attend une forme correcte et ne fait pas de vérifications. *)
 
 let rec of_string tl = Str.(
@@ -35,9 +39,10 @@ let bin_op s = match s with
   | "meet" -> DD.meet
   | "join" -> DD.join
   | "hl_future" -> DD.HalfLine.future_extension
-  | "hl_past" -> DD.HalfLine.past_extension
+  | "hl_past" -> DD.hl_past_extension
   | "ci_future" -> DD.Circle.future_extension
-  | "ci_past" -> DD.Circle.past_extension
+  | "ci_past" -> DD.ci_past_extension
+  | _ -> failwith ("Unknown operator " ^ s)
 
 let un_op s = match s with
   | "compl" -> DD.complement
@@ -45,61 +50,46 @@ let un_op s = match s with
   | "ci_interior" -> DD.Circle.interior
   | "hl_closure" -> DD.HalfLine.closure
   | "ci_closure" -> DD.Circle.closure
+  | _ -> failwith ("Unknown operator " ^ s)
 
-let test_binary op s1 s2 =
+let test_binary operator operand1 operand2 expected_result =
+  let op_name = operator in
+  let operator = bin_op operator in
+  let operand1 = of_string operand1 in
+  let operand2 = of_string operand2 in
+  let result = operator operand1 operand2 in
+  let expected_result = of_string expected_result in
+  if result <> expected_result
+  then Printf.printf "%s\n %s\n %s\n= %s\nbut %s was expected\n%!"
+    op_name
+    (HL.string_of operand1)
+    (HL.string_of operand2)
+    (HL.string_of result)
+    (HL.string_of expected_result)
   
-
-
+let hl_future_extension_tests = [
+  ("[3]","]3","]3");
+  ("[0]","]0","]0");
   
+]
 
-let i = of_string "[3 4] ]6 7[]7 8] [7]"
-let () = print_endline ("i = " ^ (DD.HalfLine.string_of i ))
-  
-let i1 = DD.interval true true 0 1
-let i2 = DD.interval true true 1 2
-let i3 = DD.meet i1 i2
+let testing_hl_future_extension = 
+  List.iter 
+    (fun (a,b,c) -> test_binary "hl_future" a b c)
+    hl_future_extension_tests
+    
+    
+let hl_past_extension_tests = [
+  ("[3]","]3","");
+  ("[0]","]0","");
+  ("[0]","]3","");
+  ("[4]","[2 4[","[2 4[");
+  ("[5 8[","[0] ]2 5[ [8 9]","]2 5[ ")
+]
 
-let i1 = DD.interval true true 0 1
-let i2 = DD.interval false true 1 2
-let i3 = DD.join i1 i2
-
-let i1 = DD.interval true false 0 1
-let i2 = DD.interval true true 1 2
-let i3 = DD.join i1 i2
-
-let i1 = DD.interval true false 0 1
-let i2 = DD.interval false true 1 2
-let i3 = DD.join i1 i2
-
-let i1 = DD.interval true true 0 1
-let i2 = DD.interval false true 1 2
-let i3 = DD.meet i1 i2
-
-let i1 = DD.interval true true 1 4
-let i2 = DD.interval true true 2 3
-let i3 = DD.meet i1 i2
-
-let i1 = DD.interval false false 1 7
-let i2 = DD.interval true true 1 7
-let i3 = DD.difference i2 i1
-
-let i1 = DD.final false 1
-let i2 = DD.interval true false 0 1
-let i3 = DD.hl_past_extension i1 i2
-
-let i1 = DD.atom 7
-let i2 = DD.coatom 7
-let i3 = DD.hl_past_extension i1 i2
-
-let i1 = DD.interval true true 2 3
-let i2 = DD.final true 3
-let i3 = DD.hl_past_extension i1 i2
-
-let i1 = DD.atom 3
-let i2 = DD.coatom 2
-let i3 = DD.hl_past_extension i1 i2
-
-let () = 
-  print_endline ("i1 = " ^ (DD.HalfLine.string_of i1));
-  print_endline ("i2 = " ^ (DD.HalfLine.string_of i2));
-  print_endline ("i3 = " ^ (DD.HalfLine.string_of i3))
+let testing_hl_past_extension = 
+  List.iter 
+    (fun (a,b,c) -> test_binary "hl_past" a b c)
+    hl_past_extension_tests
+    
+    
