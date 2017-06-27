@@ -124,13 +124,10 @@ let testing_hl_past_extension () =
 
 let operator_name = ref ""
 
-let arity = ref 0
-
 let operator = ref (Unary (fun x -> x)) (*dummy default value*)
 
 let preparing op_name () = 
   operator_name := op_name ;
-  arity := arity_of_string op_name ;
   operator := operator_of_string op_name
   
 
@@ -154,9 +151,6 @@ let anon_fun s =
       with End_of_file -> (
         close_in chan;
         raise Exit) in
-(*
-  let arity = arity !operator_name in
-*)
   let operator = operator_of_string !operator_name in
   match operator with 
     | Unary operator -> (
@@ -176,7 +170,6 @@ let anon_fun s =
               (of_string (iterator ()))
           done
         with Exit -> print_endline "End of test")
-    | _ -> assert false
   
   
   
