@@ -4,7 +4,7 @@ module HL = DD.HalfLine
 
 module Ci = DD.Circle
 
-(* of_string attend une forme correcte et ne fait pas de vérifications. *)
+(* of_string does not check the format of the argument *)
 
 let rec of_string tl = Str.(
   match tl with 
@@ -33,20 +33,6 @@ let of_string s =
         | Str.Delim s -> s = "[" || s = "]")
       tokens in
   of_string tokens
-
-let arity_of_string s = match s with 
-  | "meet" 
-  | "join" 
-  | "hl_future" 
-  | "hl_past" 
-  | "ci_future" 
-  | "ci_past" -> 2
-  | "compl"
-  | "hl_interior"
-  | "ci_interior"
-  | "hl_closure"
-  | "ci_closure" -> 1
-  | _ -> failwith ("Unknown operator " ^ s)
 
 type operator = Unary of (DD.t -> DD.t) | Binary of (DD.t -> DD.t -> DD.t)
   
