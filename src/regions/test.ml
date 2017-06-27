@@ -34,7 +34,7 @@ let of_string s =
       tokens in
   of_string tokens
 
-let arity s = 
+let arity_of_string s = match s with 
   | "meet" 
   | "join" 
   | "hl_future" 
@@ -47,24 +47,26 @@ let arity s =
   | "hl_closure"
   | "ci_closure" -> 1
   | _ -> failwith ("Unknown operator " ^ s)
+
+type operator = Unary of (DD.t -> DD.t) | Binary of (DD.t -> DD.t -> DD.t)
   
 let operator_of_string s = match s with
-  | "meet" -> DD.meet
-  | "join" -> DD.join
-  | "hl_future" -> DD.HalfLine.future_extension
-  | "hl_past" -> DD.hl_past_extension
-  | "ci_future" -> DD.Circle.future_extension
-  | "ci_past" -> DD.ci_past_extension
-  | "compl" -> DD.complement
-  | "hl_interior" -> DD.HalfLine.interior
-  | "ci_interior" -> DD.Circle.interior
-  | "hl_closure" -> DD.HalfLine.closure
-  | "ci_closure" -> DD.Circle.closure
+  | "meet" -> Binary DD.meet
+  | "join" -> Binary DD.join
+  | "hl_future" -> Binary DD.HalfLine.future_extension
+  | "hl_past" -> Binary DD.hl_past_extension
+  | "ci_future" -> Binary DD.Circle.future_extension
+  | "ci_past" -> Binary DD.ci_past_extension
+  | "compl" -> Unary DD.complement
+  | "hl_interior" -> Unary DD.HalfLine.interior
+  | "ci_interior" -> Unary DD.Circle.interior
+  | "hl_closure" -> Unary DD.HalfLine.closure
+  | "ci_closure" -> Unary DD.Circle.closure
   | _ -> failwith ("Unknown operator " ^ s)
 
 let test_unary op_name operator operand expected_result =
   let result = operator operand in
-  let expected_result = of_string expected_result in
+  let expected_result = expected_result in
   if result <> expected_result
   then Printf.printf "%s\n %s\n= %s\nbut\n %s\nwas expected.\n%!"
     op_name
@@ -74,7 +76,7 @@ let test_unary op_name operator operand expected_result =
 
 let test_binary op_name operator operand1 operand2 expected_result =
   let result = operator operand1 operand2 in
-  let expected_result = of_string expected_result in
+  let expected_result = expected_result in
   if result <> expected_result
   then Printf.printf "%s\n %s\n %s\n= %s\nbut\n %s\nwas expected.\n%!"
     op_name
@@ -120,15 +122,26 @@ let testing_hl_past_extension () =
     hl_past_extension_tests
 *)
 
+let operator_name = ref ""
+
+let arity = ref 0
+
+let operator = ref (Unary (fun x -> x)) (*dummy default value*)
+
+let preparing op_name () = 
+  operator_name := op_name ;
+  arity := arity_of_string op_name ;
+  operator := operator_of_string op_name
+  
 
 let command_line_options = [
-  "-hlf",Arg.Unit (fun () -> operator := "hl_future"),"Test hl_future_extension" ;
-  "-hlp",Arg.Unit (fun () -> operator := "hl_past"),"Test hl_past_extension" ;
-  "-cif",Arg.Unit (fun () -> operator := "ci_future"),"Test ci_future_extension" ;
-  "-cip",Arg.Unit (fun () -> operator := "ci_past"),"Test ci_future_extension" ;
-  "-meet",Arg.Unit (fun () -> operator := "meet"),"Test meet" ;
-  "-join",Arg.Unit (fun () -> operator := "join"),"Test join" ;
-  "-complement",Arg.Unit (fun () -> operator := "complement"),"Test complement" ;
+  "-hlf",Arg.Unit (preparing "hl_future"),"Test hl_future_extension" ;
+  "-hlp",Arg.Unit (preparing "hl_past"),"Test hl_past_extension" ;
+  "-cif",Arg.Unit (preparing "ci_future"),"Test ci_future_extension" ;
+  "-cip",Arg.Unit (preparing "ci_past"),"Test ci_future_extension" ;
+  "-meet",Arg.Unit (preparing "meet"),"Test meet" ;
+  "-join",Arg.Unit (preparing "join"),"Test join" ;
+  "-complement",Arg.Unit (preparing "complement"),"Test complement" ;
 ]
 
 
@@ -141,23 +154,26 @@ let anon_fun s =
       with End_of_file -> (
         close_in chan;
         raise Exit) in
+(*
   let arity = arity !operator_name in
-  let operator = operator operator_name in
-  match arity with 
-    | 1 ->         try
-          while true do
-            test_unary operator 
-              (string_of (iterator ()))
-              (string_of (iterator ()))
-          done
-        with Exit -> print_endline "End of test")
-    | 2 -> (
+*)
+  let operator = operator_of_string !operator_name in
+  match operator with 
+    | Unary operator -> (
         try
           while true do
-            test_binary operator
-              (string_of (iterator ()))
-              (string_of (iterator ()))
-              (string_of (iterator ()))
+            test_unary !operator_name operator 
+              (of_string (iterator ()))
+              (of_string (iterator ()))
+          done
+        with Exit -> print_endline "End of test")
+    | Binary operator -> (
+        try
+          while true do
+            test_binary !operator_name  operator
+              (of_string (iterator ()))
+              (of_string (iterator ()))
+              (of_string (iterator ()))
           done
         with Exit -> print_endline "End of test")
     | _ -> assert false
@@ -166,6 +182,7 @@ let anon_fun s =
   
   
   
+(*
 let testing_hl_future_extension () =
   let () = print_endline "Testing hl_future_extension" in 
   try
@@ -176,13 +193,9 @@ let testing_hl_future_extension () =
       test_binary "hl_future"
     done
   with Exit -> print_endline "End of test"
+*)
 
-let operator_name = ref ""
-
-type operator = Unary of (DD.t -> DD.t) | Binary of (DD.t -> DD.t -> DD.t)
-
-let operator = ref Unary (fun x -> x) (*dummy default value*)
 
 let msg = ""
 
-let () = Arg.parse command_line_options msg anon_fun
+let () = Arg.parse command_line_options anon_fun msg
