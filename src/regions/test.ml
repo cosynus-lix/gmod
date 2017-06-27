@@ -71,25 +71,7 @@ let test_binary op_name operator operand1 operand2 expected_result =
     (HL.string_of result)
     (HL.string_of expected_result)
 
-let operator_name = ref ""
-
-let operator = ref (Unary (fun x -> x)) (*dummy default value*)
-
-let preparing op_name () = 
-  operator_name := op_name ;
-  operator := operator_of_string op_name
-
-let command_line_options = [
-  "-hlf",Arg.Unit (preparing "hl_future"),"Test hl_future_extension" ;
-  "-hlp",Arg.Unit (preparing "hl_past"),"Test hl_past_extension" ;
-  "-cif",Arg.Unit (preparing "ci_future"),"Test ci_future_extension" ;
-  "-cip",Arg.Unit (preparing "ci_past"),"Test ci_future_extension" ;
-  "-meet",Arg.Unit (preparing "meet"),"Test meet" ;
-  "-join",Arg.Unit (preparing "join"),"Test join" ;
-  "-complement",Arg.Unit (preparing "complement"),"Test complement" ;
-]
-
-let anon_fun s = 
+let anon_fun s =
   let chan = open_in s in
   let iterator = 
     fun () -> 
@@ -125,6 +107,41 @@ let anon_fun s =
           done
         with Exit -> print_endline "End of test")
 
-let msg = ""
+let perform_all_tests () =
+  anon_fun "hl_future.test";
+  anon_fun "ci_future.test";
+  anon_fun "hl_past.test";
+  anon_fun "ci_past.test";
+  anon_fun "hl_closure.test";
+  anon_fun "ci_closure.test";
+  anon_fun "hl_interior.test";
+  anon_fun "ci_interior.test";
+  anon_fun "meet.test";
+  anon_fun "join.test";
+  anon_fun "complement.test";
+  
+
+let operator_name = ref ""
+
+let operator = ref (Unary (fun x -> x)) (*dummy default value*)
+
+let preparing op_name () = 
+  operator_name := op_name ;
+  operator := operator_of_string op_name
+
+let command_line_options = [
+  "-all",Arg.Unit perform_all_tests, "Perform all tests"
+  "-hlf",Arg.Unit (preparing "hl_future"),"Test hl_future_extension" ;
+  "-hlp",Arg.Unit (preparing "hl_past"),"Test hl_past_extension" ;
+  "-cif",Arg.Unit (preparing "ci_future"),"Test ci_future_extension" ;
+  "-cip",Arg.Unit (preparing "ci_past"),"Test ci_future_extension" ;
+  "-meet",Arg.Unit (preparing "meet"),"Test meet" ;
+  "-join",Arg.Unit (preparing "join"),"Test join" ;
+  "-complement",Arg.Unit (preparing "complement"),"Test complement" ;
+  "-hli",Arg.Unit (preparing "hl_interior"),"Test interior on half-line" ;
+  "-hlc",Arg.Unit (preparing "hl_closure"),"Test closure on half-line" ;
+]
+
+let msg = "Choose an option and a file."
 
 let () = Arg.parse command_line_options anon_fun msg
