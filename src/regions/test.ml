@@ -84,43 +84,6 @@ let test_binary op_name operator operand1 operand2 expected_result =
     (HL.string_of operand2)
     (HL.string_of result)
     (HL.string_of expected_result)
-  
-(*
-let hl_future_extension_tests = [
-  ("[3]","]3","]3");
-  ("[0]","]0","]0");
-  ("[3]","[0]","");
-  ("[3]","[0 3[","");
-  ("[3]","[0 3]","[3]");
-  ("[3]","[0 2[","");
-  ("[3]","[0 2]","");
-]
-*)
-
-(*
-let testing_hl_future_extension () = 
-  List.iter 
-    (fun (a,b,c) -> test_binary "hl_future" a b c)
-    hl_future_extension_tests
-*)
-    
-    
-(*
-let hl_past_extension_tests = [
-  ("[3]","]3","");
-  ("[0]","]0","");
-  ("[0]","]3","");
-  ("[4]","[2 4[","[2 4[");
-  ("[5 8[","[0] ]2 5[ [8 9]","]2 5[ ")
-]
-*)
-
-(*
-let testing_hl_past_extension () = 
-  List.iter 
-    (fun (a,b,c) -> test_binary "hl_past" a b c)
-    hl_past_extension_tests
-*)
 
 let operator_name = ref ""
 
@@ -129,7 +92,6 @@ let operator = ref (Unary (fun x -> x)) (*dummy default value*)
 let preparing op_name () = 
   operator_name := op_name ;
   operator := operator_of_string op_name
-  
 
 let command_line_options = [
   "-hlf",Arg.Unit (preparing "hl_future"),"Test hl_future_extension" ;
@@ -141,13 +103,16 @@ let command_line_options = [
   "-complement",Arg.Unit (preparing "complement"),"Test complement" ;
 ]
 
-
-
 let anon_fun s = 
   let chan = open_in s in
   let iterator = 
     fun () -> 
-      try input_line chan 
+      try 
+        let s = ref (input_line chan) in
+        while !s <> "" && Bytes.get (!s) 0 = '%' do
+          s := input_line chan
+        done;
+        !s
       with End_of_file -> (
         close_in chan;
         raise Exit) in
@@ -156,38 +121,23 @@ let anon_fun s =
     | Unary operator -> (
         try
           while true do
+            let operand = of_string (iterator ()) in
+            let expected = of_string (iterator ()) in
             test_unary !operator_name operator 
-              (of_string (iterator ()))
-              (of_string (iterator ()))
+              operand
+              expected
           done
         with Exit -> print_endline "End of test")
     | Binary operator -> (
         try
           while true do
+            let operand1 = of_string (iterator ()) in
+            let operand2 = of_string (iterator ()) in
+            let expected = of_string (iterator ()) in
             test_binary !operator_name  operator
-              (of_string (iterator ()))
-              (of_string (iterator ()))
-              (of_string (iterator ()))
+              operand1 operand2 expected
           done
         with Exit -> print_endline "End of test")
-  
-  
-  
-  
-  
-(*
-let testing_hl_future_extension () =
-  let () = print_endline "Testing hl_future_extension" in 
-  try
-    while true do
-      let op1 = of_string (iterator ()) in
-      let op2 = of_string (iterator ()) in
-      let expected = of_string (iterator ()) in
-      test_binary "hl_future"
-    done
-  with Exit -> print_endline "End of test"
-*)
-
 
 let msg = ""
 
