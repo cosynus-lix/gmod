@@ -34,7 +34,9 @@ let of_string s =
       tokens in
   of_string tokens
 
-type operator = Unary of (DD.t -> DD.t) | Binary of (DD.t -> DD.t -> DD.t)
+type operator = 
+  | Unary of (DD.t -> DD.t)
+  | Binary of (DD.t -> DD.t -> DD.t)
   
 let operator_of_string s = match s with
   | "meet" -> Binary DD.meet
@@ -70,6 +72,10 @@ let test_binary op_name operator operand1 operand2 expected_result =
     (HL.string_of operand2)
     (HL.string_of result)
     (HL.string_of expected_result)
+
+let operator_name = ref ""
+
+let operator = ref (Unary (fun x -> x)) (*dummy default value*)
 
 let anon_fun s =
   let chan = open_in s in
@@ -118,28 +124,25 @@ let perform_all_tests () =
   anon_fun "ci_interior.test";
   anon_fun "meet.test";
   anon_fun "join.test";
-  anon_fun "complement.test";
+  anon_fun "complement.test"
   
-
-let operator_name = ref ""
-
-let operator = ref (Unary (fun x -> x)) (*dummy default value*)
-
 let preparing op_name () = 
   operator_name := op_name ;
   operator := operator_of_string op_name
 
 let command_line_options = [
-  "-all",Arg.Unit perform_all_tests, "Perform all tests"
-  "-hlf",Arg.Unit (preparing "hl_future"),"Test hl_future_extension" ;
-  "-hlp",Arg.Unit (preparing "hl_past"),"Test hl_past_extension" ;
-  "-cif",Arg.Unit (preparing "ci_future"),"Test ci_future_extension" ;
-  "-cip",Arg.Unit (preparing "ci_past"),"Test ci_future_extension" ;
+  "-all",Arg.Unit perform_all_tests, "Perform all tests" ;
+  "-future-extension-on-half-line",Arg.Unit (preparing "hl_future"),"Test future_extension on the half-line" ;
+  "-past-extension-on-half-line",Arg.Unit (preparing "hl_past"),"Test past_extension on the half-line" ;
+  "-future-extension-on-circle",Arg.Unit (preparing "ci_future"),"Test ci_future_extension" ;
+  "-past-extension-on-circle",Arg.Unit (preparing "ci_past"),"Test ci_future_extension" ;
   "-meet",Arg.Unit (preparing "meet"),"Test meet" ;
   "-join",Arg.Unit (preparing "join"),"Test join" ;
   "-complement",Arg.Unit (preparing "complement"),"Test complement" ;
-  "-hli",Arg.Unit (preparing "hl_interior"),"Test interior on half-line" ;
-  "-hlc",Arg.Unit (preparing "hl_closure"),"Test closure on half-line" ;
+  "-interior-on-half-line",Arg.Unit (preparing "hl_interior"),"Test interior on half-line" ;
+  "-closure-on-half-line",Arg.Unit (preparing "hl_closure"),"Test closure on half-line" ;
+  "-interior-on-circle",Arg.Unit (preparing "hl_interior"),"Test interior on circle" ;
+  "-closure-on-circle",Arg.Unit (preparing "hl_closure"),"Test closure on circle" ;
 ]
 
 let msg = "Choose an option and a file."
