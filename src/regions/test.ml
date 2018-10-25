@@ -83,7 +83,7 @@ let anon_fun s =
     fun () -> 
       try 
         let s = ref (input_line chan) in
-        while !s <> "" && Bytes.get (!s) 0 = '%' do
+        while !s <> "" && String.get (!s) 0 = '%' do
           s := input_line chan
         done;
         !s
