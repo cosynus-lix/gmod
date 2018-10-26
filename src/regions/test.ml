@@ -45,7 +45,7 @@ let operator_of_string s = match s with
   | "hl_past" -> Binary DD.hl_past_extension
   | "ci_future" -> Binary DD.Circle.future_extension
   | "ci_past" -> Binary DD.ci_past_extension
-  | "compl" -> Unary DD.complement
+  | "complement" -> Unary DD.complement
   | "hl_interior" -> Unary DD.HalfLine.interior
   | "ci_interior" -> Unary DD.Circle.interior
   | "hl_closure" -> Unary DD.HalfLine.closure
@@ -113,22 +113,24 @@ let anon_fun s =
           done
         with Exit -> print_endline "End of test")
 
-let perform_all_tests dir =
-  anon_fun (dir ^ "hl_future.test");
-  anon_fun (dir ^ "ci_future.test");
-  anon_fun (dir ^ "hl_past.test");
-  anon_fun (dir ^ "ci_past.test");
-  anon_fun (dir ^ "hl_closure.test");
-  anon_fun (dir ^ "ci_closure.test");
-  anon_fun (dir ^ "hl_interior.test");
-  anon_fun (dir ^ "ci_interior.test");
-  anon_fun (dir ^ "meet.test");
-  anon_fun (dir ^ "join.test");
-  anon_fun (dir ^ "complement.test")
-  
 let preparing op_name () = 
   operator_name := op_name ;
   operator := operator_of_string op_name
+
+
+let perform_all_tests dir =
+  preparing "hl_future" (); anon_fun (dir ^ "hl_future.test");
+  preparing "ci_future" (); anon_fun (dir ^ "ci_future.test");
+  preparing "hl_past" (); anon_fun (dir ^ "hl_past.test");
+  preparing "ci_past" (); anon_fun (dir ^ "ci_past.test");
+  preparing "hl_closure" (); anon_fun (dir ^ "hl_closure.test");
+  preparing "ci_closure" (); anon_fun (dir ^ "ci_closure.test");
+  preparing "hl_interior" (); anon_fun (dir ^ "hl_interior.test");
+  preparing "ci_interior" (); anon_fun (dir ^ "ci_interior.test");
+  preparing "meet" (); anon_fun (dir ^ "meet.test");
+  preparing "join" (); anon_fun (dir ^ "join.test");
+  preparing "complement" (); anon_fun (dir ^ "complement.test")
+  
 
 let command_line_options = [
   "-all", Arg.String perform_all_tests, "Perform all tests in the specified directory." ;
@@ -143,6 +145,7 @@ let command_line_options = [
   "-closure-on-half-line", Arg.Unit (preparing "hl_closure"), "Test closure on half-line" ;
   "-interior-on-circle", Arg.Unit (preparing "hl_interior"), "Test interior on circle" ;
   "-closure-on-circle", Arg.Unit (preparing "hl_closure"), "Test closure on circle" ;
+  "-exhaustive",Arg.Unit (fun () -> print_endline "NIY"), "Compare the results of the current implementation with a previous one, on all possible values up to some extent.";
 ]
 
 let msg = "This tool tests the DashDot library, which implements boolean, topological, 
