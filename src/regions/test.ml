@@ -83,7 +83,7 @@ let anon_fun s =
     fun () -> 
       try 
         let s = ref (input_line chan) in
-        while !s <> "" && String.get (!s) 0 = '%' do
+        while !s = "" || String.get (!s) 0 = '%' do
           s := input_line chan
         done;
         !s
@@ -113,38 +113,67 @@ let anon_fun s =
           done
         with Exit -> print_endline "End of test")
 
-let perform_all_tests () =
-  anon_fun "hl_future.test";
-  anon_fun "ci_future.test";
-  anon_fun "hl_past.test";
-  anon_fun "ci_past.test";
-  anon_fun "hl_closure.test";
-  anon_fun "ci_closure.test";
-  anon_fun "hl_interior.test";
-  anon_fun "ci_interior.test";
-  anon_fun "meet.test";
-  anon_fun "join.test";
-  anon_fun "complement.test"
+let perform_all_tests dir =
+  anon_fun (dir ^ "hl_future.test");
+  anon_fun (dir ^ "ci_future.test");
+  anon_fun (dir ^ "hl_past.test");
+  anon_fun (dir ^ "ci_past.test");
+  anon_fun (dir ^ "hl_closure.test");
+  anon_fun (dir ^ "ci_closure.test");
+  anon_fun (dir ^ "hl_interior.test");
+  anon_fun (dir ^ "ci_interior.test");
+  anon_fun (dir ^ "meet.test");
+  anon_fun (dir ^ "join.test");
+  anon_fun (dir ^ "complement.test")
   
 let preparing op_name () = 
   operator_name := op_name ;
   operator := operator_of_string op_name
 
 let command_line_options = [
-  "-all",Arg.Unit perform_all_tests, "Perform all tests" ;
-  "-future-extension-on-half-line",Arg.Unit (preparing "hl_future"),"Test future_extension on the half-line" ;
-  "-past-extension-on-half-line",Arg.Unit (preparing "hl_past"),"Test past_extension on the half-line" ;
-  "-future-extension-on-circle",Arg.Unit (preparing "ci_future"),"Test ci_future_extension" ;
-  "-past-extension-on-circle",Arg.Unit (preparing "ci_past"),"Test ci_future_extension" ;
-  "-meet",Arg.Unit (preparing "meet"),"Test meet" ;
-  "-join",Arg.Unit (preparing "join"),"Test join" ;
-  "-complement",Arg.Unit (preparing "complement"),"Test complement" ;
-  "-interior-on-half-line",Arg.Unit (preparing "hl_interior"),"Test interior on half-line" ;
-  "-closure-on-half-line",Arg.Unit (preparing "hl_closure"),"Test closure on half-line" ;
-  "-interior-on-circle",Arg.Unit (preparing "hl_interior"),"Test interior on circle" ;
-  "-closure-on-circle",Arg.Unit (preparing "hl_closure"),"Test closure on circle" ;
+  "-all", Arg.String perform_all_tests, "Perform all tests in the specified directory." ;
+  "-future-extension-on-half-line", Arg.Unit (preparing "hl_future"), "Test future_extension on the half-line" ;
+  "-past-extension-on-half-line", Arg.Unit (preparing "hl_past"), "Test past_extension on the half-line" ;
+  "-future-extension-on-circle", Arg.Unit (preparing "ci_future"), "Test ci_future_extension" ;
+  "-past-extension-on-circle", Arg.Unit (preparing "ci_past"), "Test ci_past_extension" ;
+  "-meet", Arg.Unit (preparing "meet"), "Test meet" ;
+  "-join", Arg.Unit (preparing "join"), "Test join" ;
+  "-complement", Arg.Unit (preparing "complement"), "Test complement" ;
+  "-interior-on-half-line", Arg.Unit (preparing "hl_interior"), "Test interior on half-line" ;
+  "-closure-on-half-line", Arg.Unit (preparing "hl_closure"), "Test closure on half-line" ;
+  "-interior-on-circle", Arg.Unit (preparing "hl_interior"), "Test interior on circle" ;
+  "-closure-on-circle", Arg.Unit (preparing "hl_closure"), "Test closure on circle" ;
 ]
 
-let msg = "Choose an option and a file."
+let msg = "This tool tests the DashDot library, which implements boolean, topological, 
+and order theoretic operations on the finite union of intervals 
+(respectively on finite unions of arcs). 
+
+The tests to perform are stored in files.
+
+In case of a unary operator, each test is given by two lines, the first 
+one being the operand, the second one being the expected result.
+
+In case of a binary operator, each test is given by three lines, the first 
+two of them being the operands, the third one being the expected result.
+
+A value is described by a sequence of disconnected intervals such that if I 
+appears before J in the description, then I < J.
+
+Intervals are 
+  [x] : singlton
+  [x y] : closed interval
+  ]x y[ : open interval
+  [x y[ : right-closed left-open interval
+  ]x y] : right-open left-closed interval
+  [x    : closed terminal segment
+  ]x    : open terminal segment
+
+E.g.: [0] ]1 3[ [3 represents {0} U ]1,3[ U [3,+oo[.
+  
+Choose an option, and a file or a directory.
+
+Lines starting with % are comments. Empty lines are ignored.
+Options are:"
 
 let () = Arg.parse command_line_options anon_fun msg
