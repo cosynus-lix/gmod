@@ -4,6 +4,8 @@ module HL = DD.HalfLine
 
 module Ci = DD.Circle
 
+module I = Interval.Make(Integer)
+
 (* of_string does not check the format of the argument *)
 
 let rec of_string tl = Str.(
@@ -130,7 +132,18 @@ let perform_all_tests dir =
   preparing "meet" (); anon_fun (dir ^ "meet.test");
   preparing "join" (); anon_fun (dir ^ "join.test");
   preparing "complement" (); anon_fun (dir ^ "complement.test")
-  
+
+
+let exhaustive max = 
+  let next n = if n < max then n + 1 else raise Exit in
+  let next = I.next next in
+  let x = ref (I.atom 0) in
+  try
+    while true do 
+      print_endline (I.string_of !x);
+      x := next !x
+    done
+  with Exit -> print_endline "End of enumeration"
 
 let command_line_options = [
   "-all", Arg.String perform_all_tests, "Perform all tests in the specified directory." ;
@@ -145,7 +158,7 @@ let command_line_options = [
   "-closure-on-half-line", Arg.Unit (preparing "hl_closure"), "Test closure on half-line" ;
   "-interior-on-circle", Arg.Unit (preparing "hl_interior"), "Test interior on circle" ;
   "-closure-on-circle", Arg.Unit (preparing "hl_closure"), "Test closure on circle" ;
-  "-exhaustive",Arg.Unit (fun () -> print_endline "NIY"), "Compare the results of the current implementation with a previous one, on all possible values up to some extent.";
+  "-exhaustive",Arg.Int (exhaustive), "Compare the results of the current implementation with a previous one, on all possible values up to some extent.";
 ]
 
 let msg = "This tool tests the DashDot library, which implements boolean, topological, 
