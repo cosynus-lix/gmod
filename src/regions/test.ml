@@ -4,6 +4,8 @@ module HL = DD.HalfLine
 
 module Ci = DD.Circle
 
+module I = Interval.Make(Integer)
+
 (* of_string does not check the format of the argument *)
 
 let rec of_string tl = Str.(
@@ -45,7 +47,7 @@ let operator_of_string s = match s with
   | "hl_past" -> Binary DD.hl_past_extension
   | "ci_future" -> Binary DD.Circle.future_extension
   | "ci_past" -> Binary DD.ci_past_extension
-  | "compl" -> Unary DD.complement
+  | "complement" -> Unary DD.complement
   | "hl_interior" -> Unary DD.HalfLine.interior
   | "ci_interior" -> Unary DD.Circle.interior
   | "hl_closure" -> Unary DD.HalfLine.closure
@@ -83,7 +85,7 @@ let anon_fun s =
     fun () -> 
       try 
         let s = ref (input_line chan) in
-        while !s <> "" && Bytes.get (!s) 0 = '%' do
+        while !s = "" || String.get (!s) 0 = '%' do
           s := input_line chan
         done;
         !s
@@ -113,38 +115,81 @@ let anon_fun s =
           done
         with Exit -> print_endline "End of test")
 
-let perform_all_tests () =
-  anon_fun "hl_future.test";
-  anon_fun "ci_future.test";
-  anon_fun "hl_past.test";
-  anon_fun "ci_past.test";
-  anon_fun "hl_closure.test";
-  anon_fun "ci_closure.test";
-  anon_fun "hl_interior.test";
-  anon_fun "ci_interior.test";
-  anon_fun "meet.test";
-  anon_fun "join.test";
-  anon_fun "complement.test"
-  
 let preparing op_name () = 
   operator_name := op_name ;
   operator := operator_of_string op_name
 
+
+let perform_all_tests dir =
+  preparing "hl_future" (); anon_fun (dir ^ "hl_future.test");
+  preparing "ci_future" (); anon_fun (dir ^ "ci_future.test");
+  preparing "hl_past" (); anon_fun (dir ^ "hl_past.test");
+  preparing "ci_past" (); anon_fun (dir ^ "ci_past.test");
+  preparing "hl_closure" (); anon_fun (dir ^ "hl_closure.test");
+  preparing "ci_closure" (); anon_fun (dir ^ "ci_closure.test");
+  preparing "hl_interior" (); anon_fun (dir ^ "hl_interior.test");
+  preparing "ci_interior" (); anon_fun (dir ^ "ci_interior.test");
+  preparing "meet" (); anon_fun (dir ^ "meet.test");
+  preparing "join" (); anon_fun (dir ^ "join.test");
+  preparing "complement" (); anon_fun (dir ^ "complement.test")
+
+
+let exhaustive max = 
+  let next n = if n < max then n + 1 else raise Exit in
+  let next = I.next next in
+  let x = ref (I.atom 0) in
+  try
+    while true do 
+      print_endline (I.string_of !x);
+      x := next !x
+    done
+  with Exit -> print_endline "End of enumeration"
+
 let command_line_options = [
-  "-all",Arg.Unit perform_all_tests, "Perform all tests" ;
-  "-future-extension-on-half-line",Arg.Unit (preparing "hl_future"),"Test future_extension on the half-line" ;
-  "-past-extension-on-half-line",Arg.Unit (preparing "hl_past"),"Test past_extension on the half-line" ;
-  "-future-extension-on-circle",Arg.Unit (preparing "ci_future"),"Test ci_future_extension" ;
-  "-past-extension-on-circle",Arg.Unit (preparing "ci_past"),"Test ci_future_extension" ;
-  "-meet",Arg.Unit (preparing "meet"),"Test meet" ;
-  "-join",Arg.Unit (preparing "join"),"Test join" ;
-  "-complement",Arg.Unit (preparing "complement"),"Test complement" ;
-  "-interior-on-half-line",Arg.Unit (preparing "hl_interior"),"Test interior on half-line" ;
-  "-closure-on-half-line",Arg.Unit (preparing "hl_closure"),"Test closure on half-line" ;
-  "-interior-on-circle",Arg.Unit (preparing "hl_interior"),"Test interior on circle" ;
-  "-closure-on-circle",Arg.Unit (preparing "hl_closure"),"Test closure on circle" ;
+  "-all", Arg.String perform_all_tests, "Perform all tests in the specified directory." ;
+  "-future-extension-on-half-line", Arg.Unit (preparing "hl_future"), "Test future_extension on the half-line" ;
+  "-past-extension-on-half-line", Arg.Unit (preparing "hl_past"), "Test past_extension on the half-line" ;
+  "-future-extension-on-circle", Arg.Unit (preparing "ci_future"), "Test ci_future_extension" ;
+  "-past-extension-on-circle", Arg.Unit (preparing "ci_past"), "Test ci_past_extension" ;
+  "-meet", Arg.Unit (preparing "meet"), "Test meet" ;
+  "-join", Arg.Unit (preparing "join"), "Test join" ;
+  "-complement", Arg.Unit (preparing "complement"), "Test complement" ;
+  "-interior-on-half-line", Arg.Unit (preparing "hl_interior"), "Test interior on half-line" ;
+  "-closure-on-half-line", Arg.Unit (preparing "hl_closure"), "Test closure on half-line" ;
+  "-interior-on-circle", Arg.Unit (preparing "hl_interior"), "Test interior on circle" ;
+  "-closure-on-circle", Arg.Unit (preparing "hl_closure"), "Test closure on circle" ;
+  "-exhaustive",Arg.Int (exhaustive), "Compare the results of the current implementation with a previous one, on all possible values up to some extent.";
 ]
 
-let msg = "Choose an option and a file."
+let msg = "This tool tests the DashDot library, which implements boolean, topological, 
+and order theoretic operations on the finite union of intervals 
+(respectively on finite unions of arcs). 
+
+The tests to perform are stored in files.
+
+In case of a unary operator, each test is given by two lines, the first 
+one being the operand, the second one being the expected result.
+
+In case of a binary operator, each test is given by three lines, the first 
+two of them being the operands, the third one being the expected result.
+
+A value is described by a sequence of disconnected intervals such that if I 
+appears before J in the description, then I < J.
+
+Intervals are 
+  [x] : singlton
+  [x y] : closed interval
+  ]x y[ : open interval
+  [x y[ : right-closed left-open interval
+  ]x y] : right-open left-closed interval
+  [x    : closed terminal segment
+  ]x    : open terminal segment
+
+E.g.: [0] ]1 3[ [3 represents {0} U ]1,3[ U [3,+oo[.
+  
+Choose an option, and a file or a directory.
+
+Lines starting with % are comments. Empty lines are ignored.
+Options are:"
 
 let () = Arg.parse command_line_options anon_fun msg

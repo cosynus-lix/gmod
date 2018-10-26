@@ -203,6 +203,7 @@ sig
     from a the first argument running along an anti-directed path
     whose trace is included in the set theoretic union of both
     arguments. *)
+  val next: (regular_value -> regular_value) -> t -> t
 end
 
 

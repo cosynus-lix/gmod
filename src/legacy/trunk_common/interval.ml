@@ -57,6 +57,7 @@ sig
   val in_the_past_of: t -> t -> t
   val in_the_future_of_point: regular_value -> t -> t
   val in_the_past_of_point: regular_value -> t -> t
+  val next: (regular_value -> regular_value) -> t -> t
 end
 
 module Make(B:Sig.Bound)
@@ -893,9 +894,23 @@ struct
       | (_,Em)
       | (Em,_) -> Em
 
-    let in_the_past_of_point p arc = in_the_past_of (atom p) arc
+  let in_the_past_of_point p arc = in_the_past_of (atom p) arc
 
   let step_forward = in_the_future_of
   and step_backward = in_the_past_of
 
+  (* Énumère les intervalles *)
+  (* The function next is supposed to raise Exit if one is beyond the last 
+  element of the enumeration *)
+  let next next it = 
+    let next_bound b = match b with
+      | Opn y -> Cls y
+      | Cls y -> Opn (next y) in
+    match it with
+      | Si x -> (try Bn ((Cls x), (Opn (next x))) with Exit -> Te (Cls x))
+      | Bn (a, b) -> (try Bn (a, (next_bound b)) with Exit -> Te a) 
+      | Te (Cls x) -> (try Bn ((Opn x), (Opn (next x))) with Exit -> Te (Opn x))
+      | Te (Opn x) -> (try Si (next x) with Exit -> Em)
+      | Em -> raise Exit
 end
+

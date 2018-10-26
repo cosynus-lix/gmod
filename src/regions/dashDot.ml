@@ -1,7 +1,7 @@
-(** Implements the Boolean algebra of finite unions of connected subsets of the 
-positive half-line/circle together with topological and directed operators. The 
-later behaviour depends on whether one considers subsets of the half-line or 
-subsets of the circle.*)
+(** Implements the Boolean algebra of finite disconnected unions of connected 
+subsets of the positive half-line/circle together with topological and directed 
+operators. The later behaviour depends on whether one considers subsets of the 
+half-line or subsets of the circle.*)
 
 module type S = sig
 
@@ -48,7 +48,7 @@ module type S = sig
 
   (** [discrete \[v1;...;vn\]] is the finite set \{v{_ 1},...,v{_ n}\}. The 
   sequence must be strictly increasing, i.e. v{_1}<...<v{_n}.*)
-  val discrete: ?do_sort:bool -> value list -> t
+  val discrete: value list -> t
   
   (** [interval b1 b2 v1 v2] is the interval of points between v{_1} and v{_2}. 
   
@@ -372,13 +372,12 @@ struct
   let make bound_list =
     if is_valid bound_list
     then bound_list
-    else failwith "Oda.BooleanAlgebra.make"
+    else failwith "DashDot.BooleanAlgebra.make"
 
   let atom x = [Iso x]
 
-  let discrete ?(do_sort=false) lx = 
-    List.map (fun x -> Iso x) 
-      (if do_sort then List.sort B.compare lx else lx)
+  (* Turns a sorted list of values into a discrete space *)
+  let discrete lx = List.map (fun x -> Iso x) lx
 
   let coatom x = if x=zero then [Opn zero] else [Cls zero; Pun x]
 
@@ -912,34 +911,34 @@ struct
   let compare ar1 ar2 =
     let rec compare p ar1 ar2 = match ar1,ar2 with
       | (b1::ar1),(b2::ar2) ->
-	let x1 = rvb b1 in
-	let x2 = rvb b2 in
-	if x1 < x2
-	then
-	  if p then -1 else 1
-	else
-	  if x2 < x1
-	  then
-	    if p then 1 else -1
-	  else
-	    (
-	      match b1,b2 with
-		| Pun _,Iso _
-		| Pun _,Opn _
-		| Cls _,Iso _
-		| Cls _,Opn _ ->  1
-		| Iso _,Cls _
-		| Iso _,Pun _
-		| Opn _,Pun _
-		| Opn _,Cls _ -> -1
-		| Pun _,Cls _
-		| Iso _,Opn _
-		| Cls _,Pun _
-		| Opn _,Iso _ -> if p then  1 else -1
-		| Cls _,_
-		| Opn _,_ -> compare (not p) ar1 ar2
-		| _ -> compare p ar1 ar2
-	    )
+        let x1 = rvb b1 in
+        let x2 = rvb b2 in
+        if x1 < x2
+        then
+          if p then -1 else 1
+        else
+          if x2 < x1
+          then
+            if p then 1 else -1
+          else
+            (
+              match b1,b2 with
+              | Pun _,Iso _
+              | Pun _,Opn _
+              | Cls _,Iso _
+              | Cls _,Opn _ ->  1
+              | Iso _,Cls _
+              | Iso _,Pun _
+              | Opn _,Pun _
+              | Opn _,Cls _ -> -1
+              | Pun _,Cls _
+              | Iso _,Opn _
+              | Cls _,Pun _
+              | Opn _,Iso _ -> if p then  1 else -1
+              | Cls _,_
+              | Opn _,_ -> compare (not p) ar1 ar2
+              | _ -> compare p ar1 ar2
+            )
       | [],ar2 ->
 	if ar2<>[] (*the second argument is neither empty nor full*)
 	then
