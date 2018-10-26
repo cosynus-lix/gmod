@@ -503,7 +503,7 @@ struct
 					then Cls zero::Pun b::(List.map reverse_bound a)
 					else Opn zero::(List.map reverse_bound a)
       | [] -> full
-      | Pun _::_ -> failwith "complement: this value has no semantics [Oda]"
+      | Pun _::_ -> invalid_arg "comlement"
 
 
   let binary_boolean_operator test =
@@ -907,7 +907,7 @@ struct
   (* The compare function is actually a linear extension of both
      inclusion relation and linear order over the elements. It is
      based on the following theoretical definition:
-     min(B\A) ⩽ min(A\B) <=> A ⩽ B *)
+     min(B\A) ⩽  min(A\B) <=> A ⩽ B *)
 
   let compare ar1 ar2 =
     let rec compare p ar1 ar2 = match ar1,ar2 with
@@ -2675,8 +2675,6 @@ struct
     | Cls x :: Pun y :: a -> [Cls x ; Opn y] :: connected_components ((Opn y) :: a)
     | Cls x :: Cls y :: a -> [Cls x ; Cls y] :: connected_components a
     | _ -> invalid_arg "HalfLine.connected_components"
-  
-  
 
 end(*HalfLine*)
 
