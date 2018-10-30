@@ -58,6 +58,7 @@ sig
   val in_the_future_of_point: regular_value -> t -> t
   val in_the_past_of_point: regular_value -> t -> t
   val next: (regular_value -> regular_value) -> t -> t
+  val next_region: (regular_value -> regular_value) -> t list -> t list
 end
 
 module Make(B:Sig.Bound)
@@ -912,5 +913,198 @@ struct
       | Te (Cls x) -> (try Bn ((Opn x), (Opn (next x))) with Exit -> Te (Opn x))
       | Te (Opn x) -> (try Si (next x) with Exit -> Em)
       | Em -> raise Exit
-end
+      
+  let nonempty_disconnected_next next it =
+    match it with
+      | Te _ -> raise Exit
+      | Bn (_,Opn x) -> (try Bn ((Opn x) , (Opn (next x))) with Exit -> Te (Opn x))
+      | Si x | Bn (_,Cls x) -> Si (next x)
+      | Em -> raise Exit
+  
+  (* Une région est ici représentée par une liste décroissante d'intervalles, 
+  l'ordre I < J signifiant que tout point de I est strictement inférieur à 
+  tout point de J et que I et J sont déconnectés. Pour des raisons pratiques, 
+  la fonction next region prend les listes renversées. La région vide est 
+  représentée par la liste vide. Aucun intervalle de la liste n'est vide. *)
+  
+  let verbose = false
 
+  
+  let print_region re = 
+    List.iter (fun it -> print_string ((string_of it)^" ")) re; 
+    print_endline ""
+  
+  let rec glb_region re = 
+    match re with 
+      | [it] -> glb it 
+      | _ :: re -> glb_region re
+      | _ -> raise Undefined
+  
+  let next_region_3 next_value re =
+    let next it = 
+      let next = next next_value it in
+      if next <> Em then next else raise Exit in
+      
+    let rec init min n = 
+      if (Pervasives.(>)) n 1
+      then
+        let x = init min (n-1) in 
+        (nonempty_disconnected_next next_value (List.hd x)) :: x
+      else 
+        if n = 1 
+        then [atom min] 
+        else [] in
+    
+    let rec next_region re =
+      match re with
+        | it :: re -> (
+          try next it :: re
+          with Exit -> (
+(*
+            let re = next_region ((next (List.hd re)) :: re) in
+*)
+            let re' = try next_region re with Exit -> print_endline "boom" ; re in
+            try nonempty_disconnected_next next_value (List.hd re') :: re' 
+            with Exit -> (
+              try (*c'est ici qu'il y a un «saut»*) init (next_value (glb_region re)) (List.length re + 1)
+              with Exit -> init (B.least_regular_value) (List.length re + 2))))
+        | [] -> [atom B.least_regular_value] in 
+    next_region re
+
+(*backtrack returns the longest prefix from which one can continue*)
+
+(*attention aux intervalles de la forme Te _ *)
+
+
+  let have_strictcly_greater_lub it1 it2 =
+    match it1 with 
+      | Te _ -> (match it2 with 
+        | Te _ -> false
+        | _ -> true)
+      | Bn (_,Opn b) | Bn (_,Cls b) | Si b -> (match it2 with 
+        | Te _ -> false
+        | Bn (_,Opn d) | Bn (_,Cls d) | Si d -> b > d
+        | Em -> it1 <> Em)
+      | Em -> false
+
+  let next_region_2 next_value re = if verbose then (print_string "next_region "; print_region re);
+
+    let next it = 
+      let next = next next_value it in
+      if next <> Em then next else raise Exit in
+
+    let rec next_backtrack it = 
+      let it' = next it in
+      if have_strictcly_greater_lub it it'
+      then it'
+      else next_backtrack it' in
+      
+    let rec nonterminal_next it = match it with
+      | Te (Cls x) | Te (Opn x) -> 
+          if verbose then (print_endline "nonterminal_next Cls") 
+          ; nonterminal_next (next it)
+      | _ -> it in
+    let rec init k re = if verbose then (Printf.printf "init %i " k; print_region re);
+      if (Pervasives.(>)) k 0 
+      then 
+        init (pred k) (
+          match re with 
+            | it :: _ -> nonempty_disconnected_next next_value it :: re
+            | []      -> [atom B.least_regular_value])
+      else re in
+    let rec backtrack len re = if verbose then (Printf.printf "backtrack %i " len ; print_region re) ; match re with
+      | it :: re' -> (
+          try 
+            let it = next it in (*more aggressive here*)
+            init 
+              (len - (List.length re)) 
+              ((nonterminal_next (*next it*) it) :: re')
+          with Exit -> 
+            if re' = [] 
+            then init (len-1) [next_backtrack it] 
+            else backtrack len re')
+      | [] -> init (succ len) [] in
+    match re with
+      | it :: re' -> (
+          try next it :: re'
+          with Exit -> (
+            let lre = List.length re in
+            try backtrack lre re'
+            with Exit -> init (succ lre) []))
+      | [] -> [atom B.least_regular_value]
+
+
+
+
+(* ********************************* *)
+
+  
+
+  let counter = ref 5000
+
+
+  let next_region next_value re = if verbose then (print_string "next_region "; print_region re);
+
+(*
+    decr counter ; if Pervasives.(<) !counter 0 then failwith "STOP" ; 
+*)
+
+    let next it = 
+      let next = next next_value it in
+      if next <> Em then next else raise Exit in
+    let rec init k re = if verbose then (Printf.printf "  init %i " k; print_region re);
+      if (Pervasives.(>)) k 0 
+      then 
+        init (pred k) (
+          match re with 
+            | it :: _ -> nonempty_disconnected_next next_value it :: re
+            | []      -> [atom B.least_regular_value])
+      else re in
+    let rec backtrack len re = if verbose then (Printf.printf "  backtrack %i " len ; print_region re) ; 
+      let re' = next_region len re in
+      try
+        init 
+          (len - (List.length re')) 
+          re'
+      with Exit -> backtrack len re' 
+    and next_region len re = match re with
+      | it :: re' -> (
+          try next it :: re'
+          with Exit -> (
+            try backtrack len re'
+            with Exit -> init (succ len) []))
+      | [] -> init (succ len) [] in
+    next_region (List.length re) re 
+
+  (*cette version prend dans le bon ordre*)
+
+(*
+  let next_region next_value re = if verbose then (print_string "next_region "; print_region re);
+    let next it = 
+      let next = next next_value it in
+      if next <> Em then next else raise Exit in
+    let nonterminal_next it = match it with
+      | Te (Opn x) | Te (Cls x) -> if verbose then (print_endline "nonterminal_next") ; Si (next_value x)
+      | _ -> it in
+    let rec init k re = if verbose then (Printf.printf "init %i " k; print_region re);
+      if (Pervasives.(>)) k 0 
+      then 
+        init (pred k) (
+          match re with 
+            | it :: _ -> nonempty_disconnected_next next_value it :: re
+            | []      -> [atom B.least_regular_value])
+      else re in
+    let rec next_region re = match re with 
+      | [] -> [atom B.least_regular_value]
+      | [it] -> (try [next it] with Exit -> init 2 [])
+      | it :: re -> (
+        try it :: next_region re
+        with Exit -> ()
+      
+      )
+      
+*)
+
+
+
+end

@@ -133,14 +133,25 @@ let perform_all_tests dir =
   preparing "join" (); anon_fun (dir ^ "join.test");
   preparing "complement" (); anon_fun (dir ^ "complement.test")
 
-
-let exhaustive max = 
+let exhaustive_intervals max = 
   let next n = if n < max then n + 1 else raise Exit in
   let next = I.next next in
   let x = ref (I.atom 0) in
   try
     while true do 
       print_endline (I.string_of !x);
+      x := next !x
+    done
+  with Exit -> print_endline "End of enumeration"
+
+let exhaustive_regions max = 
+  let next n = if n < max then n + 1 else raise Exit in
+  let next = I.next_region next in
+  let x = ref [] in
+  try
+    while true do 
+      List.iter (fun it -> print_string ((I.string_of it) ^ " ")) (List.rev !x);
+      print_endline "";
       x := next !x
     done
   with Exit -> print_endline "End of enumeration"
@@ -158,7 +169,8 @@ let command_line_options = [
   "-closure-on-half-line", Arg.Unit (preparing "hl_closure"), "Test closure on half-line" ;
   "-interior-on-circle", Arg.Unit (preparing "hl_interior"), "Test interior on circle" ;
   "-closure-on-circle", Arg.Unit (preparing "hl_closure"), "Test closure on circle" ;
-  "-exhaustive",Arg.Int (exhaustive), "Compare the results of the current implementation with a previous one, on all possible values up to some extent.";
+  "-exhaustive-intervals",Arg.Int (exhaustive_intervals), "Compare the results of the current implementation with a previous one, on all possible intervals up to some extent.";
+  "-exhaustive-regions",Arg.Int (exhaustive_regions), "Compare the results of the current implementation with a previous one, on all possible regions up to some extent.";
 ]
 
 let msg = "This tool tests the DashDot library, which implements boolean, topological, 

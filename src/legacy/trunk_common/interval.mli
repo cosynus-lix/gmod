@@ -204,6 +204,7 @@ sig
     whose trace is included in the set theoretic union of both
     arguments. *)
   val next: (regular_value -> regular_value) -> t -> t
+  val next_region: (regular_value -> regular_value) -> t list -> t list
 end
 
 
