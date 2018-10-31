@@ -150,7 +150,7 @@ let exhaustive_regions max =
   let x = ref [] in
   try
     while true do 
-      List.iter (fun it -> print_string ((I.string_of it) ^ " ")) (List.rev !x);
+      List.iter (fun it -> print_string ((I.string_of it) ^ " ")) ((*List.rev*) !x);
       print_endline "";
       x := next !x
     done

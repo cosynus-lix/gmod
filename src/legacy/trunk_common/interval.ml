@@ -929,20 +929,15 @@ struct
   
   let verbose = false
 
-  
-(*
   let print_region re = 
     List.iter (fun it -> print_string ((string_of it)^" ")) re; 
     print_endline ""
-*)
   
   let rec glb_region re = 
     match re with 
       | [it] -> glb it 
       | _ :: re -> glb_region re
       | _ -> raise Undefined
-
-
 
   let next_region next_value re = if verbose then (print_string "next_region "; print_region re);
     let next it = 
@@ -972,17 +967,32 @@ struct
       | [] -> init (succ len) [] in
     next_region (List.length re) re 
 
-  (*cette version prend dans le bon ordre*)
 
-(*
-  let next_region next_value re = if verbose then (print_string "next_region "; print_region re);
+  let counter = ref 1500
+
+  let next_region next_value re = 
+  
+    decr counter; if Pervasives.(<) !counter 0 then failwith "STOP";
+  
+    if verbose then (print_string "next_region "; print_region re);
+  
     let next it = 
       let next = next next_value it in
       if next <> Em then next else raise Exit in
-    let nonterminal_next it = match it with
-      | Te (Opn x) | Te (Cls x) -> if verbose then (print_endline "nonterminal_next") ; Si (next_value x)
-      | _ -> it in
-    let rec init k re = if verbose then (Printf.printf "init %i " k; print_region re);
+    
+    let next_with_lesser_lub it =
+      if verbose then (print_string "next_with_lesser_lub "; print_string (string_of it));
+      let x = ref it in
+      let y = ref (next it) in
+      while (
+        (is_bounded !x) && (not (is_bounded !y)) || 
+        (is_bounded !x && is_bounded !y && lub !x <= lub !y))
+      do x := !y ; y := next !y
+      done;
+      if verbose then print_endline (" = "^(string_of !y));
+      !y in
+    
+    let rec init k re = if verbose then (Printf.printf "  init %i " k; print_region re);
       if (Pervasives.(>)) k 0 
       then 
         init (pred k) (
@@ -990,17 +1000,22 @@ struct
             | it :: _ -> nonempty_disconnected_next next_value it :: re
             | []      -> [atom B.least_regular_value])
       else re in
-    let rec next_region re = match re with 
-      | [] -> [atom B.least_regular_value]
-      | [it] -> (try [next it] with Exit -> init 2 [])
-      | it :: re -> (
-        try it :: next_region re
-        with Exit -> ()
+  
+    let init k re = List.rev (init k re) in
+  
+    let rec next_region len re =
+        match re with
+          (*| [it] -> assert (len = 1); [next it]*) (* petite optimisation *)
+          | it :: re' -> (
+              try it :: next_region (pred len) re'
+              with Exit -> (
+               try init (pred len) [next it]
+               with Exit -> init (pred len) [next_with_lesser_lub it] ))
+          | [] -> raise Exit (* assert false *) in
       
-      )
-      
-*)
-
-
-
+    try
+      match re with 
+        | [] -> [atom B.least_regular_value]
+        | _ -> next_region (List.length re) re 
+    with Exit -> init (succ (List.length re)) []
 end
