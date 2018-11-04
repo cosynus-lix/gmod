@@ -192,8 +192,8 @@ Intervals are
   [x] : singlton
   [x y] : closed interval
   ]x y[ : open interval
-  [x y[ : right-closed left-open interval
-  ]x y] : right-open left-closed interval
+  [x y[ : left-closed right-open interval
+  ]x y] : left-open right-closed interval
   [x    : closed terminal segment
   ]x    : open terminal segment
 
