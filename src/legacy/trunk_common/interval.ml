@@ -927,11 +927,11 @@ struct
   la fonction next region prend les listes renversées. La région vide est 
   représentée par la liste vide. Aucun intervalle de la liste n'est vide. *)
   
-  let verbose = false
-
+(*
   let print_region re = 
     List.iter (fun it -> print_string ((string_of it)^" ")) re; 
     print_endline ""
+*)
   
   let rec glb_region re = 
     match re with 
@@ -939,49 +939,11 @@ struct
       | _ :: re -> glb_region re
       | _ -> raise Undefined
 
-  let next_region next_value re = if verbose then (print_string "next_region "; print_region re);
-    let next it = 
-      let next = next next_value it in
-      if next <> Em then next else raise Exit in
-    let rec init k re = if verbose then (Printf.printf "  init %i " k; print_region re);
-      if (Pervasives.(>)) k 0 
-      then 
-        init (pred k) (
-          match re with 
-            | it :: _ -> nonempty_disconnected_next next_value it :: re
-            | []      -> [atom B.least_regular_value])
-      else re in
-    let rec backtrack len re = if verbose then (Printf.printf "  backtrack %i " len ; print_region re) ; 
-      let re' = next_region len re in
-      try
-        init 
-          (len - (List.length re')) 
-          re'
-      with Exit -> backtrack len re' 
-    and next_region len re = match re with
-      | it :: re' -> (
-          try next it :: re'
-          with Exit -> (
-            try backtrack len re'
-            with Exit -> init (succ len) []))
-      | [] -> init (succ len) [] in
-    next_region (List.length re) re 
-
-
-  let counter = ref 1500
-
   let next_region next_value re = 
-  
-    decr counter; if Pervasives.(<) !counter 0 then failwith "STOP";
-  
-    if verbose then (print_string "next_region "; print_region re);
-  
     let next it = 
       let next = next next_value it in
       if next <> Em then next else raise Exit in
-    
     let next_with_lesser_lub it =
-      if verbose then (print_string "next_with_lesser_lub "; print_string (string_of it));
       let x = ref it in
       let y = ref (next it) in
       while (
@@ -989,10 +951,8 @@ struct
         (is_bounded !x && is_bounded !y && lub !x <= lub !y))
       do x := !y ; y := next !y
       done;
-      if verbose then print_endline (" = "^(string_of !y));
       !y in
-    
-    let rec init k re = if verbose then (Printf.printf "  init %i " k; print_region re);
+    let rec init k re =
       if (Pervasives.(>)) k 0 
       then 
         init (pred k) (
@@ -1000,9 +960,7 @@ struct
             | it :: _ -> nonempty_disconnected_next next_value it :: re
             | []      -> [atom B.least_regular_value])
       else re in
-  
     let init k re = List.rev (init k re) in
-  
     let rec next_region len re =
         match re with
           (*| [it] -> assert (len = 1); [next it]*) (* petite optimisation *)
@@ -1012,7 +970,6 @@ struct
                try init (pred len) [next it]
                with Exit -> init (pred len) [next_with_lesser_lub it] ))
           | [] -> raise Exit (* assert false *) in
-      
     try
       match re with 
         | [] -> [atom B.least_regular_value]
