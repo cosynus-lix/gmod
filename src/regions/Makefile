@@ -1,11 +1,16 @@
 OCAMLMAKEFILE = ../OCamlMakefile
 COMMON = ../common/
-INTERVAL = ../legacy/trunk_common/
-SOURCES = bound.ml dashDot.ml $(COMMON)integer.ml $(INTERVAL)interval.mli $(INTERVAL)interval.ml  test.ml
+LEGACY_COMMON = ../legacy/trunk_common/
+SOURCES = bound.ml dashDot.ml $(COMMON)integer.ml $(LEGACY_COMMON)common.ml  \
+$(LEGACY_COMMON)interval.mli $(LEGACY_COMMON)interval.ml \
+$(LEGACY_COMMON)cube.ml $(LEGACY_COMMON)cube.mli \
+$(LEGACY_COMMON)algebra.mli $(LEGACY_COMMON)algebra.ml \
+$(LEGACY_COMMON)areaOverCube.ml $(LEGACY_COMMON)areaOverCube.mli \
+test.ml
 RESULT = main
 ANNOTATE = true
 DOC_FILES = bound.ml dashDot.ml
-PACKS = str
+PACKS = str ocamlgraph unix
 
 all: dnc
 

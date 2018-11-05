@@ -6,6 +6,10 @@ module Ci = DD.Circle
 
 module I = Interval.Make(Integer)
 
+module C = Cube.Make(Common)(I)
+
+module AC = AreaOverCube.Make(Common)(C)
+
 (* of_string does not check the format of the argument *)
 
 let rec of_string tl = Str.(
@@ -144,17 +148,44 @@ let exhaustive_intervals max =
     done
   with Exit -> print_endline "End of enumeration"
 
+(* based on regions *)
 let exhaustive_regions max = 
   let next n = if n < max then n + 1 else raise Exit in
   let next = I.next_region next in
   let x = ref [] in
   try
     while true do 
-      List.iter (fun it -> print_string ((I.string_of it) ^ " ")) ((*List.rev*) !x);
+      List.iter (fun it -> print_string ((I.string_of it) ^ " ")) !x;
       print_endline "";
       x := next !x
     done
   with Exit -> print_endline "End of enumeration"
+
+(* based on dashdot *)
+let exhaustive_regions max = 
+  let next n = if n < max then n + 1 else raise Exit in
+  let next = DD.next next in
+  let x = ref DD.empty in
+  try
+    while true do 
+      print_endline (HL.string_of !x);
+      x := next !x
+    done
+  with Exit -> print_endline "End of enumeration"
+
+(* based on regions implemented in dashdot *)
+let exhaustive_regions max = 
+  let next n = if n < max then n + 1 else raise Exit in
+  let next = DD.next_region next in
+  let x = ref [DD.empty] in
+  try
+    while true do 
+      List.iter (fun it -> print_string ((HL.string_of it) ^ " ")) !x;
+      print_endline "";
+      x := next !x
+    done
+  with Exit -> print_endline "End of enumeration"
+
 
 let command_line_options = [
   "-all", Arg.String perform_all_tests, "Perform all tests in the specified directory." ;
@@ -171,6 +202,9 @@ let command_line_options = [
   "-closure-on-circle", Arg.Unit (preparing "hl_closure"), "Test closure on circle" ;
   "-exhaustive-intervals",Arg.Int (exhaustive_intervals), "Compare the results of the current implementation with a previous one, on all possible intervals up to some extent.";
   "-exhaustive-regions",Arg.Int (exhaustive_regions), "Compare the results of the current implementation with a previous one, on all possible regions up to some extent.";
+(*
+  "-exhaustive-meet",Arg.Int (exhaustive_meet), "Compare the results of the current implementation of meet with a previous one, on all possible regions up to some extent.";
+*)
 ]
 
 let msg = "This tool tests the DashDot library, which implements boolean, topological, 

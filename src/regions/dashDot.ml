@@ -158,6 +158,17 @@ that way.*)
   
   module Circle:DirectedTopology
   
+  (** {2 Iterator and Enumerator}*)
+  
+  val next: (value -> value) -> t -> t
+
+  val next_region: (value -> value) -> t list -> t list
+  
+  val region_of: t -> t list
+  
+  val of_region: t list -> t
+  
+  
   (** {2 Under test}*)
   
   (** Alternative implementations of past_extension using future_extension 
@@ -2595,21 +2606,16 @@ struct
     let rec lub ?lb a =
       match a with
 				| Cls x::a
-				| Opn x::a ->
-				  (
+				| Opn x::a -> (
 				    match lb with
 				      | Some x -> lub a
-				      | None -> lub ~lb:x a
-				  )
+				      | None -> lub ~lb:x a)
 				| Iso x::a -> lub ~lb:x a
 				| Pun x::a -> lub a
-				| [] ->
-				  (
+				| [] -> (
 				    match lb with
 				      | Some x -> x
-				      | None -> raise Undefined
-				  )
-    in
+				      | None -> raise Undefined) in
     if a<>[] then lub a else zero
 
   (* Warning: If zero belongs to some subset of the
@@ -2936,5 +2942,122 @@ let ci_past_extension cr1 cr2 = past_extension false cr1 cr2
   let () = reverse_bound_order () in
   List.rev cr3'
 *)
+
+(* Enumerator / Iterator *)
+
+
+  (* Énumère les intervalles *)
+  (* The function next is supposed to raise Exit if one is beyond the last 
+  element of the enumeration *)
+  let next_interval next it = 
+    let next_bound b = match b with
+      | Opn y -> Cls y
+      | Cls y -> Opn (next y)
+      | _ -> assert false in
+    match it with
+      | [Iso x] -> (try [Cls x; Opn (next x)] with Exit -> [Cls x])
+      | [((Opn x) as a); b]  
+      | [((Cls x) as a); b] -> (try [a; next_bound b] with Exit -> [a]) 
+      | [Cls x] -> (try [Opn x; Opn (next x)] with Exit -> [Opn x])
+      | [Opn x] -> (try [Iso (next x)] with Exit -> [])
+      | [] -> raise Exit
+      | _ -> assert false
+
+  let nonempty_disconnected_next next it =
+    match it with
+      | [Opn _] | [Cls _] -> raise Exit
+      | [Opn _; Opn x] | [Cls _; Opn x] -> (
+          try [Opn x; Opn (next x)]
+          with Exit -> [Opn x])
+      | [Iso x] | [Opn _;Cls x] | [Cls _;Cls x] -> [Iso (next x)]
+      | [] -> raise Exit
+      | _ -> assert false
+
+  
+  (* Une région est ici représentée par une liste décroissante d'intervalles, 
+  l'ordre I < J signifiant que tout point de I est strictement inférieur à 
+  tout point de J et que I et J sont déconnectés. Pour des raisons pratiques, 
+  la fonction next region prend les listes renversées. La région vide est 
+  représentée par la liste vide. Aucun intervalle de la liste n'est vide. *)
+  
+(*
+  let print_region re = 
+    List.iter (fun it -> print_string ((string_of it)^" ")) re; 
+    print_endline ""
+*)
+  
+  let glb_region re = 
+    let rec glb_region re = 
+      match re with 
+        | [Cls x] | [Opn x] | [Pun x] | [Iso x] -> x 
+        | b :: re -> glb_region re
+        | [] -> raise Undefined in
+    if HalfLine.is_bounded re
+    then glb_region re
+    else raise Undefined
+    
+  let next_region next_value re = 
+    let next it = 
+      let next = next_interval next_value it in
+      if next <> [] then next else raise Exit in
+    let next_with_lesser_lub it =
+      let x = ref it in
+      let y = ref (next it) in
+      while (
+        (HalfLine.is_bounded !x) && (not (HalfLine.is_bounded !y)) || 
+        (HalfLine.is_bounded !x && HalfLine.is_bounded !y && HalfLine.lub !x <= HalfLine.lub !y))
+      do x := !y ; y := next !y
+      done;
+      !y in
+    let rec init k re =
+      if (Pervasives.(>)) k 0 
+      then 
+        init (pred k) (
+          match re with 
+            | it :: _ -> nonempty_disconnected_next next_value it :: re
+            | []      -> [atom B.least_regular_value])
+      else re in
+    let init k re = List.rev (init k re) in
+    let rec next_region len re =
+        match re with
+          (*| [it] -> assert (len = 1); [next it]*) (* petite optimisation *)
+          | it :: re' -> (
+              try it :: next_region (pred len) re'
+              with Exit -> (
+               try init (pred len) [next it]
+               with Exit -> init (pred len) [next_with_lesser_lub it] ))
+          | [] -> raise Exit (* assert false *) in
+    try
+      match re with 
+        | [] -> [atom B.least_regular_value]
+        | _ -> next_region (List.length re) re 
+    with Exit -> init (succ (List.length re)) []
+
+(* A region is an increasing sequence of disconnected intervals *)
+
+  let of_region re = 
+    let re = List.concat re in
+    let rec polish re = match re with
+      | a :: ((b :: re) as re') -> 
+          if rvb a <> rvb b 
+          then polish re'
+          else (match a with
+            | Cls x -> (Iso x) :: polish re  
+            | Opn x -> (Pun x) :: polish re  
+            | _ -> assert false)
+      | _ -> re in
+    polish re
+
+  let rec region_of at = match at with
+    | [] -> []
+    | Iso x :: at -> [Iso x] :: region_of at
+    | a :: Pun x :: at -> [a;Opn x] :: region_of (Opn x :: at)
+    | a :: b :: at -> [a;b] :: region_of at
+    | _ -> assert false
+  
+  let next next_value at = 
+    let re = region_of at in
+    let re = next_region next_value re in
+    of_region re
 
 end (* BooleanAlgebra *)
