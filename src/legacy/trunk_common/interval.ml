@@ -933,10 +933,10 @@ struct
     print_endline ""
 *)
   
-  let rec glb_region re = 
+  let rec lub_region re = 
     match re with 
-      | [it] -> glb it 
-      | _ :: re -> glb_region re
+      | [it] -> lub it 
+      | _ :: re -> lub_region re
       | _ -> raise Undefined
 
   let next_region next_value re = 

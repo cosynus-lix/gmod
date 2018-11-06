@@ -2602,21 +2602,19 @@ struct
     | b::a -> rvb b
     | [] -> raise Undefined
 
-  let lub a =
-    let rec lub ?lb a =
-      match a with
-				| Cls x::a
-				| Opn x::a -> (
-				    match lb with
-				      | Some x -> lub a
-				      | None -> lub ~lb:x a)
-				| Iso x::a -> lub ~lb:x a
-				| Pun x::a -> lub a
-				| [] -> (
-				    match lb with
-				      | Some x -> x
-				      | None -> raise Undefined) in
-    if a<>[] then lub a else zero
+  let rec lub a = 
+(*
+  print_string "lub "; print_string ((string_of a)^" = ");
+*)
+    match a with
+    | [] -> zero
+    | [Iso x] -> x
+    | [Opn _] | [Cls _] | [Pun _] -> raise Undefined
+    | [_;Opn x] | [_;Cls x] -> x
+    | (Iso x) :: a -> lub a
+    | _ :: (Opn x) :: a | _ :: (Cls x) :: a -> lub a
+    | _ :: (((Pun _) :: a) as b) -> lub b
+    | _ -> assert false
 
   (* Warning: If zero belongs to some subset of the
      topological space [0,+oo[ then zero also belong to its
@@ -2660,11 +2658,9 @@ struct
 
   let boundary a = match a with
     | Cls x::a ->
-      if x<>zero
-      then
-	Iso x::List.map (fun b -> Iso (rvb b)) a
-      else
-	List.map (fun b -> Iso (rvb b)) a
+        if x<>zero
+        then Iso x::List.map (fun b -> Iso (rvb b)) a
+        else List.map (fun b -> Iso (rvb b)) a
     | b::a -> Iso (rvb b)::List.map (fun b -> Iso (rvb b)) a
     | [] -> []
 
@@ -2954,6 +2950,7 @@ let ci_past_extension cr1 cr2 = past_extension false cr1 cr2
       | Opn y -> Cls y
       | Cls y -> Opn (next y)
       | _ -> assert false in
+    let answer = 
     match it with
       | [Iso x] -> (try [Cls x; Opn (next x)] with Exit -> [Cls x])
       | [((Opn x) as a); b]  
@@ -2962,8 +2959,18 @@ let ci_past_extension cr1 cr2 = past_extension false cr1 cr2
       | [Opn x] -> (try [Iso (next x)] with Exit -> [])
       | [] -> raise Exit
       | _ -> assert false
+    in 
+(*
+    let () = 
+      print_string "next_interval ";
+      print_string (HalfLine.string_of it);
+      print_string " = ";
+      print_endline (HalfLine.string_of answer) in 
+*)
+    answer
 
   let nonempty_disconnected_next next it =
+    let answer =
     match it with
       | [Opn _] | [Cls _] -> raise Exit
       | [Opn _; Opn x] | [Cls _; Opn x] -> (
@@ -2972,7 +2979,16 @@ let ci_past_extension cr1 cr2 = past_extension false cr1 cr2
       | [Iso x] | [Opn _;Cls x] | [Cls _;Cls x] -> [Iso (next x)]
       | [] -> raise Exit
       | _ -> assert false
-
+    in
+(*
+    let () = 
+      print_string "nonempty_disconnected_next ";
+      print_string (HalfLine.string_of it);
+      print_string " = ";
+      print_endline (HalfLine.string_of answer) in 
+*)
+    answer
+    
   
   (* Une région est ici représentée par une liste décroissante d'intervalles, 
   l'ordre I < J signifiant que tout point de I est strictement inférieur à 
@@ -2986,14 +3002,14 @@ let ci_past_extension cr1 cr2 = past_extension false cr1 cr2
     print_endline ""
 *)
   
-  let glb_region re = 
-    let rec glb_region re = 
+  let lub_region re = 
+    let rec lub_region re = 
       match re with 
         | [Cls x] | [Opn x] | [Pun x] | [Iso x] -> x 
-        | b :: re -> glb_region re
+        | b :: re -> lub_region re
         | [] -> raise Undefined in
-    if HalfLine.is_bounded re
-    then glb_region re
+    if HalfLine.is_bounded re && re <> []
+    then lub_region re
     else raise Undefined
     
   let next_region next_value re = 
@@ -3015,7 +3031,7 @@ let ci_past_extension cr1 cr2 = past_extension false cr1 cr2
         init (pred k) (
           match re with 
             | it :: _ -> nonempty_disconnected_next next_value it :: re
-            | []      -> [atom B.least_regular_value])
+            | []      -> [atom zero])
       else re in
     let init k re = List.rev (init k re) in
     let rec next_region len re =
@@ -3029,7 +3045,7 @@ let ci_past_extension cr1 cr2 = past_extension false cr1 cr2
           | [] -> raise Exit (* assert false *) in
     try
       match re with 
-        | [] -> [atom B.least_regular_value]
+        | [] -> [atom zero]
         | _ -> next_region (List.length re) re 
     with Exit -> init (succ (List.length re)) []
 
@@ -3038,18 +3054,19 @@ let ci_past_extension cr1 cr2 = past_extension false cr1 cr2
   let of_region re = 
     let re = List.concat re in
     let rec polish re = match re with
-      | a :: ((b :: re) as re') -> 
+      | a :: ((b :: re'') as re') -> 
           if rvb a <> rvb b 
-          then polish re'
+          then a :: polish re'
           else (match a with
-            | Cls x -> (Iso x) :: polish re  
-            | Opn x -> (Pun x) :: polish re  
+            | Cls x -> (Iso x) :: polish re''  
+            | Opn x -> (Pun x) :: polish re''
             | _ -> assert false)
       | _ -> re in
     polish re
 
   let rec region_of at = match at with
     | [] -> []
+    | ([Cls x] as a) | ([Opn x] as a) -> [a]
     | Iso x :: at -> [Iso x] :: region_of at
     | a :: Pun x :: at -> [a;Opn x] :: region_of (Opn x :: at)
     | a :: b :: at -> [a;b] :: region_of at

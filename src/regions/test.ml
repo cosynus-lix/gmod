@@ -143,10 +143,11 @@ let exhaustive_intervals max =
   let x = ref (I.atom 0) in
   try
     while true do 
-      print_endline (I.string_of !x);
-      x := next !x
+      print_string (I.string_of !x);
+      x := next !x;
+      print_endline ""
     done
-  with Exit -> print_endline "End of enumeration"
+  with Exit -> () (*print_endline "End of enumeration"*)
 
 (* based on regions *)
 let exhaustive_regions max = 
@@ -156,10 +157,35 @@ let exhaustive_regions max =
   try
     while true do 
       List.iter (fun it -> print_string ((I.string_of it) ^ " ")) !x;
+      x := next !x;
+      print_endline ""
+    done
+  with Exit -> () (*print_endline "End of enumeration"*)
+
+(* based on regions implemented in dashdot *)
+let exhaustive_regions max =
+  let next n = if n < max then n + 1 else raise Exit in
+  let next = DD.next_region next in
+  let x = ref [] in
+  try
+    while true do
+(*
+    print_string "x = "; 
+      List.iter (fun it -> print_string ((HL.string_of it) ^ " ")) !x;
       print_endline "";
+(*
+      print_string "of_region = ";
+      print_endline (HL.string_of (DD.of_region !x));
+*)
+      let y = DD.region_of (DD.of_region !x) in
+      print_string "y = ";
+      List.iter (fun it -> print_string ((HL.string_of it) ^ " ")) y;
+      print_endline "";
+      print_endline (if y = !x then "--" else "PROBLEM");
+*)
       x := next !x
     done
-  with Exit -> print_endline "End of enumeration"
+  with Exit -> () (*print_endline "End of enumeration"*)
 
 (* based on dashdot *)
 let exhaustive_regions max = 
@@ -171,20 +197,7 @@ let exhaustive_regions max =
       print_endline (HL.string_of !x);
       x := next !x
     done
-  with Exit -> print_endline "End of enumeration"
-
-(* based on regions implemented in dashdot *)
-let exhaustive_regions max = 
-  let next n = if n < max then n + 1 else raise Exit in
-  let next = DD.next_region next in
-  let x = ref [DD.empty] in
-  try
-    while true do 
-      List.iter (fun it -> print_string ((HL.string_of it) ^ " ")) !x;
-      print_endline "";
-      x := next !x
-    done
-  with Exit -> print_endline "End of enumeration"
+  with Exit -> () (*print_endline "End of enumeration"*)
 
 
 let command_line_options = [
