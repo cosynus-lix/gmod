@@ -523,7 +523,11 @@ let right_bound it =
 
 let is_before it1 it2 = 
   try 
-    rvb (right_bound it2) <= rvb (left_bound it1)
+    let b1 = right_bound it1 in
+    let b2 = right_bound it2 in
+    let y1 = rvb b1 in
+    let y2 = rvb b2 in
+    y2 < y1 || (y2 = y1 && (bob b1 || not (bob b2)))
   with Undefined -> false
 
 (* is it2 strictly after it1 ? *)
@@ -546,7 +550,7 @@ let is_future_extending it1 it2 =
 
 (*
 Renvoie le prolongement dans le futur de it par at, autrement dit le 
-prolongement dans le futur de it par it', la dernière composante connexe et 
+prolongement dans le futur de it par it', la dernière composante connexe de 
 at qui ne soit pas strictement après it. Renvoie également le «reste» de at, 
 c'est-à-dire les composantes connexes de at qui sont strictement après le 
 prolongement dans le futur de it par it'.
@@ -558,17 +562,21 @@ avant it.
 *)
 
 let future_extension it at =
-  let at = ref at in
-  let hnt = ref (try head_and_tail !at with Undefined -> (empty,empty)) in
-  let criterion = ref Before in
-  while (is_not_empty !at) && !criterion = Before do
-    at := snd !hnt;
-    hnt := head_and_tail !at;
-    criterion := is_future_extending it (fst !hnt)
-  done;
-  match !criterion with
-  | Before | After -> (it,!at)
-  | Extending it -> (it,snd !hnt)
+    let at = ref at in
+    let hnt = try head_and_tail !at with Undefined -> (it,empty) in
+    let it' = ref (fst hnt) in
+    let at' = ref (snd hnt) in
+    let criterion = ref (is_future_extending it !it') in
+    while !criterion = Before do
+      let hnt = try head_and_tail !at' with Undefined -> (it,empty) in
+      at := !at';
+      it' := fst hnt;
+      at' := snd hnt;
+      criterion := is_future_extending it !it'
+    done;
+    match !criterion with
+    | Before | After -> (it,!at)
+    | Extending it -> (it,!at')
 
 (*
 Dans le calcul de future_extension at1 at2 on sépare at1 en it1 et at1', le 
@@ -597,16 +605,16 @@ let next_connected_component it1 at1 at2 =
   
 let future_extension at1 at2 =
   let rec future_extension at1 at2 =
-    let (it1,at1) = head_and_tail at1 in
-    let (ncc,at1,at2) = next_connected_component it1 at1 at2 in
-    if is_empty at1
-    then []
-    else if is_empty at2 
-      then intervals_of at1
-      else ncc :: (future_extension at1 at2) in
+    if is_empty at1 then empty
+    else (
+      let (it1,at1) = head_and_tail at1 in (* BUG: cas at1 vide *)
+      let (ncc,at1,at2) = next_connected_component it1 at1 at2 in
+      if is_empty at1
+      then []
+      else if is_empty at2 
+        then intervals_of at1
+        else ncc :: (future_extension at1 at2)) in
   of_intervals (List.rev (future_extension at1 at2))
-
-
     
 end (* FutureExtension *)
 
@@ -2826,7 +2834,7 @@ struct
   let future_closure ar = future_closure ~circle_mode:false ar
   let past_extension ar1 ar2 = past_extension ar1 ar2
 
-  let future_extension_2 = FutureExtension.future_extension
+  let future_extension_2 ar1 ar2 = FutureExtension.future_extension ar1 ar2 
 
   let boundary a = match a with
     | Cls x::a ->
