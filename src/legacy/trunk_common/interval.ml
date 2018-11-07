@@ -212,7 +212,8 @@ struct
       | Te(Cls _)   -> true
       | Si _        -> true
       | _ -> false
-  and rgt_bool_of_bound it =
+  
+  let rgt_bool_of_bound it =
     match it with
       | Bn(_,Cls _) -> true
       | Si _        -> true

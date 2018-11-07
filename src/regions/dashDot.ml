@@ -164,9 +164,9 @@ that way.*)
 
   val next_region: (value -> value) -> t list -> t list
   
-  val region_of: t -> t list
+  val intervals_of: t -> t list
   
-  val of_region: t list -> t
+  val of_intervals: t list -> t
   
   
   (** {2 Under test}*)
@@ -433,12 +433,186 @@ struct
       then [Cls zero; Pun x]
       else failwith "oda.ml: cointerval: the left bound must be greater than the right bound"
 
+  let of_intervals re = 
+    let re = List.concat re in
+    let rec polish re = match re with
+      | a :: ((b :: re'') as re') -> 
+          if rvb a <> rvb b 
+          then a :: polish re'
+          else (match a with
+            | Cls x -> (Iso x) :: polish re''  
+            | Opn x -> (Pun x) :: polish re''
+            | _ -> assert false)
+      | _ -> re in
+    polish re
+
+  let rec intervals_of at = match at with
+    | [] -> []
+    | ([Cls x] as a) | ([Opn x] as a) -> [a]
+    | Iso x :: at -> [Iso x] :: intervals_of at
+    | a :: Pun x :: at -> [a;Opn x] :: intervals_of (Opn x :: at)
+    | a :: b :: at -> [a;b] :: intervals_of at
+    | _ -> assert false
+
+(*
+  head_and_tail returns an ordered pair whose first term is the first 
+  connected component and whose second term is the remaining of the region.
+*)
+
+  let head_and_tail at = match at with
+    | ([Cls x] as a) | ([Opn x] as a) -> (a , [])
+    | Iso x :: at -> ([Iso x] , at)
+    | a :: Pun x :: at -> ([a;Opn x] , (Opn x :: at))
+    | a :: b :: at -> ([a;b] , at)
+    | [] -> raise Undefined
+    | _ -> failwith "head_and_tail"
+    
+  (*Écrire une version alternative (plus simple) de la fonction future_extension *)
+  
+(*
+On veut caluculer future_extension at1 at2.
+at1 est l'union disjointe de it1 (sa première composente connexe) et at1' le 
+reste.
+
+On cherche la seule (si elle existe) composante connexe de at2 susceptible d'étendre it1.
+Cette recherche se fait en passant au crible les composantes connexes de at2.
+
+Si on en trouve une, notons la it2, on a Interval.future_extension it1 it2.
+
+On cherche alors la seule (si elle existe) composante connexe de at1 susceptible d'étendre Interval.future_extension it1 it2.
+Cette recherche se fait en passant au crible les composantes connexes de at1 \ it1.
+
+En «piochant» alternativement dans at1 et at2 on essaie d'étendre it1 au maximum.
+
+Lorsque l'on ne peut plus, on «repart» depuis la première composante connexe de at1 qui 
+na pas été «consommée». 
+
+On continue jusqu'à épuisement des composantes connexes de at1.
+*)
+
+
+module FutureExtension = struct
+
+(* est-ce que it2 prolonge strictement it1 dans le futur ? *)
+
+type position = Before | After | Extending of t
+
+(*
+  Before : it2 est contenu dans le plus petit segment initial contenant it1
+  After : it2 est contenu dans l'ensemble des majorants stricts de it1, et it1 et it2 sont déconnectés
+  Dans tous les autres cas il y a extension dans le futur et le résultat est 
+  [borne gauche de it1;borne droite (éventuellement infinie) de it2]
+*)
+
+(* test si it2 est avant it1 sous l'hypothèse que it2 n'est pas vide *)
+
+let left_bound it = 
+  match it with 
+  | [a] | [a;_] -> a
+  | _ -> assert false
+
+let right_bound it = 
+  match it with 
+  | [((Iso _) as b)] | [_;b] -> b
+  | [_] -> raise Undefined
+  | _ -> assert false
+
+(* is it2 before it1 ? *)
+
+let is_before it1 it2 = 
+  try 
+    rvb (right_bound it2) <= rvb (left_bound it1)
+  with Undefined -> false
+
+(* is it2 strictly after it1 ? *)
+
+let is_strictly_after it1 it2 =
+  try
+    let b1 = right_bound it1 in
+    let a2 = left_bound it2 in
+    let y1 = rvb b1 in
+    let x2 = rvb a2 in 
+    (y1 < x2) || (y1 = x2 && not (bob b1) && not (bob a2))
+  with Undefined -> false
+
+let is_future_extending it1 it2 =
+  if is_before it1 it2 then Before
+  else if is_strictly_after it1 it2 then After
+  else 
+    try Extending [left_bound it1;right_bound it2]
+    with Undefined -> Extending [left_bound it1]
+
+(*
+Renvoie le prolongement dans le futur de it par at, autrement dit le 
+prolongement dans le futur de it par it', la dernière composante connexe et 
+at qui ne soit pas strictement après it. Renvoie également le «reste» de at, 
+c'est-à-dire les composantes connexes de at qui sont strictement après le 
+prolongement dans le futur de it par it'.
+
+En particulier, s'il n'y a pas prolongement strict, alors on a it = 
+future_extension it it'. Par convention on peut, du point de vue 
+théorique, supposer que it' est l'intervalle vide lorsque at est entièrement 
+avant it.
+*)
+
+let future_extension it at =
+  let at = ref at in
+  let hnt = ref (try head_and_tail !at with Undefined -> (empty,empty)) in
+  let criterion = ref Before in
+  while (is_not_empty !at) && !criterion = Before do
+    at := snd !hnt;
+    hnt := head_and_tail !at;
+    criterion := is_future_extending it (fst !hnt)
+  done;
+  match !criterion with
+  | Before | After -> (it,!at)
+  | Extending it -> (it,snd !hnt)
+
+(*
+Dans le calcul de future_extension at1 at2 on sépare at1 en it1 et at1', le 
+reste de at1, pour calculer la prochaine composante connexe du résultat. En 
+particulier, on sait déjà que future_extension it1 at1' va renvoyer (it1,at1'), 
+il faut donc commencer par future_extension it1 at2. Donc on fait l'hypothèse 
+que at1 est strictement après it. C'est cet invariant que l'on maintient.
+
+On revoie un triplet tel que:
+  le premier élément est l'extension dans le future de it obtenu en «piochant» 
+  les extensions potentielles alternativement dans at1 et at2. On note cette 
+  extension it'.
+  le second élément est le reste de at1 après it'. 
+  le troisième élément est le reste de at2 après it'. 
+*)
+
+let next_connected_component it1 at1 at2 =
+  let rec next_connected_component twisted it1 at1 at2 =
+    let (it1',at2') = future_extension it1 at2 in
+    if it1' <> it1
+    then next_connected_component (not twisted) it1' at2' at1
+    else if twisted
+      then (it1,at2',at1)
+      else (it1,at1,at2') in
+  next_connected_component false it1 at1 at2
+  
+let future_extension at1 at2 =
+  let rec future_extension at1 at2 =
+    let (it1,at1) = head_and_tail at1 in
+    let (ncc,at1,at2) = next_connected_component it1 at1 at2 in
+    if is_empty at1
+    then []
+    else if is_empty at2 
+      then intervals_of at1
+      else ncc :: (future_extension at1 at2) in
+  of_intervals (List.rev (future_extension at1 at2))
+
+
+    
+end (* FutureExtension *)
+
   (* The normal form is a sorted list of bounds *)
 
   (* TODO: improve it *)
 
   let normalize a =
-    let dump () = failwith "normalize [Oda]" in
     let rec normalize parity a = match a with
       | Opn x::(Opn y::a as b) ->
 					if parity
@@ -448,11 +622,11 @@ struct
 					  else
 					    if x = y
 					    then Pun x::normalize true a
-					    else dump ()
+					    else failwith "normalize [DashDot]"
 					else
 					  if x < y
 					  then Opn x::normalize true b
-					  else dump ()
+					  else failwith "normalize [DashDot]"
       | (Opn x as c)::(Cls y::a as b)
       | (Cls x as c)::(Opn y::a as b)
       | (Cls x as c)::(Cls y::a as b) ->
@@ -463,22 +637,22 @@ struct
 					  else
 					    if x=y
 					    then normalize true a
-					    else dump ()
+					    else failwith "normalize [DashDot]"
 					else
 					  if x<y
 					  then c::normalize true b
-					  else dump ()
+					  else failwith "normalize [DashDot]"
       | (Iso x as c)::(Opn y as b)::a
       | (Iso x as c)::(Cls y as b)::a ->
 					if parity
-					then dump ()
+					then failwith "normalize [DashDot]"
 					else
 					  if x<y
 					  then c::b::normalize true a
 					  else
 					    if x=y
 					    then Cls x::normalize true a
-					    else dump ()
+					    else failwith "normalize [DashDot]"
       | (Opn x as c)::Iso y::a
       | (Cls x as c)::Iso y::a ->
 					if parity
@@ -488,8 +662,8 @@ struct
 					  else
 					    if x=y
 					    then normalize true (Cls x::a)
-					    else dump ()
-					else dump ()
+					    else failwith "normalize [DashDot]"
+					else failwith "normalize [DashDot]"
       | x -> x in
     normalize false a
 
@@ -513,8 +687,7 @@ struct
 					then Cls zero::Pun b::(List.map reverse_bound a)
 					else Opn zero::(List.map reverse_bound a)
       | [] -> full
-      | Pun _::_ -> invalid_arg "comlement"
-
+      | Pun _::_ -> invalid_arg "complement [DashDot]"
 
   let binary_boolean_operator test =
     let rec binary_boolean_operator ar1 ar2 =
@@ -574,98 +747,92 @@ struct
 				let v1 = rvb b1 in
 				let v2 = rvb b2 in
 				if v1<v2
-				then
-				  (
-				    let p1' = alter_parity b1 in
-				    let x2 = (false,x2') in
-				    let middle = test (bob b1) false in
-				    let remaining () = binary_boolean_operator (p1',ar1) x2 in
-				    if v1=zero
-				    then match middle,test p1' false with
-									| false,false ->           remaining ()
-									| true ,true  -> Cls zero::remaining ()
-									| true ,false -> Iso zero::remaining ()
-									| false,true  -> Opn zero::remaining ()
-				    else match test false false,test p1' false with
-									| false,false ->
-									  if middle
-									  then           Iso v1::remaining ()
-									  else                   remaining ()
-									| false,true  ->
-									  if middle
-									  then           Cls v1::remaining ()
-									  else           Opn v1::remaining ()
-									| true ,true  -> (*first round specific*)
-									  if middle
-									  then Cls zero::        remaining ()
-									  else Cls zero::Pun v1::remaining ()
-									| true,false  -> (*first round specific*)
-									  if middle
-									  then Cls zero::Cls v1::remaining ()
-									  else Cls zero::Opn v1::remaining ()
-				  )
-				else
-				  if v1>v2
-				  then
-				    (
-				      let p2' = alter_parity b2 in
-				      let x1 = (false,x1') in
-				      let middle = test false (bob b2) in
-				      let remaining () = binary_boolean_operator x1 (p2',ar2) in
-				      if v2=zero
-				      then match middle,test false p2' with
-									  | false,false ->           remaining ()
-									  | true ,true  -> Cls zero::remaining ()
-									  | true ,false -> Iso zero::remaining ()
-									  | false,true  -> Opn zero::remaining ()
-				      else match test false false,test false p2' with
-									  | false,false ->
-									    if middle
-									    then           Iso v2::remaining ()
-									    else                   remaining ()
-									  | false,true  ->
-									    if middle
-									    then           Cls v2::remaining ()
-									    else           Opn v2::remaining ()
-									  | true ,true  -> (*first round specific*)
-									    if middle
-									    then Cls zero::        remaining ()
-									    else Cls zero::Pun v2::remaining ()
-									  | true,false  -> (*first round specific*)
-									    if middle
-									    then Cls zero::Cls v2::remaining ()
-									    else Cls zero::Opn v2::remaining ()
-				    )
-				  else (*v1=v2*)
-				    (
+				then (
+          let p1' = alter_parity b1 in
+          let x2 = (false,x2') in
+          let middle = test (bob b1) false in
+          let remaining () = binary_boolean_operator (p1',ar1) x2 in
+          if v1=zero
+          then match middle,test p1' false with
+            | false,false ->           remaining ()
+            | true ,true  -> Cls zero::remaining ()
+            | true ,false -> Iso zero::remaining ()
+            | false,true  -> Opn zero::remaining ()
+          else match test false false,test p1' false with
+            | false,false ->
+              if middle
+              then           Iso v1::remaining ()
+              else                   remaining ()
+            | false,true  ->
+              if middle
+              then           Cls v1::remaining ()
+              else           Opn v1::remaining ()
+            | true ,true  -> (*first round specific*)
+              if middle
+              then Cls zero::        remaining ()
+              else Cls zero::Pun v1::remaining ()
+            | true,false  -> (*first round specific*)
+              if middle
+              then Cls zero::Cls v1::remaining ()
+              else Cls zero::Opn v1::remaining ())
+				else if v1>v2
+				  then (
+            let p2' = alter_parity b2 in
+            let x1 = (false,x1') in
+            let middle = test false (bob b2) in
+            let remaining () = binary_boolean_operator x1 (p2',ar2) in
+            if v2=zero
+            then match middle,test false p2' with
+              | false,false ->           remaining ()
+              | true ,true  -> Cls zero::remaining ()
+              | true ,false -> Iso zero::remaining ()
+              | false,true  -> Opn zero::remaining ()
+            else match test false false,test false p2' with
+              | false,false ->
+                if middle
+                then           Iso v2::remaining ()
+                else                   remaining ()
+              | false,true  ->
+                if middle
+                then           Cls v2::remaining ()
+                else           Opn v2::remaining ()
+              | true ,true  -> (*first round specific*)
+                if middle
+                then Cls zero::        remaining ()
+                else Cls zero::Pun v2::remaining ()
+              | true,false  -> (*first round specific*)
+                if middle
+                then Cls zero::Cls v2::remaining ()
+                else Cls zero::Opn v2::remaining ())
+				  else ((*v1=v2*)
+				    
 				      let p1' = alter_parity b1 in
 				      let p2' = alter_parity b2 in
 				      let middle = test (bob b1) (bob b2) in
 				      let remaining () = binary_boolean_operator (p1',ar1) (p2',ar2) in
 				      if v1=zero
 				      then match middle,test p1' p2' with
-									  | false,false ->           remaining ()
-									  | true ,true  -> Cls zero::remaining ()
-									  | true ,false -> Iso zero::remaining ()
-									  | false,true  -> Opn zero::remaining ()
+                | false,false ->           remaining ()
+                | true ,true  -> Cls zero::remaining ()
+                | true ,false -> Iso zero::remaining ()
+                | false,true  -> Opn zero::remaining ()
 				      else match test false false,test p1' p2' with
-									  | false,false ->
-									    if middle
-									    then           Iso v1::remaining ()
-									    else                   remaining ()
-									  | false,true  ->
-									    if middle
-									    then           Cls v1::remaining ()
-									    else           Opn v1::remaining ()
-									  | true ,true  -> (*first round specific*)
-									    if middle
-									    then Cls zero::        remaining ()
-									    else Cls zero::Pun v1::remaining ()
-									  | true,false  -> (*first round specific*)
-									    if middle
-									    then Cls zero::Cls v1::remaining ()
-									    else Cls zero::Opn v1::remaining ()
-				    )
+                | false,false ->
+                  if middle
+                  then           Iso v1::remaining ()
+                  else                   remaining ()
+                | false,true  ->
+                  if middle
+                  then           Cls v1::remaining ()
+                  else           Opn v1::remaining ()
+                | true ,true  -> (*first round specific*)
+                  if middle
+                  then Cls zero::        remaining ()
+                  else Cls zero::Pun v1::remaining ()
+                | true,false  -> (*first round specific*)
+                  if middle
+                  then Cls zero::Cls v1::remaining ()
+                  else Cls zero::Opn v1::remaining ())
 		      | _ -> (*at least one of the arguments is empty*)
 							let b = is_empty ar1 in
 							match test (not b) b,test false false with
@@ -2960,13 +3127,6 @@ let ci_past_extension cr1 cr2 = past_extension false cr1 cr2
       | [] -> raise Exit
       | _ -> assert false
     in 
-(*
-    let () = 
-      print_string "next_interval ";
-      print_string (HalfLine.string_of it);
-      print_string " = ";
-      print_endline (HalfLine.string_of answer) in 
-*)
     answer
 
   let nonempty_disconnected_next next it =
@@ -2978,15 +3138,7 @@ let ci_past_extension cr1 cr2 = past_extension false cr1 cr2
           with Exit -> [Opn x])
       | [Iso x] | [Opn _;Cls x] | [Cls _;Cls x] -> [Iso (next x)]
       | [] -> raise Exit
-      | _ -> assert false
-    in
-(*
-    let () = 
-      print_string "nonempty_disconnected_next ";
-      print_string (HalfLine.string_of it);
-      print_string " = ";
-      print_endline (HalfLine.string_of answer) in 
-*)
+      | _ -> assert false in
     answer
     
   
@@ -3051,30 +3203,16 @@ let ci_past_extension cr1 cr2 = past_extension false cr1 cr2
 
 (* A region is an increasing sequence of disconnected intervals *)
 
-  let of_region re = 
-    let re = List.concat re in
-    let rec polish re = match re with
-      | a :: ((b :: re'') as re') -> 
-          if rvb a <> rvb b 
-          then a :: polish re'
-          else (match a with
-            | Cls x -> (Iso x) :: polish re''  
-            | Opn x -> (Pun x) :: polish re''
-            | _ -> assert false)
-      | _ -> re in
-    polish re
-
-  let rec region_of at = match at with
-    | [] -> []
-    | ([Cls x] as a) | ([Opn x] as a) -> [a]
-    | Iso x :: at -> [Iso x] :: region_of at
-    | a :: Pun x :: at -> [a;Opn x] :: region_of (Opn x :: at)
-    | a :: b :: at -> [a;b] :: region_of at
-    | _ -> assert false
-  
   let next next_value at = 
-    let re = region_of at in
+    let re = intervals_of at in
     let re = next_region next_value re in
-    of_region re
+    of_intervals re
+
+  let iterator next_value = 
+    let current = ref empty in
+    fun () -> (
+      let answer = !current in
+      current := next next_value !current;
+      answer)
 
 end (* BooleanAlgebra *)
