@@ -146,6 +146,8 @@ that way.*)
     (** [future_extension x y] is the set of points {i q} of [y] such that 
     there exists a point {i p} of [x] such the interval/anticlockwise arc from 
     {i p} to {i q} is contained in the union of [x] and [y].*)
+
+    val future_extension_2: t -> t -> t
     
     val past_extension: t -> t -> t
     (** [past_extension x y] is the set of points {i q} of [y] such that 
@@ -607,6 +609,7 @@ let future_extension at1 at2 =
 
     
 end (* FutureExtension *)
+
 
   (* The normal form is a sorted list of bounds *)
 
@@ -2716,6 +2719,7 @@ in the union of x and {p} *)
     val interior: t -> t
     val closure: t -> t
     val future_extension: t -> t -> t
+    val future_extension_2: t -> t -> t
     val past_extension: t -> t -> t
   end
 
@@ -2822,6 +2826,7 @@ struct
   let future_closure ar = future_closure ~circle_mode:false ar
   let past_extension ar1 ar2 = past_extension ar1 ar2
 
+  let future_extension_2 = FutureExtension.future_extension
 
   let boundary a = match a with
     | Cls x::a ->
@@ -3042,6 +3047,8 @@ struct
     else aux
 
   let future_extension at1 at2 = future_extension at1 at2
+
+  let future_extension_2 = future_extension (*TODO: write a new implementation*)
 
   let future_closure at = future_closure ~circle_mode:true at
 

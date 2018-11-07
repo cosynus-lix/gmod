@@ -199,7 +199,30 @@ let exhaustive_regions max =
     done
   with Exit -> () (*print_endline "End of enumeration"*)
 
-
+let exhaustive_future_extension_on_half_line max =
+  let next n = if n < max then n + 1 else raise Exit in
+  let next = DD.next next in
+  let at1 = ref DD.empty in
+  let at2 = ref DD.empty in
+  let fe1 = ref DD.empty in
+  let fe2 = ref DD.empty in
+  let ok = ref true in
+  while !ok do
+    fe1 := HL.future_extension   !at1 !at2;
+    fe2 := HL.future_extension_2 !at1 !at2;
+    ok  := !fe1 = !fe2;
+    try at2 := next !at2
+    with Exit -> (
+      try at1 := next !at1; at2 := DD.empty 
+      with Exit -> ok := false
+    )
+  done;
+  if !fe1 <> !fe2 then (
+    print_string ("at1 = "^(HL.string_of !at1));
+    print_endline "";
+    print_string ("at2 = "^(HL.string_of !at2));
+    print_endline "")
+  
 let command_line_options = [
   "-all", Arg.String perform_all_tests, "Perform all tests in the specified directory." ;
   "-future-extension-on-half-line", Arg.Unit (preparing "hl_future"), "Test future_extension on the half-line" ;
@@ -215,6 +238,7 @@ let command_line_options = [
   "-closure-on-circle", Arg.Unit (preparing "hl_closure"), "Test closure on circle" ;
   "-exhaustive-intervals",Arg.Int (exhaustive_intervals), "Compare the results of the current implementation with a previous one, on all possible intervals up to some extent.";
   "-exhaustive-regions",Arg.Int (exhaustive_regions), "Compare the results of the current implementation with a previous one, on all possible regions up to some extent.";
+  "-exhaustive-future-extension-on-half-line",Arg.Int (exhaustive_future_extension_on_half_line),"Compare the new implementation of future_extension on half-line (~ 60 LoC) with the current one (~ 500 LoC)";
 (*
   "-exhaustive-meet",Arg.Int (exhaustive_meet), "Compare the results of the current implementation of meet with a previous one, on all possible regions up to some extent.";
 *)
