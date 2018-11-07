@@ -208,14 +208,16 @@ let exhaustive_future_extension_on_half_line max =
   let fe2 = ref DD.empty in
   let ok = ref true in
   while !ok do
+    print_endline ("at1 = "^(HL.string_of !at1)^" ");
+    print_endline ("at2 = "^(HL.string_of !at2)^" ");
     fe1 := HL.future_extension   !at1 !at2;
     fe2 := HL.future_extension_2 !at1 !at2;
+    print_endline "--";
     ok  := !fe1 = !fe2;
     try at2 := next !at2
     with Exit -> (
       try at1 := next !at1; at2 := DD.empty 
-      with Exit -> ok := false
-    )
+      with Exit -> ok := false)
   done;
   if !fe1 <> !fe2 then (
     print_string ("at1 = "^(HL.string_of !at1));

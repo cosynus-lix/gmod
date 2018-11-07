@@ -561,14 +561,16 @@ théorique, supposer que it' est l'intervalle vide lorsque at est entièrement
 avant it.
 *)
 
+
+
 let future_extension it at =
     let at = ref at in
     let hnt = try head_and_tail !at with Undefined -> (it,empty) in
     let it' = ref (fst hnt) in
     let at' = ref (snd hnt) in
     let criterion = ref (is_future_extending it !it') in
-    while !criterion = Before do
-      let hnt = try head_and_tail !at' with Undefined -> (it,empty) in
+    while is_not_empty !at' && !criterion = Before do (* BUG: boucle infinie si at' vide *)
+      let hnt = head_and_tail !at' in
       at := !at';
       it' := fst hnt;
       at' := snd hnt;
