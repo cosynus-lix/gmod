@@ -536,12 +536,14 @@ type position = Before | After | Extending of t
 
 let left_bound it = 
   match it with 
+  | [Iso x] -> Cls x
   | [a] | [a;_] -> a
   | _ -> assert false
 
 let right_bound it = 
-  match it with 
-  | [((Iso _) as b)] | [_;b] -> b
+  match it with
+  | [Iso x] -> Cls x 
+  | [_;b] -> b
   | [_] -> raise Undefined
   | _ -> assert false
 
@@ -550,11 +552,13 @@ let right_bound it =
 let is_before it1 it2 = 
   try 
     let b1 = right_bound it1 in
-    let b2 = right_bound it2 in
-    let y1 = rvb b1 in
-    let y2 = rvb b2 in
-    y2 < y1 || (y2 = y1 && (bob b1 || not (bob b2)))
-  with Undefined -> false
+    (try 
+      let b2 = right_bound it2 in
+      let y1 = rvb b1 in
+      let y2 = rvb b2 in
+      y2 < y1 || (y2 = y1 && (bob b1 || not (bob b2)))
+    with Undefined -> false)
+  with Undefined -> true
 
 (* is it2 strictly after it1 ? *)
 
@@ -568,11 +572,12 @@ let is_strictly_after it1 it2 =
   with Undefined -> false
 
 let is_future_extending it1 it2 =
-  if is_before it1 it2 then Before
-  else if is_strictly_after it1 it2 then After
-  else 
-    try Extending [left_bound it1;right_bound it2]
-    with Undefined -> Extending [left_bound it1]
+  Printf.printf "  is_future_extending ( %s , %s ) = " (hl_string_of it1) (hl_string_of it2) ;
+  if is_before it1 it2 then (print_endline "Before"; Before)
+  else if is_strictly_after it1 it2 then (print_endline "After"; After)
+  else (*Ici les choses sont plus subtiles*)
+    try (let x = [left_bound it1;right_bound it2] in print_endline (hl_string_of x) ; Extending x)
+    with Undefined -> (let x = [left_bound it1] in print_endline (hl_string_of x) ; Extending x)
 
 (*
 Renvoie le prolongement dans le futur de it par at, autrement dit le 
@@ -587,9 +592,8 @@ théorique, supposer que it' est l'intervalle vide lorsque at est entièrement
 avant it.
 *)
 
-let future_extension it at =
-  Printf.printf "  fe ( %s , %s ) ↦ " (hl_string_of it) (hl_string_of at);
-  let at = ref at in
+let future_extension it at'' =
+  let at = ref at'' in
   let hnt = try head_and_tail !at with Undefined -> (it,empty) in
   let it' = ref (fst hnt) in
   let at' = ref (snd hnt) in
@@ -601,9 +605,10 @@ let future_extension it at =
     at' := snd hnt;
     criterion := is_future_extending it !it'
   done;
+  Printf.printf "  fe ( %s , %s ) ↦ " (hl_string_of it) (hl_string_of at'');
   match !criterion with
-  | Before | After -> Printf.printf "( %s , %s )\n" (hl_string_of it) (hl_string_of !at); (it,!at)
-  | Extending it -> (it,!at')
+  | Before | After ->  Printf.printf "( %s , %s )\n" (hl_string_of it) (hl_string_of !at); (it,!at)
+  | Extending it -> Printf.printf "( %s , %s )\n" (hl_string_of it) (hl_string_of !at'); (it,!at')
 
 (*
 Dans le calcul de future_extension at1 at2 on sépare at1 en it1 et at1', le 
@@ -628,7 +633,11 @@ let next_connected_component it1 at1 at2 =
     else if twisted
       then (it1,at2',at1)
       else (it1,at1,at2') in
-  next_connected_component false it1 at1 at2
+  let (a,b,c) = next_connected_component false it1 at1 at2 in
+  Printf.printf "  next_connected_component ( %s , %s , %s ) = ( %s , %s , %s )\n" 
+  (hl_string_of it1) (hl_string_of at1) (hl_string_of at2) 
+  (hl_string_of a) (hl_string_of b) (hl_string_of c);
+  (a,b,c)
 
 let future_extension at1 at2 =
   let rec future_extension at1 at2 =
@@ -639,14 +648,13 @@ let future_extension at1 at2 =
       if is_empty at1
       then [ncc]
       else if is_empty at2 
-        then intervals_of at1
+        then it1 :: intervals_of at1
         else ncc :: (future_extension at1 at2)) in
-  let answer = of_intervals (List.rev (future_extension at1 at2)) in
+  let answer = of_intervals ((*List.rev*) (future_extension at1 at2)) in
   Printf.printf "fe ( %s , %s ) ↦ %s\n" (hl_string_of at1) (hl_string_of at2) (hl_string_of answer);
   answer
     
 end (* FutureExtension *)
-
 
   (* The normal form is a sorted list of bounds *)
 
@@ -845,7 +853,6 @@ end (* FutureExtension *)
                 then Cls zero::Cls v2::remaining ()
                 else Cls zero::Opn v2::remaining ())
 				  else ((*v1=v2*)
-				    
 				      let p1' = alter_parity b1 in
 				      let p2' = alter_parity b2 in
 				      let middle = test (bob b1) (bob b2) in
@@ -2864,7 +2871,7 @@ struct
   let future_closure ar = future_closure ~circle_mode:false ar
   let past_extension ar1 ar2 = past_extension ar1 ar2
 
-  let future_extension_1 ar1 ar2 = (*join ar1*) (future_extension ar1 ar2)
+  let future_extension_1 ar1 ar2 = join ar1 (future_extension ar1 ar2)
   let future_extension_2 ar1 ar2 = FutureExtension.future_extension ar1 ar2 
 
   let boundary a = match a with
@@ -3263,3 +3270,11 @@ let ci_past_extension cr1 cr2 = past_extension false cr1 cr2
       answer)
 
 end (* BooleanAlgebra *)
+
+(*
+
+TODO: Une version basée uniquement sur les intervalles. Déterminer une 
+signature minimale pour le «foncteur intervalle» telle que l'on puisse écrire 
+un «foncteur région» uniquement dessus.
+
+*)

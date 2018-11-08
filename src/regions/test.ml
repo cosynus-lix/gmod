@@ -214,21 +214,17 @@ let exhaustive_future_extension_on_half_line max =
     fe2 := HL.future_extension_2 !at1 !at2;
     print_endline "--";
     ok  := !fe1 = !fe2;
+    if not !ok then (
+      print_endline "Mismatch:";
+      Printf.printf "at1 = %s\n" (HL.string_of !at1);
+      Printf.printf "at2 = %s\n" (HL.string_of !at2);
+      Printf.printf "fe1 = %s\n" (HL.string_of !fe1);
+      Printf.printf "fe2 = %s\n" (HL.string_of !fe2));
     try at2 := next !at2
     with Exit -> (
       try at1 := next !at1; at2 := DD.empty 
       with Exit -> ok := false)
-  done;
-  if !fe1 <> !fe2 then (
-    print_endline "Mismatch:";
-    print_string ("at1 = "^(HL.string_of !at1));
-    print_endline "";
-    print_string ("at2 = "^(HL.string_of !at2));
-    print_endline "";
-    print_string ("fe1 = "^(HL.string_of !fe1));
-    print_endline "";
-    print_string ("fe2 = "^(HL.string_of !fe2));
-    print_endline "")
+  done
   
 let command_line_options = [
   "-all", Arg.String perform_all_tests, "Perform all tests in the specified directory." ;
@@ -286,24 +282,16 @@ let () = Arg.parse command_line_options anon_fun msg
 
 (* Test direct *)
 
+(*
 let at1 = DD.atom 0
-let at2 = DD.interval false true 0 1
+let at2 = DD.interval true true 0 1
+let fe  = HL.future_extension   at1 at2
 let fe1 = HL.future_extension_1 at1 at2
 let fe2 = HL.future_extension_2 at1 at2
 let () = 
-  print_string ("at1 = "^(HL.string_of at1));
-  print_endline "";
-  print_string ("at1 = "^(DD.string_of at1));
-  print_endline "";
-  print_string ("at2 = "^(HL.string_of at2));
-  print_endline "";
-  print_string ("at2 = "^(DD.string_of at2));
-  print_endline "";
-  print_string ("fe1 = "^(HL.string_of fe1));
-  print_endline "";
-  print_string ("fe2 = "^(HL.string_of fe2));
-  print_endline "";
-  print_string ("join at1 fe1 = "^(HL.string_of (DD.join at1 fe2)));
-  print_endline "";
-  print_string ("join at1 fe1 = "^(DD.hl_string_of (DD.join at1 fe2)));
-  print_endline ""
+  Printf.printf "at1 = %s\n" (HL.string_of at1);
+  Printf.printf "at2 = %s\n" (HL.string_of at2);
+  Printf.printf "fe  = %s\n" (HL.string_of fe );
+  Printf.printf "fe1 = %s\n" (HL.string_of fe1);
+  Printf.printf "fe2 = %s\n" (HL.string_of fe2);
+*)
