@@ -17,6 +17,7 @@ module type S = sig
   (** {2 Display} *)
   
   val string_of: t -> string
+  val hl_string_of: t -> string
   
   (** {2 Tests} *)  
   
@@ -147,6 +148,8 @@ that way.*)
     there exists a point {i p} of [x] such the interval/anticlockwise arc from 
     {i p} to {i q} is contained in the union of [x] and [y].*)
 
+    (** In this version, we consider the points {i q} of [y] ... *)
+    val future_extension_1: t -> t -> t
     val future_extension_2: t -> t -> t
     
     val past_extension: t -> t -> t
@@ -492,6 +495,29 @@ na pas été «consommée».
 On continue jusqu'à épuisement des composantes connexes de at1.
 *)
 
+(* Duplicata de la fonction du module HalfLine, provisoirement pour dubbugé le module FutureExtension *)
+let hl_string_of a =
+  let empty_set_denotation = "Ø" in
+  let infinity_denotation = "+oo" in
+  let open_infinity = true in
+  let rec string_of p a = match a with
+    |	Cls x::a ->
+        if p
+        then (B.string_of x)^(if a<>[] then "] " else "]")^(string_of (not p) a)
+        else "["^(B.string_of x)^","^(string_of (not p) a)
+    |	Opn x::a ->
+        if p
+        then (B.string_of x)^(if a<>[] then "[ " else "[")^(string_of (not p) a)
+        else "]"^(B.string_of x)^","^(string_of (not p) a)
+    |	Iso x::a -> "{"^(B.string_of x)^(if a <>[] then "} " else "}")^(string_of p a)
+    |	Pun x::a -> let b = B.string_of x in b^"[ ]"^b^","^(string_of p a)
+    | _ ->
+        if p
+        then if open_infinity then infinity_denotation^"[" else infinity_denotation^"]"
+        else if open_infinity then "" else " {"^infinity_denotation^"}" in
+  let answer = string_of false a in
+  if answer <> "" then answer else empty_set_denotation
+
 
 module FutureExtension = struct
 
@@ -561,24 +587,23 @@ théorique, supposer que it' est l'intervalle vide lorsque at est entièrement
 avant it.
 *)
 
-
-
 let future_extension it at =
-    let at = ref at in
-    let hnt = try head_and_tail !at with Undefined -> (it,empty) in
-    let it' = ref (fst hnt) in
-    let at' = ref (snd hnt) in
-    let criterion = ref (is_future_extending it !it') in
-    while is_not_empty !at' && !criterion = Before do (* BUG: boucle infinie si at' vide *)
-      let hnt = head_and_tail !at' in
-      at := !at';
-      it' := fst hnt;
-      at' := snd hnt;
-      criterion := is_future_extending it !it'
-    done;
-    match !criterion with
-    | Before | After -> (it,!at)
-    | Extending it -> (it,!at')
+  Printf.printf "  fe ( %s , %s ) ↦ " (hl_string_of it) (hl_string_of at);
+  let at = ref at in
+  let hnt = try head_and_tail !at with Undefined -> (it,empty) in
+  let it' = ref (fst hnt) in
+  let at' = ref (snd hnt) in
+  let criterion = ref (is_future_extending it !it') in
+  while is_not_empty !at' && !criterion = Before do
+    let hnt = head_and_tail !at' in
+    at := !at';
+    it' := fst hnt;
+    at' := snd hnt;
+    criterion := is_future_extending it !it'
+  done;
+  match !criterion with
+  | Before | After -> Printf.printf "( %s , %s )\n" (hl_string_of it) (hl_string_of !at); (it,!at)
+  | Extending it -> (it,!at')
 
 (*
 Dans le calcul de future_extension at1 at2 on sépare at1 en it1 et at1', le 
@@ -604,19 +629,21 @@ let next_connected_component it1 at1 at2 =
       then (it1,at2',at1)
       else (it1,at1,at2') in
   next_connected_component false it1 at1 at2
-  
+
 let future_extension at1 at2 =
   let rec future_extension at1 at2 =
     if is_empty at1 then empty
     else (
-      let (it1,at1) = head_and_tail at1 in (* BUG: cas at1 vide *)
+      let (it1,at1) = head_and_tail at1 in
       let (ncc,at1,at2) = next_connected_component it1 at1 at2 in
       if is_empty at1
-      then []
+      then [ncc]
       else if is_empty at2 
         then intervals_of at1
         else ncc :: (future_extension at1 at2)) in
-  of_intervals (List.rev (future_extension at1 at2))
+  let answer = of_intervals (List.rev (future_extension at1 at2)) in
+  Printf.printf "fe ( %s , %s ) ↦ %s\n" (hl_string_of at1) (hl_string_of at2) (hl_string_of answer);
+  answer
     
 end (* FutureExtension *)
 
@@ -2729,6 +2756,7 @@ in the union of x and {p} *)
     val interior: t -> t
     val closure: t -> t
     val future_extension: t -> t -> t
+    val future_extension_1: t -> t -> t
     val future_extension_2: t -> t -> t
     val past_extension: t -> t -> t
   end
@@ -2836,6 +2864,7 @@ struct
   let future_closure ar = future_closure ~circle_mode:false ar
   let past_extension ar1 ar2 = past_extension ar1 ar2
 
+  let future_extension_1 ar1 ar2 = (*join ar1*) (future_extension ar1 ar2)
   let future_extension_2 ar1 ar2 = FutureExtension.future_extension ar1 ar2 
 
   let boundary a = match a with
@@ -3058,6 +3087,7 @@ struct
 
   let future_extension at1 at2 = future_extension at1 at2
 
+  let future_extension_1 = future_extension (*TODO: write a new implementation*)
   let future_extension_2 = future_extension (*TODO: write a new implementation*)
 
   let future_closure at = future_closure ~circle_mode:true at

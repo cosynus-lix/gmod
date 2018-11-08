@@ -210,7 +210,7 @@ let exhaustive_future_extension_on_half_line max =
   while !ok do
     print_endline ("at1 = "^(HL.string_of !at1)^" ");
     print_endline ("at2 = "^(HL.string_of !at2)^" ");
-    fe1 := HL.future_extension   !at1 !at2;
+    fe1 := HL.future_extension_1 !at1 !at2;
     fe2 := HL.future_extension_2 !at1 !at2;
     print_endline "--";
     ok  := !fe1 = !fe2;
@@ -220,9 +220,14 @@ let exhaustive_future_extension_on_half_line max =
       with Exit -> ok := false)
   done;
   if !fe1 <> !fe2 then (
+    print_endline "Mismatch:";
     print_string ("at1 = "^(HL.string_of !at1));
     print_endline "";
     print_string ("at2 = "^(HL.string_of !at2));
+    print_endline "";
+    print_string ("fe1 = "^(HL.string_of !fe1));
+    print_endline "";
+    print_string ("fe2 = "^(HL.string_of !fe2));
     print_endline "")
   
 let command_line_options = [
@@ -278,3 +283,27 @@ Lines starting with % are comments. Empty lines are ignored.
 Options are:"
 
 let () = Arg.parse command_line_options anon_fun msg
+
+(* Test direct *)
+
+let at1 = DD.atom 0
+let at2 = DD.interval false true 0 1
+let fe1 = HL.future_extension_1 at1 at2
+let fe2 = HL.future_extension_2 at1 at2
+let () = 
+  print_string ("at1 = "^(HL.string_of at1));
+  print_endline "";
+  print_string ("at1 = "^(DD.string_of at1));
+  print_endline "";
+  print_string ("at2 = "^(HL.string_of at2));
+  print_endline "";
+  print_string ("at2 = "^(DD.string_of at2));
+  print_endline "";
+  print_string ("fe1 = "^(HL.string_of fe1));
+  print_endline "";
+  print_string ("fe2 = "^(HL.string_of fe2));
+  print_endline "";
+  print_string ("join at1 fe1 = "^(HL.string_of (DD.join at1 fe2)));
+  print_endline "";
+  print_string ("join at1 fe1 = "^(DD.hl_string_of (DD.join at1 fe2)));
+  print_endline ""
