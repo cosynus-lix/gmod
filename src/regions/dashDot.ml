@@ -183,6 +183,8 @@ that way.*)
   val hl_past_extension: t -> t -> t
   
   val ci_past_extension: t -> t -> t
+
+  val past_extension_2: t -> t -> t
   
 end
 
@@ -672,7 +674,8 @@ let future_extension at1 at2 =
   answer
 
 let initial_hull it = match it with
-  | [_;b] | [((Iso _) as b)] -> [Cls zero;b]
+  | [_;b] -> [Cls zero;b]
+  | [Iso x] -> if x = zero then it else [Cls zero;Cls x]  
   | _ -> full 
 
 
@@ -1236,9 +1239,7 @@ end (* PastExtension *)
     | Cls x::a' -> if x <> zero then a else (Opn x) :: a'
     | _ -> a
 
-
-
-let past_extension at1 at2 =
+let past_extension_2 at1 at2 =
   if is_empty at1 then empty 
   else (
     let answer = ref [] in
@@ -1246,7 +1247,7 @@ let past_extension at1 at2 =
     let it1 = ref empty (*dummy value*) in
     let it2 = ref empty (*dummy value*) in
     let at1 = ref at1 in
-    let at2 = ref (join !at1 !at2) in
+    let at2 = ref (join !at1 at2) in
     while is_not_empty !at2 do
       let hnt2 = head_and_tail !at2 in
       it2 := fst hnt2;
@@ -1258,15 +1259,12 @@ let past_extension at1 at2 =
         if not (FutureExtension.is_strictly_before !it2 !it1) then last := !it1;
       done;
       if is_not_empty !last
-      then answer := (meet !it2 (FutureExtension.initial_hull !it1)) :: !answer ;
+      then answer := (meet !it2 (FutureExtension.initial_hull !last)) :: !answer ;
+      Printf.printf "last = %s\n" (hl_string_of !last);
       last := empty
     done;
     answer := List.rev !answer;
-    of_intervals !answer
-)
-
-
-
+    of_intervals !answer)
 
   (*The name is not well chosen in the case where the underlying space is the circle*)
   (*The flag is set if the result is unbounded, and left as is otherwise*)

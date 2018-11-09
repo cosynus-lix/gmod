@@ -304,3 +304,13 @@ let () =
   Printf.printf "fe1 = %s\n" (HL.string_of fe1);
   Printf.printf "fe2 = %s\n" (HL.string_of fe2);
 *)
+
+let at1 = DD.discrete [0;3;7]
+let at2 = DD.complement at1
+let pe1 = DD.join at1 (HL.past_extension at1 at2)
+let pe2 = DD.past_extension_2 at1 at2
+let () = 
+  Printf.printf "at1 = %s\n" (HL.string_of at1);
+  Printf.printf "at2 = %s\n" (HL.string_of at2);
+  Printf.printf "pe1 = %s\n" (HL.string_of pe1);
+  Printf.printf "pe2 = %s\n" (HL.string_of pe2);
