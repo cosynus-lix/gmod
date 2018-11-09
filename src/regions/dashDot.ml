@@ -89,6 +89,7 @@ module type S = sig
   val difference: t -> t -> t
   val symmetric_difference: t -> t -> t
   
+  
   (** {2 Miscellaneous} *)
   
   (** Given a function [f: bool -> bool -> bool], the semantics of the function
@@ -552,6 +553,7 @@ let right_bound it =
 (* is it2 before it1 ? *)
 
 let is_before it1 it2 = 
+  (is_empty it2) || (
   try 
     let b1 = right_bound it1 in
     (try 
@@ -560,7 +562,7 @@ let is_before it1 it2 =
       let y2 = rvb b2 in
       y2 < y1 || (y2 = y1 && (bob b1 || not (bob b2)))
     with Undefined -> false)
-  with Undefined -> true
+  with Undefined -> true)
 
 let is_strictly_before it1 it2 =
   try
@@ -669,29 +671,10 @@ let future_extension at1 at2 =
   if verbose then Printf.printf "fe ( %s , %s ) ↦ %s\n" (hl_string_of at1) (hl_string_of at2) (hl_string_of answer);
   answer
 
-let past_extension at1 at2 =
-  if is_empty at1 then empty 
-  else (
-    let ncc = ref empty (*dummy value*) in
-    let it1 = ref empty (*dummy value*) in
-    let it2 = ref empty (*dummy value*) in
-    let at1 = ref at1 in
-    let at2 = ref (join at1 at2) in
-    while is_not_empty !at2 do
-      let hnt2 = head_and_tail !at2 in
-      it2 := fst hnt2; 
-      at2 := snd hnt2; 
-      while is_not_empty !at1 do
-        let hnt1 = head_and_tail !at1 in
-        it1 := fst hnt1; 
-        at1 := snd hnt1; 
-        
-        if is_strictly_before !it1 !it3
-        then  
-        else
-      done
-    done
-)
+let initial_hull it = match it with
+  | [_;b] | [((Iso _) as b)] -> [Cls zero;b]
+  | _ -> full 
+
 
 end (* FutureExtension *)
 
@@ -1252,6 +1235,38 @@ end (* PastExtension *)
     | Iso x::a' -> if x <> zero then a else a'
     | Cls x::a' -> if x <> zero then a else (Opn x) :: a'
     | _ -> a
+
+
+
+let past_extension at1 at2 =
+  if is_empty at1 then empty 
+  else (
+    let answer = ref [] in
+    let last = ref empty (*dummy value*) in
+    let it1 = ref empty (*dummy value*) in
+    let it2 = ref empty (*dummy value*) in
+    let at1 = ref at1 in
+    let at2 = ref (join !at1 !at2) in
+    while is_not_empty !at2 do
+      let hnt2 = head_and_tail !at2 in
+      it2 := fst hnt2;
+      at2 := snd hnt2;
+      while is_not_empty !at1 && FutureExtension.is_before !it2 !it1 do
+        let hnt1 = head_and_tail !at1 in
+        it1 := fst hnt1;
+        at1 := snd hnt1;
+        if not (FutureExtension.is_strictly_before !it2 !it1) then last := !it1;
+      done;
+      if is_not_empty !last
+      then answer := (meet !it2 (FutureExtension.initial_hull !it1)) :: !answer ;
+      last := empty
+    done;
+    answer := List.rev !answer;
+    of_intervals !answer
+)
+
+
+
 
   (*The name is not well chosen in the case where the underlying space is the circle*)
   (*The flag is set if the result is unbounded, and left as is otherwise*)
