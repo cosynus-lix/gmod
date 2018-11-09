@@ -525,16 +525,16 @@ let verbose = false
 
 (* est-ce que it2 prolonge strictement it1 dans le futur ? *)
 
-type position = Before | After | Extending of t
+type position = Before | StrictlyAfter | Extending of t
 
 (*
   Before : it2 est contenu dans le plus petit segment initial contenant it1
-  After : it2 est contenu dans l'ensemble des majorants stricts de it1, et it1 et it2 sont déconnectés
+  StrictlyAfter : it2 est contenu dans l'ensemble des majorants stricts de it1, et it1 et it2 sont déconnectés
   Dans tous les autres cas il y a extension dans le futur et le résultat est 
   [borne gauche de it1;borne droite (éventuellement infinie) de it2]
 *)
 
-(* test si it2 est avant it1 sous l'hypothèse que it2 n'est pas vide *)
+(* test si it2 est avant it1 sous l'hypothèse que it1 et it2 ne sont pas vides *)
 
 let left_bound it = 
   match it with 
@@ -562,6 +562,16 @@ let is_before it1 it2 =
     with Undefined -> false)
   with Undefined -> true
 
+let is_strictly_before it1 it2 =
+  try
+    let b2 = right_bound it2 in
+    let a1 = left_bound it1 in
+    let y2 = rvb b2 in
+    let x1 = rvb a1 in
+    (y2 < x1) || (y2=x1 && not (bob a1) && not (bob b2))
+  with Undefined -> false
+
+
 (* is it2 strictly after it1 ? *)
 
 let is_strictly_after it1 it2 =
@@ -576,7 +586,7 @@ let is_strictly_after it1 it2 =
 let is_future_extending it1 it2 =
   if verbose then Printf.printf "  is_future_extending ( %s , %s ) = " (hl_string_of it1) (hl_string_of it2) ;
   if is_before it1 it2 then (if verbose then print_endline "Before"; Before)
-  else if is_strictly_after it1 it2 then (if verbose then print_endline "After"; After)
+  else if is_strictly_after it1 it2 then (if verbose then print_endline "StrictlyAfter"; StrictlyAfter)
   else (*Ici les choses sont plus subtiles*)
     try (let x = [left_bound it1;right_bound it2] in if verbose then print_endline (hl_string_of x) ; Extending x)
     with Undefined -> (let x = [left_bound it1] in if verbose then print_endline (hl_string_of x) ; Extending x)
@@ -610,7 +620,7 @@ let future_extension it at =
   done;
   if verbose then print_string msg;
   match !criterion with
-  | After ->  if verbose then Printf.printf "( %s , %s )\n" (hl_string_of it) (hl_string_of !at); (it,!at)
+  | StrictlyAfter ->  if verbose then Printf.printf "( %s , %s )\n" (hl_string_of it) (hl_string_of !at); (it,!at)
   | Before ->  if verbose then Printf.printf "( %s , %s )\n" (hl_string_of it) (hl_string_of !at); (it,empty)
   | Extending it -> if verbose then Printf.printf "( %s , %s )\n" (hl_string_of it) (hl_string_of !at'); (it,!at')
 
@@ -627,6 +637,7 @@ On revoie un triplet tel que:
   extension it'.
   le second élément est le reste de at1 après it'. 
   le troisième élément est le reste de at2 après it'. 
+  
 *)
 
 let next_connected_component it1 at1 at2 =
@@ -657,12 +668,59 @@ let future_extension at1 at2 =
   let answer = of_intervals ((future_extension at1 at2)) in
   if verbose then Printf.printf "fe ( %s , %s ) ↦ %s\n" (hl_string_of at1) (hl_string_of at2) (hl_string_of answer);
   answer
-    
+
+let past_extension at1 at2 =
+  if is_empty at1 then empty 
+  else (
+    let ncc = ref empty (*dummy value*) in
+    let it1 = ref empty (*dummy value*) in
+    let it2 = ref empty (*dummy value*) in
+    let at1 = ref at1 in
+    let at2 = ref (join at1 at2) in
+    while is_not_empty !at2 do
+      let hnt2 = head_and_tail !at2 in
+      it2 := fst hnt2; 
+      at2 := snd hnt2; 
+      while is_not_empty !at1 do
+        let hnt1 = head_and_tail !at1 in
+        it1 := fst hnt1; 
+        at1 := snd hnt1; 
+        
+        if is_strictly_before !it1 !it3
+        then  
+        else
+      done
+    done
+)
+
 end (* FutureExtension *)
 
 
 module PastExtension = struct
 
+(*
+Soient it1 et it2, les plus petites composantes connexes (i.e. les «plus à 
+gauche») de at1 et at2. 
+
+1) Soit it3 le minimum (i.e. plus à gauche) de it1 et it2.
+
+Si it3 = it1, on calcule ncc = next_connected_component it3 at1' at2 (où at1' 
+est le reste de at1 après it3). On note it4 la dernière composante connexe de 
+at1 (i.e. «la plus à droite») contenue dans ncc. La composante connexe que l'on cherche est 
+alors l'intersection de ncc et du plus petit segment initial contenant it' 
+(i.e. meet ncc (initial_hull it4)).
+
+Le cas it3 = it1 est symétrique excepté que it4 est toujours la dernière 
+composante connexe de at1.
+
+Pb: comment trouve-t-on it4 ?
+
+PLUS EXPÉDITIF:
+On calcule at3 la réunion de at1 et at2.
+Pour chaque composante connexe cc de at3 on cherche la composante connexe de at1 
+la plus à droite qui soit incluse dans cc. 
+
+*)
 
 end (* PastExtension *)
 
