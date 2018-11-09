@@ -521,6 +521,8 @@ let hl_string_of a =
 
 module FutureExtension = struct
 
+let verbose = false
+
 (* est-ce que it2 prolonge strictement it1 dans le futur ? *)
 
 type position = Before | After | Extending of t
@@ -572,12 +574,12 @@ let is_strictly_after it1 it2 =
   with Undefined -> false
 
 let is_future_extending it1 it2 =
-  Printf.printf "  is_future_extending ( %s , %s ) = " (hl_string_of it1) (hl_string_of it2) ;
-  if is_before it1 it2 then (print_endline "Before"; Before)
-  else if is_strictly_after it1 it2 then (print_endline "After"; After)
+  if verbose then Printf.printf "  is_future_extending ( %s , %s ) = " (hl_string_of it1) (hl_string_of it2) ;
+  if is_before it1 it2 then (if verbose then print_endline "Before"; Before)
+  else if is_strictly_after it1 it2 then (if verbose then print_endline "After"; After)
   else (*Ici les choses sont plus subtiles*)
-    try (let x = [left_bound it1;right_bound it2] in print_endline (hl_string_of x) ; Extending x)
-    with Undefined -> (let x = [left_bound it1] in print_endline (hl_string_of x) ; Extending x)
+    try (let x = [left_bound it1;right_bound it2] in if verbose then print_endline (hl_string_of x) ; Extending x)
+    with Undefined -> (let x = [left_bound it1] in if verbose then print_endline (hl_string_of x) ; Extending x)
 
 (*
 Renvoie le prolongement dans le futur de it par at, autrement dit le 
@@ -592,8 +594,9 @@ théorique, supposer que it' est l'intervalle vide lorsque at est entièrement
 avant it.
 *)
 
-let future_extension it at'' =
-  let at = ref at'' in
+let future_extension it at =
+  let msg = Printf.sprintf "  fe ( %s , %s ) ↦ " (hl_string_of it) (hl_string_of at) in
+  let at = ref at in
   let hnt = try head_and_tail !at with Undefined -> (it,empty) in
   let it' = ref (fst hnt) in
   let at' = ref (snd hnt) in
@@ -605,10 +608,11 @@ let future_extension it at'' =
     at' := snd hnt;
     criterion := is_future_extending it !it'
   done;
-  Printf.printf "  fe ( %s , %s ) ↦ " (hl_string_of it) (hl_string_of at'');
+  if verbose then print_string msg;
   match !criterion with
-  | Before | After ->  Printf.printf "( %s , %s )\n" (hl_string_of it) (hl_string_of !at); (it,!at)
-  | Extending it -> Printf.printf "( %s , %s )\n" (hl_string_of it) (hl_string_of !at'); (it,!at')
+  | After ->  if verbose then Printf.printf "( %s , %s )\n" (hl_string_of it) (hl_string_of !at); (it,!at)
+  | Before ->  if verbose then Printf.printf "( %s , %s )\n" (hl_string_of it) (hl_string_of !at); (it,empty)
+  | Extending it -> if verbose then Printf.printf "( %s , %s )\n" (hl_string_of it) (hl_string_of !at'); (it,!at')
 
 (*
 Dans le calcul de future_extension at1 at2 on sépare at1 en it1 et at1', le 
@@ -634,7 +638,7 @@ let next_connected_component it1 at1 at2 =
       then (it1,at2',at1)
       else (it1,at1,at2') in
   let (a,b,c) = next_connected_component false it1 at1 at2 in
-  Printf.printf "  next_connected_component ( %s , %s , %s ) = ( %s , %s , %s )\n" 
+  if verbose then Printf.printf "  next_connected_component ( %s , %s , %s ) = ( %s , %s , %s )\n" 
   (hl_string_of it1) (hl_string_of at1) (hl_string_of at2) 
   (hl_string_of a) (hl_string_of b) (hl_string_of c);
   (a,b,c)
@@ -648,13 +652,20 @@ let future_extension at1 at2 =
       if is_empty at1
       then [ncc]
       else if is_empty at2 
-        then it1 :: intervals_of at1
+        then ncc :: intervals_of at1
         else ncc :: (future_extension at1 at2)) in
-  let answer = of_intervals ((*List.rev*) (future_extension at1 at2)) in
-  Printf.printf "fe ( %s , %s ) ↦ %s\n" (hl_string_of at1) (hl_string_of at2) (hl_string_of answer);
+  let answer = of_intervals ((future_extension at1 at2)) in
+  if verbose then Printf.printf "fe ( %s , %s ) ↦ %s\n" (hl_string_of at1) (hl_string_of at2) (hl_string_of answer);
   answer
     
 end (* FutureExtension *)
+
+
+module PastExtension = struct
+
+
+end (* PastExtension *)
+
 
   (* The normal form is a sorted list of bounds *)
 

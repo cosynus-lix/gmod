@@ -207,23 +207,32 @@ let exhaustive_future_extension_on_half_line max =
   let fe1 = ref DD.empty in
   let fe2 = ref DD.empty in
   let ok = ref true in
+  let nb_of_tests = Int64.(shift_left 2L (2*max+1)) in
+  let nb_of_tests = Int64.mul nb_of_tests nb_of_tests in
+  let one_percent = Int64.(to_int (div nb_of_tests 100L)) in
+  let () = Printf.printf "There are %s tests to perform\n" 
+    (Int64.to_string nb_of_tests) in 
+  let percent = ref 0 in
+  let counter = ref 0 in
   while !ok do
-    print_endline ("at1 = "^(HL.string_of !at1)^" ");
-    print_endline ("at2 = "^(HL.string_of !at2)^" ");
     fe1 := HL.future_extension_1 !at1 !at2;
     fe2 := HL.future_extension_2 !at1 !at2;
-    print_endline "--";
     ok  := !fe1 = !fe2;
+    incr counter; 
     if not !ok then (
       print_endline "Mismatch:";
       Printf.printf "at1 = %s\n" (HL.string_of !at1);
       Printf.printf "at2 = %s\n" (HL.string_of !at2);
       Printf.printf "fe1 = %s\n" (HL.string_of !fe1);
       Printf.printf "fe2 = %s\n" (HL.string_of !fe2));
-    try at2 := next !at2
-    with Exit -> (
-      try at1 := next !at1; at2 := DD.empty 
-      with Exit -> ok := false)
+    begin
+      try at2 := next !at2
+      with Exit -> (
+        try at1 := next !at1; at2 := DD.empty 
+        with Exit -> ok := false);
+    end;
+    if !counter = one_percent 
+    then (counter := 0; incr percent; Printf.printf "%i%%\n" !percent;flush stdout) 
   done
   
 let command_line_options = [
