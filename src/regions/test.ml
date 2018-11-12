@@ -235,6 +235,42 @@ let exhaustive_future_extension_on_half_line max =
     then (counter := 0; incr percent; Printf.printf "%i%%\n" !percent;flush stdout) 
   done
   
+let exhaustive_past_extension_on_half_line max =
+  let next n = if n < max then n + 1 else raise Exit in
+  let next = DD.next next in
+  let at1 = ref DD.empty in
+  let at2 = ref DD.empty in
+  let fe1 = ref DD.empty in
+  let fe2 = ref DD.empty in
+  let ok = ref true in
+  let nb_of_tests = Int64.(shift_left 2L (2*max+1)) in
+  let nb_of_tests = Int64.mul nb_of_tests nb_of_tests in
+  let one_percent = Int64.(to_int (div nb_of_tests 100L)) in
+  let () = Printf.printf "There are %s tests to perform\n" 
+    (Int64.to_string nb_of_tests) in 
+  let percent = ref 0 in
+  let counter = ref 0 in
+  while !ok do
+    fe1 := DD.join !at1 (HL.past_extension !at1 !at2);
+    fe2 := DD.past_extension_2 !at1 !at2;
+    ok  := !fe1 = !fe2;
+    incr counter; 
+    if not !ok then (
+      print_endline "Mismatch:";
+      Printf.printf "at1 = %s\n" (HL.string_of !at1);
+      Printf.printf "at2 = %s\n" (HL.string_of !at2);
+      Printf.printf "fe1 = %s\n" (HL.string_of !fe1);
+      Printf.printf "fe2 = %s\n" (HL.string_of !fe2));
+    begin
+      try at2 := next !at2
+      with Exit -> (
+        try at1 := next !at1; at2 := DD.empty 
+        with Exit -> ok := false);
+    end;
+    if !counter = one_percent 
+    then (counter := 0; incr percent; Printf.printf "%i%%\n" !percent;flush stdout) 
+  done
+  
 let command_line_options = [
   "-all", Arg.String perform_all_tests, "Perform all tests in the specified directory." ;
   "-future-extension-on-half-line", Arg.Unit (preparing "hl_future"), "Test future_extension on the half-line" ;
@@ -251,6 +287,7 @@ let command_line_options = [
   "-exhaustive-intervals",Arg.Int (exhaustive_intervals), "Compare the results of the current implementation with a previous one, on all possible intervals up to some extent.";
   "-exhaustive-regions",Arg.Int (exhaustive_regions), "Compare the results of the current implementation with a previous one, on all possible regions up to some extent.";
   "-exhaustive-future-extension-on-half-line",Arg.Int (exhaustive_future_extension_on_half_line),"Compare the new implementation of future_extension on half-line (~ 60 LoC) with the current one (~ 500 LoC)";
+  "-exhaustive-past-extension-on-half-line",Arg.Int (exhaustive_past_extension_on_half_line),"Compare the new implementation of past_extension on half-line (~ 60 LoC) with the current one (~ 500 LoC)";
 (*
   "-exhaustive-meet",Arg.Int (exhaustive_meet), "Compare the results of the current implementation of meet with a previous one, on all possible regions up to some extent.";
 *)
@@ -303,7 +340,6 @@ let () =
   Printf.printf "fe  = %s\n" (HL.string_of fe );
   Printf.printf "fe1 = %s\n" (HL.string_of fe1);
   Printf.printf "fe2 = %s\n" (HL.string_of fe2);
-*)
 
 let at1 = DD.discrete [0;3;7]
 let at2 = DD.complement at1
@@ -314,3 +350,21 @@ let () =
   Printf.printf "at2 = %s\n" (HL.string_of at2);
   Printf.printf "pe1 = %s\n" (HL.string_of pe1);
   Printf.printf "pe2 = %s\n" (HL.string_of pe2);
+
+
+
+*)
+
+let at1 = DD.discrete [0;1]
+let at2 = DD.interval true false 0 1
+let at2 = DD.join at2 (DD.atom 2)
+let fe1 = DD.join at1 (HL.future_extension at1 at2)
+let fe2 = HL.future_extension_2 at1 at2
+let () =
+  Printf.printf "at1 = %s\n" (HL.string_of at1);
+  Printf.printf "at2 = %s\n" (HL.string_of at2);
+  Printf.printf "fe1 = %s\n" (HL.string_of fe1);
+  Printf.printf "fe2 = %s\n" (HL.string_of fe2);
+
+
+

@@ -549,12 +549,12 @@ let right_bound it =
   match it with
   | [Iso x] -> Cls x 
   | [_;b] -> b
-  | [_] -> raise Undefined
+  | [_] | [] -> raise Undefined
   | _ -> assert false
 
 (* is it2 before it1 ? *)
 
-let is_before it1 it2 = 
+let is_before it1 it2 =
   (is_empty it2) || (
   try 
     let b1 = right_bound it1 in
@@ -566,7 +566,10 @@ let is_before it1 it2 =
     with Undefined -> false)
   with Undefined -> true)
 
-let is_strictly_before it1 it2 =
+let is_contained_in_the_initial_hull_of it1 it2 = 
+  is_before it2 it1
+
+let is_strictly_before it1 it2 = (* it2 < it1 et déconnectés *)
   try
     let b2 = right_bound it2 in
     let a1 = left_bound it1 in
@@ -575,10 +578,9 @@ let is_strictly_before it1 it2 =
     (y2 < x1) || (y2=x1 && not (bob a1) && not (bob b2))
   with Undefined -> false
 
-
 (* is it2 strictly after it1 ? *)
 
-let is_strictly_after it1 it2 =
+let ordered_disconnected it1 it2 =
   try
     let b1 = right_bound it1 in
     let a2 = left_bound it2 in
@@ -590,7 +592,7 @@ let is_strictly_after it1 it2 =
 let is_future_extending it1 it2 =
   if verbose then Printf.printf "  is_future_extending ( %s , %s ) = " (hl_string_of it1) (hl_string_of it2) ;
   if is_before it1 it2 then (if verbose then print_endline "Before"; Before)
-  else if is_strictly_after it1 it2 then (if verbose then print_endline "StrictlyAfter"; StrictlyAfter)
+  else if ordered_disconnected it1 it2 then (if verbose then print_endline "StrictlyAfter"; StrictlyAfter)
   else (*Ici les choses sont plus subtiles*)
     try (let x = [left_bound it1;right_bound it2] in if verbose then print_endline (hl_string_of x) ; Extending x)
     with Undefined -> (let x = [left_bound it1] in if verbose then print_endline (hl_string_of x) ; Extending x)
@@ -675,8 +677,17 @@ let future_extension at1 at2 =
 
 let initial_hull it = match it with
   | [_;b] -> [Cls zero;b]
-  | [Iso x] -> if x = zero then it else [Cls zero;Cls x]  
-  | _ -> full 
+  | [Iso x] -> if x = zero then it (* [Iso zero] *) else [Cls zero;Cls x]
+  | [_] -> full
+  | [] -> it (*empty*)
+  | _ -> assert false
+
+let terminal_hull it = match it with
+  | [a;_] -> [a]
+  | [Iso x] -> [Cls x]  
+  | [_] -> it
+  | [] -> []
+  | _ -> assert false
 
 
 end (* FutureExtension *)
@@ -1239,32 +1250,108 @@ end (* PastExtension *)
     | Cls x::a' -> if x <> zero then a else (Opn x) :: a'
     | _ -> a
 
-let past_extension_2 at1 at2 =
-  if is_empty at1 then empty 
-  else (
-    let answer = ref [] in
-    let last = ref empty (*dummy value*) in
-    let it1 = ref empty (*dummy value*) in
-    let it2 = ref empty (*dummy value*) in
-    let at1 = ref at1 in
-    let at2 = ref (join !at1 at2) in
-    while is_not_empty !at2 do
+let future_extension_3 at1 at2 = 
+  print_endline "future_extension_3";
+  let answer = ref [] in
+  let it1 = ref empty (*dummy value*) in
+  let it2 = ref empty (*dummy value*) in
+  let it3 = ref empty (*dummy value*) in
+  let at1 = ref at1 in
+  let at2 = ref (join !at1 at2) in
+  let at3 = ref empty (*dummy value*) in
+  let print_state msg =
+    Printf.printf "
+    %s
+    it1 = %s
+    it2 = %s
+    at1 = %s
+    at2 = %s
+    
+    "
+    msg
+    (hl_string_of !it1)
+    (hl_string_of !it2)
+    (hl_string_of !at1)
+    (hl_string_of !at2)
+  in
+  print_state "État initial";
+  while is_not_empty !at1 && is_not_empty !at2 do
+    print_state "Entrée de boucle principale";
+    let hnt1 = head_and_tail !at1 in
+    let hnt2 = head_and_tail !at2 in
+    it1 := fst hnt1;
+    at1 := snd hnt1;
+    it2 := fst hnt2;
+    at2 := snd hnt2;
+    print_state "Avant recherche de !it2";
+    while is_not_empty !at2 && FutureExtension.ordered_disconnected !it2 !it1 do (* i.e. !it2 << !it1 *)
       let hnt2 = head_and_tail !at2 in
       it2 := fst hnt2;
       at2 := snd hnt2;
-      while is_not_empty !at1 && FutureExtension.is_before !it2 !it1 do
-        let hnt1 = head_and_tail !at1 in
-        it1 := fst hnt1;
-        at1 := snd hnt1;
-        if not (FutureExtension.is_strictly_before !it2 !it1) then last := !it1;
-      done;
-      if is_not_empty !last
-      then answer := (meet !it2 (FutureExtension.initial_hull !last)) :: !answer ;
-      Printf.printf "last = %s\n" (hl_string_of !last);
-      last := empty
     done;
-    answer := List.rev !answer;
-    of_intervals !answer)
+    print_state "Après recherche de !it2";
+    (*Ici, on sait que !it1 est la plus à gauche des composantes connexes de 
+    !at1 qui sont incluses dans !it2*)
+    answer := (meet !it2 (FutureExtension.terminal_hull !it1)) :: !answer;
+    (*TODO: mettre !it1 à jour*)
+    it3 := !it1;
+    at3 := !at1; 
+    try 
+      while FutureExtension.is_contained_in_the_initial_hull_of !it3 !it2 do (* i.e. !it3 contained in !it2  *)
+        let hnt3 = head_and_tail !at3 in
+        it1 := !it3;
+        at1 := !at3;
+        it3 := fst hnt3;
+        at3 := snd hnt3;
+      done;
+    with Undefined -> (); (*answer := (meet !it2 (FutureExtension.terminal_hull !it3)) :: !answer*)
+  it1 := !it3;
+  at3 := !at3;
+  print_state "Après mise à jour de !it1";
+  done;
+  answer := List.rev !answer;
+(*
+  List.iter (fun it -> print_string ((hl_string_of it)^" ")) !answer;
+*)
+  of_intervals !answer
+
+
+
+let past_extension_2 at1 at2 =
+  let answer = ref [] in
+  let it1 = ref empty (*dummy value*) in
+  let it2 = ref empty (*dummy value*) in
+  let it3 = ref empty (*dummy value*) in
+  let at1 = ref at1 in
+  let at2 = ref (join !at1 at2) in
+  let at3 = ref empty (*dummy value*) in
+  while is_not_empty !at1 && is_not_empty !at2 do
+    let hnt1 = head_and_tail !at1 in
+    let hnt2 = head_and_tail !at2 in
+    it1 := fst hnt1;
+    at1 := snd hnt1;
+    it2 := fst hnt2;
+    at2 := snd hnt2;
+    while is_not_empty !at2 && FutureExtension.ordered_disconnected !it2 !it1 do (* i.e. !it2 << !it1 *)
+      let hnt2 = head_and_tail !at2 in
+      it2 := fst hnt2;
+      at2 := snd hnt2;
+    done;
+    it3 := !it1;
+    at3 := !at1; 
+    try 
+      while FutureExtension.is_contained_in_the_initial_hull_of !it3 !it2 do (* i.e. !it3 contained in !it2  *)
+        let hnt3 = head_and_tail !at3 in
+        it1 := !it3;
+        at1 := !at3;
+        it3 := fst hnt3;
+        at3 := snd hnt3;
+      done;
+      answer := (meet !it2 (FutureExtension.initial_hull !it1)) :: !answer
+    with Undefined -> answer := (meet !it2 (FutureExtension.initial_hull !it3)) :: !answer
+  done;
+  answer := List.rev !answer;
+  of_intervals !answer
 
   (*The name is not well chosen in the case where the underlying space is the circle*)
   (*The flag is set if the result is unbounded, and left as is otherwise*)
@@ -2954,7 +3041,10 @@ struct
   let past_extension ar1 ar2 = past_extension ar1 ar2
 
   let future_extension_1 ar1 ar2 = join ar1 (future_extension ar1 ar2)
-  let future_extension_2 ar1 ar2 = FutureExtension.future_extension ar1 ar2 
+(*
+  let future_extension_2 ar1 ar2 = FutureExtension.future_extension ar1 ar2
+*)
+  let future_extension_2 ar1 ar2 = future_extension_3 ar1 ar2
 
   let boundary a = match a with
     | Cls x::a ->
