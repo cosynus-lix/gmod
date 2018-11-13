@@ -185,6 +185,7 @@ that way.*)
   val ci_past_extension: t -> t -> t
 
   val past_extension_2: t -> t -> t
+  val past_extension_3: t -> t -> t
   
 end
 
@@ -1253,15 +1254,11 @@ end (* PastExtension *)
 (*Le problème vient du cas où la plus à droite des composantes connexes de !at1 
 est la seule dans la composante connexe de !at2*)
 
+(*
 let verbose = false
+*)
 
-let future_extension_3 at1 at2 = if is_empty at1 then empty else (
-  let answer = ref [] in
-  let finished = ref false in
-  let it1 = ref empty (*dummy value*) in
-  let it2 = ref empty (*dummy value*) in
-  let at1 = ref at1 in
-  let at2 = ref (join !at1 at2) in
+(*
   let print_state msg = if verbose then
     Printf.printf "
     %s
@@ -1277,113 +1274,47 @@ let future_extension_3 at1 at2 = if is_empty at1 then empty else (
     (hl_string_of !at1)
     (hl_string_of !at2)
   in
-  let () = print_state "Avant initialisation" in
-  let hnt1 = head_and_tail !at1 in
-  let () = it1 := fst hnt1; at1 := snd hnt1 in 
+*)
+
+(*
+  Idea: denote by at3 the union of at1 and at2. Every connected component it1 
+  of at1 is included in a connected component it3 of at3. If it1 is the 
+  leftmost connected component of at1 contained in it3, then the connected 
+  component of (future_extension at1 at2) containing it1 is given by (meet 
+  (terminal_hull it1) it3).
+*)
+
+let future_extension_3 at1 at2 =
+  let answer = ref [] in
+  let finished = ref false in
+  let at2 = ref (join at1 at2) in  
+  let hnt1 = head_and_tail at1 in
+  let it1 = ref (fst hnt1) in
+  let at1 = ref (snd hnt1) in
   let hnt2 = head_and_tail !at2 in
-  let () = it2 := fst hnt2; at2 := snd hnt2 in 
-  let next_connected_component () = 
+  let () = at2 := snd hnt2 in
+  let it2 = ref (fst hnt2) in
+  while not !finished do
     while FutureExtension.ordered_disconnected !it2 !it1 do
       let hnt2 = head_and_tail !at2 in
       it2 := fst hnt2;
       at2 := snd hnt2;
     done;
-    answer := (meet !it2 (FutureExtension.terminal_hull !it1)) :: !answer; 
-  in
-  print_state "État initial";
-  while not !finished (*is_not_empty !at1*) (*&& is_not_empty !at2*) do
-    print_state "Entrée de boucle principale";
-    next_connected_component ();
-    (*TODO: mettre !it1 à jour*)
-    (
+    answer := (meet !it2 (FutureExtension.terminal_hull !it1)) :: !answer;
     try 
-      while FutureExtension.is_contained_in_the_initial_hull_of !it1 !it2 do (* i.e. !it3 contained in !it2  *)
+      while FutureExtension.is_contained_in_the_initial_hull_of !it1 !it2 do
         let hnt1 = head_and_tail !at1 in
         it1 := fst hnt1;
         at1 := snd hnt1;
       done;
-    with Undefined -> (finished := true; if verbose then print_endline "Exhausted")); (*answer := (meet !it2 (FutureExtension.terminal_hull !it3)) :: !answer*)
-  print_state "Après mise à jour de !it1";
-  done;
-(*
-  if not !finished then next_connected_component ();
-*)
-  answer := List.rev !answer;
-  try of_intervals !answer with _ -> (print_string "Boom ";List.iter (fun it -> print_string ((hl_string_of it)^" ")) !answer;print_endline ""; empty)
-)
-
-(*La verion ci-dessous fonctionne, mais je ne vois pas pourquoi it3 et at3 
-sont nécesssaires à son bon fonctionnement...(voir version 3)*)
-
-let future_extension_4 at1 at2 = 
-(*
-  print_endline "future_extension_3";
-*)
-  let answer = ref [] in
-  let it1 = ref empty (*dummy value*) in
-  let it2 = ref empty (*dummy value*) in
-  let it3 = ref empty (*dummy value*) in
-  let at1 = ref at1 in
-  let at2 = ref (join !at1 at2) in
-  let at3 = ref empty (*dummy value*) in
-  let print_state msg = if false then
-    Printf.printf "
-    %s
-    it1 = %s
-    it2 = %s
-    at1 = %s
-    at2 = %s
-    
-    "
-    msg
-    (hl_string_of !it1)
-    (hl_string_of !it2)
-    (hl_string_of !at1)
-    (hl_string_of !at2)
-  in
-  print_state "État initial";
-  while is_not_empty !at1 && is_not_empty !at2 do
-    print_state "Entrée de boucle principale";
-    let hnt1 = head_and_tail !at1 in
-    let hnt2 = head_and_tail !at2 in
-    it1 := fst hnt1;
-    at1 := snd hnt1;
-    it2 := fst hnt2;
-    at2 := snd hnt2;
-    print_state "Avant recherche de !it2";
-    while (*is_not_empty !at2 &&*) FutureExtension.ordered_disconnected !it2 !it1 do (* i.e. !it2 << !it1 *)
-      let hnt2 = head_and_tail !at2 in
-      it2 := fst hnt2;
-      at2 := snd hnt2;
-    done;
-    print_state "Après recherche de !it2";
-    (*Ici, on sait que !it1 est la plus à gauche des composantes connexes de 
-    !at1 qui sont incluses dans !it2*)
-    answer := (meet !it2 (FutureExtension.terminal_hull !it1)) :: !answer;
-    (*TODO: mettre !it1 à jour*)
-    it3 := !it1;
-    at3 := !at1; 
-    try 
-      while FutureExtension.is_contained_in_the_initial_hull_of !it3 !it2 do (* i.e. !it3 contained in !it2  *)
-        let hnt3 = head_and_tail !at3 in
-        it1 := !it3;
-        at1 := !at3;
-        it3 := fst hnt3;
-        at3 := snd hnt3;
-      done;
-    with Undefined -> (); (*answer := (meet !it2 (FutureExtension.terminal_hull !it3)) :: !answer*)
-  it1 := !it3;
-  at1 := !at3;
-  print_state "Après mise à jour de !it1";
+    with Undefined -> finished := true
   done;
   answer := List.rev !answer;
-(*
-  List.iter (fun it -> print_string ((hl_string_of it)^" ")) !answer;
-*)
   of_intervals !answer
 
-
-
+let future_extension_3 at1 at2 = 
+  if is_empty at1 then empty 
+  else future_extension_3 at1 at2
 
 let past_extension_2 at1 at2 =
   let answer = ref [] in
@@ -1420,6 +1351,45 @@ let past_extension_2 at1 at2 =
   done;
   answer := List.rev !answer;
   of_intervals !answer
+
+let past_extension_3 at1 at2 =
+  let answer = ref [] in
+  let finished = ref false in
+  let at2 = ref (join at1 at2) in  
+  let hnt1 = head_and_tail at1 in
+  let it1 = ref (fst hnt1) in
+  let at1 = ref (snd hnt1) in
+  let hnt2 = head_and_tail !at2 in
+  let () = at2 := snd hnt2 in
+  let it2 = ref (fst hnt2) in
+  while not !finished do
+    while FutureExtension.ordered_disconnected !it2 !it1 do
+      let hnt2 = head_and_tail !at2 in
+      it2 := fst hnt2;
+      at2 := snd hnt2;
+    done;
+    let prev_it1 = ref !it1 in
+    let prev_at1 = ref !at1 in
+    (try
+      while FutureExtension.is_contained_in_the_initial_hull_of !it1 !it2 do
+        prev_it1 := !it1;
+        prev_at1 := !at1;
+        let hnt1 = head_and_tail !at1 in
+        it1 := fst hnt1;
+        at1 := snd hnt1
+      done;
+    with Undefined -> (
+      answer := (meet !it2 (FutureExtension.initial_hull !it1)) :: !answer;
+      finished := true));
+    if not !finished then answer := (meet !it2 (FutureExtension.initial_hull !prev_it1)) :: !answer;
+  done;
+  answer := List.rev !answer;
+  try of_intervals !answer with _ -> (List.iter (fun it -> print_string ((string_of it)^" ")) !answer; [])
+
+let past_extension_3 at1 at2 =
+  if is_empty at1 then empty 
+  else past_extension_3 at1 at2
+
 
   (*The name is not well chosen in the case where the underlying space is the circle*)
   (*The flag is set if the result is unbounded, and left as is otherwise*)

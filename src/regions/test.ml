@@ -252,7 +252,7 @@ let exhaustive_past_extension_on_half_line max =
   let counter = ref 0 in
   while !ok do
     fe1 := DD.join !at1 (HL.past_extension !at1 !at2);
-    fe2 := DD.past_extension_2 !at1 !at2;
+    fe2 := DD.past_extension_3 !at1 !at2;
     ok  := !fe1 = !fe2;
     incr counter; 
     if not !ok then (
@@ -363,7 +363,6 @@ let () =
   Printf.printf "fe1 = %s\n" (HL.string_of fe1);
   Printf.printf "fe2 = %s\n" (HL.string_of fe2);
 
-*)
 
 let () = print_endline "--"
 
@@ -377,3 +376,15 @@ let () =
   Printf.printf "fe1 = %s\n" (HL.string_of fe1);
   Printf.printf "fe2 = %s\n" (HL.string_of fe2);
 
+
+let at1 = DD.discrete [0;1]
+let at2 = DD.empty
+let pe1 = DD.join at1 (HL.past_extension at1 at2)
+let pe2 = DD.past_extension_3 at1 at2
+let () = 
+  Printf.printf "at1 = %s\n" (HL.string_of at1);
+  Printf.printf "at2 = %s\n" (HL.string_of at2);
+  Printf.printf "pe1 = %s\n" (HL.string_of pe1);
+  Printf.printf "pe2 = %s\n" (HL.string_of pe2);
+
+*)
