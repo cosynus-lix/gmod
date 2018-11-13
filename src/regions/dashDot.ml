@@ -1286,7 +1286,6 @@ let verbose = false
 
 let future_extension_3 at1 at2 =
   let answer = ref [] in
-  let finished = ref false in
   let at2 = ref (join at1 at2) in  
   let hnt1 = head_and_tail at1 in
   let it1 = ref (fst hnt1) in
@@ -1294,21 +1293,24 @@ let future_extension_3 at1 at2 =
   let hnt2 = head_and_tail !at2 in
   let () = at2 := snd hnt2 in
   let it2 = ref (fst hnt2) in
-  while not !finished do
-    while FutureExtension.ordered_disconnected !it2 !it1 do
-      let hnt2 = head_and_tail !at2 in
-      it2 := fst hnt2;
-      at2 := snd hnt2;
-    done;
-    answer := (meet !it2 (FutureExtension.terminal_hull !it1)) :: !answer;
-    try 
-      while FutureExtension.is_contained_in_the_initial_hull_of !it1 !it2 do
-        let hnt1 = head_and_tail !at1 in
-        it1 := fst hnt1;
-        at1 := snd hnt1;
-      done;
-    with Undefined -> finished := true
-  done;
+  let () =
+    try
+      while true do
+        while FutureExtension.ordered_disconnected !it2 !it1 do
+          let hnt2 = head_and_tail !at2 in
+          it2 := fst hnt2;
+          at2 := snd hnt2;
+        done;
+        answer := (meet !it2 (FutureExtension.terminal_hull !it1)) :: !answer;
+        try 
+          while FutureExtension.is_contained_in_the_initial_hull_of !it1 !it2 do
+            let hnt1 = head_and_tail !at1 in
+            it1 := fst hnt1;
+            at1 := snd hnt1;
+          done;
+        with Undefined -> raise Exit
+      done 
+    with Exit -> () in
   answer := List.rev !answer;
   of_intervals !answer
 
@@ -1354,37 +1356,40 @@ let past_extension_2 at1 at2 =
 
 let past_extension_3 at1 at2 =
   let answer = ref [] in
-  let finished = ref false in
   let at2 = ref (join at1 at2) in  
   let hnt1 = head_and_tail at1 in
   let it1 = ref (fst hnt1) in
   let at1 = ref (snd hnt1) in
   let hnt2 = head_and_tail !at2 in
   let () = at2 := snd hnt2 in
-  let it2 = ref (fst hnt2) in
-  while not !finished do
-    while FutureExtension.ordered_disconnected !it2 !it1 do
-      let hnt2 = head_and_tail !at2 in
-      it2 := fst hnt2;
-      at2 := snd hnt2;
-    done;
-    let prev_it1 = ref !it1 in
-    let prev_at1 = ref !at1 in
-    (try
-      while FutureExtension.is_contained_in_the_initial_hull_of !it1 !it2 do
-        prev_it1 := !it1;
-        prev_at1 := !at1;
-        let hnt1 = head_and_tail !at1 in
-        it1 := fst hnt1;
-        at1 := snd hnt1
-      done;
-    with Undefined -> (
-      answer := (meet !it2 (FutureExtension.initial_hull !it1)) :: !answer;
-      finished := true));
-    if not !finished then answer := (meet !it2 (FutureExtension.initial_hull !prev_it1)) :: !answer;
-  done;
+  let it2 = ref (fst hnt2) in 
+  let () = 
+    try
+      while true do
+        let () = 
+          while FutureExtension.ordered_disconnected !it2 !it1 do
+            let hnt2 = head_and_tail !at2 in
+            it2 := fst hnt2;
+            at2 := snd hnt2;
+          done in
+        let prev_it1 = ref !it1 in
+        let prev_at1 = ref !at1 in
+        let () = try
+          while FutureExtension.is_contained_in_the_initial_hull_of !it1 !it2 do
+            prev_it1 := !it1;
+            prev_at1 := !at1;
+            let hnt1 = head_and_tail !at1 in
+            it1 := fst hnt1;
+            at1 := snd hnt1
+          done;
+        with Undefined -> 
+          answer := (meet !it2 (FutureExtension.initial_hull !it1)) :: !answer;
+          raise Exit in
+        answer := (meet !it2 (FutureExtension.initial_hull !prev_it1)) :: !answer
+      done
+    with Exit -> () in
   answer := List.rev !answer;
-  try of_intervals !answer with _ -> (List.iter (fun it -> print_string ((string_of it)^" ")) !answer; [])
+  of_intervals !answer
 
 let past_extension_3 at1 at2 =
   if is_empty at1 then empty 
