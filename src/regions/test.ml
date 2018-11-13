@@ -353,11 +353,8 @@ let () =
 
 
 
-*)
-
 let at1 = DD.discrete [0;1]
-let at2 = DD.interval true false 0 1
-let at2 = DD.join at2 (DD.atom 2)
+let at2 = DD.empty
 let fe1 = DD.join at1 (HL.future_extension at1 at2)
 let fe2 = HL.future_extension_2 at1 at2
 let () =
@@ -366,5 +363,17 @@ let () =
   Printf.printf "fe1 = %s\n" (HL.string_of fe1);
   Printf.printf "fe2 = %s\n" (HL.string_of fe2);
 
+*)
 
+let () = print_endline "--"
+
+let at1 = DD.discrete [0;1]
+let at2 = DD.interval true false 0 1
+let fe1 = DD.join at1 (HL.future_extension at1 at2)
+let fe2 = HL.future_extension_2 at1 at2
+let () =
+  Printf.printf "at1 = %s\n" (HL.string_of at1);
+  Printf.printf "at2 = %s\n" (HL.string_of at2);
+  Printf.printf "fe1 = %s\n" (HL.string_of fe1);
+  Printf.printf "fe2 = %s\n" (HL.string_of fe2);
 
