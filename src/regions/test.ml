@@ -1,14 +1,14 @@
+module HL_legacy = ODA.HalfLine(Integer)
+
+module Ci_legacy = ODA.Circle(Integer)
+
 module DD = DashDot.Make(Integer)
 
 module HL = DD.HalfLine
 
 module Ci = DD.Circle
 
-module I = Interval.Make(Integer)
 
-module C = Cube.Make(Common)(I)
-
-module AC = AreaOverCube.Make(Common)(C)
 
 (* of_string does not check the format of the argument *)
 
@@ -139,53 +139,15 @@ let perform_all_tests dir =
 
 let exhaustive_intervals max = 
   let next n = if n < max then n + 1 else raise Exit in
-  let next = I.next next in
-  let x = ref (I.atom 0) in
-  try
-    while true do 
-      print_string (I.string_of !x);
-      x := next !x;
-      print_endline ""
-    done
-  with Exit -> () (*print_endline "End of enumeration"*)
-
-(* based on regions *)
-let exhaustive_regions max = 
-  let next n = if n < max then n + 1 else raise Exit in
-  let next = I.next_region next in
-  let x = ref [] in
-  try
-    while true do 
-      List.iter (fun it -> print_string ((I.string_of it) ^ " ")) !x;
-      x := next !x;
-      print_endline ""
-    done
-  with Exit -> () (*print_endline "End of enumeration"*)
-
-(* based on regions implemented in dashdot *)
-let exhaustive_regions max =
-  let next n = if n < max then n + 1 else raise Exit in
-  let next = DD.next_region next in
-  let x = ref [] in
+  let next = DD.next_interval next in
+  let x = ref (DD.atom 0) in
   try
     while true do
-(*
-    print_string "x = "; 
-      List.iter (fun it -> print_string ((HL.string_of it) ^ " ")) !x;
-      print_endline "";
-(*
-      print_string "of_region = ";
-      print_endline (HL.string_of (DD.of_region !x));
-*)
-      let y = DD.region_of (DD.of_region !x) in
-      print_string "y = ";
-      List.iter (fun it -> print_string ((HL.string_of it) ^ " ")) y;
-      print_endline "";
-      print_endline (if y = !x then "--" else "PROBLEM");
-*)
-      x := next !x
+      print_string (HL.string_of !x);
+      x := next !x;
+      print_endline ""
     done
-  with Exit -> () (*print_endline "End of enumeration"*)
+  with Exit -> print_endline ""
 
 (* based on dashdot *)
 let exhaustive_regions max = 
@@ -197,7 +159,7 @@ let exhaustive_regions max =
       print_endline (HL.string_of !x);
       x := next !x
     done
-  with Exit -> () (*print_endline "End of enumeration"*)
+  with Exit -> ()
 
 let exhaustive_future_extension_on_half_line max =
   let next n = if n < max then n + 1 else raise Exit in
@@ -325,66 +287,3 @@ Lines starting with % are comments. Empty lines are ignored.
 Options are:"
 
 let () = Arg.parse command_line_options anon_fun msg
-
-(* Test direct *)
-
-(*
-let at1 = DD.atom 0
-let at2 = DD.interval true true 0 1
-let fe  = HL.future_extension   at1 at2
-let fe1 = HL.future_extension_1 at1 at2
-let fe2 = HL.future_extension_2 at1 at2
-let () = 
-  Printf.printf "at1 = %s\n" (HL.string_of at1);
-  Printf.printf "at2 = %s\n" (HL.string_of at2);
-  Printf.printf "fe  = %s\n" (HL.string_of fe );
-  Printf.printf "fe1 = %s\n" (HL.string_of fe1);
-  Printf.printf "fe2 = %s\n" (HL.string_of fe2);
-
-let at1 = DD.discrete [0;3;7]
-let at2 = DD.complement at1
-let pe1 = DD.join at1 (HL.past_extension at1 at2)
-let pe2 = DD.past_extension_2 at1 at2
-let () = 
-  Printf.printf "at1 = %s\n" (HL.string_of at1);
-  Printf.printf "at2 = %s\n" (HL.string_of at2);
-  Printf.printf "pe1 = %s\n" (HL.string_of pe1);
-  Printf.printf "pe2 = %s\n" (HL.string_of pe2);
-
-
-
-let at1 = DD.discrete [0;1]
-let at2 = DD.empty
-let fe1 = DD.join at1 (HL.future_extension at1 at2)
-let fe2 = HL.future_extension_2 at1 at2
-let () =
-  Printf.printf "at1 = %s\n" (HL.string_of at1);
-  Printf.printf "at2 = %s\n" (HL.string_of at2);
-  Printf.printf "fe1 = %s\n" (HL.string_of fe1);
-  Printf.printf "fe2 = %s\n" (HL.string_of fe2);
-
-
-let () = print_endline "--"
-
-let at1 = DD.discrete [0;1]
-let at2 = DD.interval true false 0 1
-let fe1 = DD.join at1 (HL.future_extension at1 at2)
-let fe2 = HL.future_extension_2 at1 at2
-let () =
-  Printf.printf "at1 = %s\n" (HL.string_of at1);
-  Printf.printf "at2 = %s\n" (HL.string_of at2);
-  Printf.printf "fe1 = %s\n" (HL.string_of fe1);
-  Printf.printf "fe2 = %s\n" (HL.string_of fe2);
-
-
-let at1 = DD.discrete [0;1]
-let at2 = DD.empty
-let pe1 = DD.join at1 (HL.past_extension at1 at2)
-let pe2 = DD.past_extension_3 at1 at2
-let () = 
-  Printf.printf "at1 = %s\n" (HL.string_of at1);
-  Printf.printf "at2 = %s\n" (HL.string_of at2);
-  Printf.printf "pe1 = %s\n" (HL.string_of pe1);
-  Printf.printf "pe2 = %s\n" (HL.string_of pe2);
-
-*)

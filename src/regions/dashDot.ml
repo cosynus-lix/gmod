@@ -166,9 +166,9 @@ that way.*)
   
   (** {2 Iterator and Enumerator}*)
   
-  val next: (value -> value) -> t -> t
+  val next_interval: (value -> value) -> t -> t
 
-  val next_region: (value -> value) -> t list -> t list
+  val next: (value -> value) -> t -> t 
   
   val intervals_of: t -> t list
   
@@ -184,7 +184,6 @@ that way.*)
   
   val ci_past_extension: t -> t -> t
 
-  val past_extension_2: t -> t -> t
   val past_extension_3: t -> t -> t
   
 end
@@ -462,6 +461,7 @@ struct
     | a :: Pun x :: at -> [a;Opn x] :: intervals_of (Opn x :: at)
     | a :: b :: at -> [a;b] :: intervals_of at
     | _ -> assert false
+
 
 (*
   head_and_tail returns an ordered pair whose first term is the first 
@@ -1251,31 +1251,6 @@ end (* PastExtension *)
     | Cls x::a' -> if x <> zero then a else (Opn x) :: a'
     | _ -> a
 
-(*Le problème vient du cas où la plus à droite des composantes connexes de !at1 
-est la seule dans la composante connexe de !at2*)
-
-(*
-let verbose = false
-*)
-
-(*
-  let print_state msg = if verbose then
-    Printf.printf "
-    %s
-    it1 = %s
-    it2 = %s
-    at1 = %s
-    at2 = %s
-    
-    "
-    msg
-    (hl_string_of !it1)
-    (hl_string_of !it2)
-    (hl_string_of !at1)
-    (hl_string_of !at2)
-  in
-*)
-
 (*
   Idea: denote by at3 the union of at1 and at2. Every connected component it1 
   of at1 is included in a connected component it3 of at3. If it1 is the 
@@ -1318,41 +1293,6 @@ let future_extension_3 at1 at2 =
   if is_empty at1 then empty 
   else future_extension_3 at1 at2
 
-let past_extension_2 at1 at2 =
-  let answer = ref [] in
-  let it1 = ref empty (*dummy value*) in
-  let it2 = ref empty (*dummy value*) in
-  let it3 = ref empty (*dummy value*) in
-  let at1 = ref at1 in
-  let at2 = ref (join !at1 at2) in
-  let at3 = ref empty (*dummy value*) in
-  while is_not_empty !at1 && is_not_empty !at2 do
-    let hnt1 = head_and_tail !at1 in
-    let hnt2 = head_and_tail !at2 in
-    it1 := fst hnt1;
-    at1 := snd hnt1;
-    it2 := fst hnt2;
-    at2 := snd hnt2;
-    while is_not_empty !at2 && FutureExtension.ordered_disconnected !it2 !it1 do (* i.e. !it2 << !it1 *)
-      let hnt2 = head_and_tail !at2 in
-      it2 := fst hnt2;
-      at2 := snd hnt2;
-    done;
-    it3 := !it1;
-    at3 := !at1; 
-    try 
-      while FutureExtension.is_contained_in_the_initial_hull_of !it3 !it2 do (* i.e. !it3 contained in !it2  *)
-        let hnt3 = head_and_tail !at3 in
-        it1 := !it3;
-        at1 := !at3;
-        it3 := fst hnt3;
-        at3 := snd hnt3;
-      done;
-      answer := (meet !it2 (FutureExtension.initial_hull !it1)) :: !answer
-    with Undefined -> answer := (meet !it2 (FutureExtension.initial_hull !it3)) :: !answer
-  done;
-  answer := List.rev !answer;
-  of_intervals !answer
 
 let past_extension_3 at1 at2 =
   let answer = ref [] in
@@ -3377,6 +3317,7 @@ let ci_past_extension cr1 cr2 = past_extension false cr1 cr2
 
 (* Enumerator / Iterator *)
 
+(* Iterators/Enumerators *)
 
   (* Énumère les intervalles *)
   (* The function next is supposed to raise Exit if one is beyond the last 
