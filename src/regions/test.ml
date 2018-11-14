@@ -22,7 +22,7 @@ let hl_of_legacy b = match b with
   | HL_legacy.Opn x -> DD.Opn x
   | HL_legacy.Cls x -> DD.Cls x
 
-let hl_of_legacy oda = List.map hl_to_legacy oda
+let hl_of_legacy oda = List.map hl_of_legacy oda
 
 (* of_string does not check the format of the argument *)
 
@@ -191,7 +191,10 @@ let exhaustive_future_extension_on_half_line max =
   let percent = ref 0 in
   let counter = ref 0 in
   while !ok do
-    fe1 := HL.future_extension_1 !at1 !at2;
+    let at1' = hl_to_legacy !at1 in
+    let at2' = hl_to_legacy !at2 in
+    let at3  = hl_of_legacy (HL_legacy.future_extension at1' at2') in
+    fe1 := DD.join !at1 at3;
     fe2 := HL.future_extension_2 !at1 !at2;
     ok  := !fe1 = !fe2;
     incr counter; 
@@ -227,7 +230,10 @@ let exhaustive_past_extension_on_half_line max =
   let percent = ref 0 in
   let counter = ref 0 in
   while !ok do
-    fe1 := DD.join !at1 (HL.past_extension !at1 !at2);
+    let at1' = hl_to_legacy !at1 in
+    let at2' = hl_to_legacy !at2 in
+    let at3  = hl_of_legacy (HL_legacy.past_extension at1' at2') in
+    fe1 := DD.join !at1 at3;
     fe2 := DD.past_extension_3 !at1 !at2;
     ok  := !fe1 = !fe2;
     incr counter; 
