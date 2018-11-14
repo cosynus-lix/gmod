@@ -2381,10 +2381,7 @@ in the union of x and {p} *)
 
 end (* BooleanAlgebra *)
 
-module HalfLine(B:Sig.Bound):AdditionalSig.OdaHalfLine
-  with type value = B.t
-  and type bound = BooleanAlgebra(B).bound
-  and type t = BooleanAlgebra(B).t
+module RawHalfLine(B:Sig.Bound)
 	=
 struct
   include BooleanAlgebra(B)
@@ -2518,10 +2515,15 @@ struct
 
 end(*HalfLine*)
 
-module Circle(B:Sig.Bound):AdditionalSig.OdaCircle
+
+module HalfLine(B:Sig.Bound):(AdditionalSig.OdaHalfLine
   with type value = B.t
   and type bound = BooleanAlgebra(B).bound
-  and type t = BooleanAlgebra(B).t
+  and type t = BooleanAlgebra(B).t) 
+= RawHalfLine(B:Sig.Bound)
+
+
+module RawCircle(B:Sig.Bound)
 	=
 struct
   include BooleanAlgebra(B)
@@ -2738,3 +2740,10 @@ struct
     past_extension ~circle_mode:(unbounded_connected_component_must_be_added at1 at2) at1 at2
 
 end(*Circle*)
+
+
+module Circle(B:Sig.Bound):AdditionalSig.OdaCircle
+  with type value = B.t
+  and type bound = BooleanAlgebra(B).bound
+  and type t = BooleanAlgebra(B).t
+= RawCircle(B:Sig.Bound)

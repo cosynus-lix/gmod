@@ -190,7 +190,7 @@ end
 
 (* One-dimensional isothetic regions over the halfline and the circle *)
 
-module Make(B:Bound.S):(S with type value = B.t) =
+module Raw(B:Bound.S) =
 struct
 
   type value = B.t
@@ -3426,6 +3426,10 @@ let ci_past_extension cr1 cr2 = past_extension false cr1 cr2
       answer)
 
 end (* BooleanAlgebra *)
+
+module Make(B:Bound.S): S with type value = B.t
+= Raw (B:Bound.S)
+
 
 (*
 

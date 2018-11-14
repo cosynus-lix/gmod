@@ -1,14 +1,28 @@
-module HL_legacy = ODA.HalfLine(Integer)
+module HL_legacy = ODA.RawHalfLine(Integer)
 
-module Ci_legacy = ODA.Circle(Integer)
+module Ci_legacy = ODA.RawCircle(Integer)
 
-module DD = DashDot.Make(Integer)
+module DD = DashDot.Raw(Integer)
 
 module HL = DD.HalfLine
 
 module Ci = DD.Circle
 
+let hl_to_legacy b = match b with 
+  | DD.Iso x -> HL_legacy.Iso x
+  | DD.Pun x -> HL_legacy.Pun x
+  | DD.Opn x -> HL_legacy.Opn x
+  | DD.Cls x -> HL_legacy.Cls x
 
+let hl_to_legacy dd = List.map hl_to_legacy dd
+
+let hl_of_legacy b = match b with 
+  | HL_legacy.Iso x -> DD.Iso x
+  | HL_legacy.Pun x -> DD.Pun x
+  | HL_legacy.Opn x -> DD.Opn x
+  | HL_legacy.Cls x -> DD.Cls x
+
+let hl_of_legacy oda = List.map hl_to_legacy oda
 
 (* of_string does not check the format of the argument *)
 
