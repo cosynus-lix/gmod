@@ -3,10 +3,6 @@ COMMON = ../common/
 LEGACY_COMMON = ../legacy/trunk_common/
 GEOREAL = $(LEGACY_COMMON)/geometric_realization/
 SOURCES = bound.ml dashDot.ml $(COMMON)integer.ml $(LEGACY_COMMON)common.ml  \
-$(LEGACY_COMMON)interval.mli $(LEGACY_COMMON)interval.ml \
-$(LEGACY_COMMON)cube.ml $(LEGACY_COMMON)cube.mli \
-$(LEGACY_COMMON)algebra.mli $(LEGACY_COMMON)algebra.ml \
-$(LEGACY_COMMON)areaOverCube.ml $(LEGACY_COMMON)areaOverCube.mli \
 $(GEOREAL)ODA.ml \
 test.ml
 RESULT = main
@@ -17,3 +13,8 @@ PACKS = str ocamlgraph unix
 all: dnc
 
 include $(OCAMLMAKEFILE)
+
+#$(LEGACY_COMMON)interval.mli $(LEGACY_COMMON)interval.ml \
+#$(LEGACY_COMMON)cube.ml $(LEGACY_COMMON)cube.mli \
+#$(LEGACY_COMMON)algebra.mli $(LEGACY_COMMON)algebra.ml \
+#$(LEGACY_COMMON)areaOverCube.ml $(LEGACY_COMMON)areaOverCube.mli \

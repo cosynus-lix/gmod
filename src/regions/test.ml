@@ -175,7 +175,8 @@ let exhaustive_regions max =
     done
   with Exit -> ()
 
-let exhaustive_future_extension_on_half_line max =
+
+let exhaustive_test oracle bin_op max =
   let next n = if n < max then n + 1 else raise Exit in
   let next = DD.next next in
   let at1 = ref DD.empty in
@@ -191,50 +192,8 @@ let exhaustive_future_extension_on_half_line max =
   let percent = ref 0 in
   let counter = ref 0 in
   while !ok do
-    let at1' = hl_to_legacy !at1 in
-    let at2' = hl_to_legacy !at2 in
-    let at3  = hl_of_legacy (HL_legacy.future_extension at1' at2') in
-    fe1 := DD.join !at1 at3;
-    fe2 := HL.future_extension !at1 !at2;
-    ok  := !fe1 = !fe2;
-    incr counter; 
-    if not !ok then (
-      print_endline "Mismatch:";
-      Printf.printf "at1 = %s\n" (HL.string_of !at1);
-      Printf.printf "at2 = %s\n" (HL.string_of !at2);
-      Printf.printf "fe1 = %s\n" (HL.string_of !fe1);
-      Printf.printf "fe2 = %s\n" (HL.string_of !fe2));
-    begin
-      try at2 := next !at2
-      with Exit -> (
-        try at1 := next !at1; at2 := DD.empty 
-        with Exit -> ok := false);
-    end;
-    if !counter = one_percent 
-    then (counter := 0; incr percent; if !percent < 100 then Printf.printf "%i%%\r%!" !percent else print_endline "100%")
-  done
-  
-let exhaustive_past_extension_on_half_line max =
-  let next n = if n < max then n + 1 else raise Exit in
-  let next = DD.next next in
-  let at1 = ref DD.empty in
-  let at2 = ref DD.empty in
-  let fe1 = ref DD.empty in
-  let fe2 = ref DD.empty in
-  let ok = ref true in
-  let nb_of_tests = Int64.(shift_left 2L (2*max+1)) in
-  let nb_of_tests = Int64.mul nb_of_tests nb_of_tests in
-  let one_percent = Int64.(to_int (div nb_of_tests 100L)) in
-  let () = Printf.printf "There are %s tests to perform\n" 
-    (Int64.to_string nb_of_tests) in 
-  let percent = ref 0 in
-  let counter = ref 0 in
-  while !ok do
-    let at1' = hl_to_legacy !at1 in
-    let at2' = hl_to_legacy !at2 in
-    let at3  = hl_of_legacy (HL_legacy.past_extension at1' at2') in
-    fe1 := DD.join !at1 at3;
-    fe2 := HL.past_extension !at1 !at2;
+    fe1 := oracle !at1 !at2;
+    fe2 := bin_op !at1 !at2;
     ok  := !fe1 = !fe2;
     incr counter; 
     if not !ok then (
@@ -253,108 +212,60 @@ let exhaustive_past_extension_on_half_line max =
     then (counter := 0; incr percent; if !percent < 100 then Printf.printf "%i%%\r%!" !percent else print_endline "100%")
   done
 
-let exhaustive_future_extension_on_circle max =
-  let next n = if n < max then n + 1 else raise Exit in
-  let next = DD.next next in
-  let at1 = ref DD.empty in
-  let at2 = ref DD.empty in
-  let fe1 = ref DD.empty in
-  let fe2 = ref DD.empty in
-  let ok = ref true in
-  let nb_of_tests = Int64.(shift_left 2L (2*max+1)) in
-  let nb_of_tests = Int64.mul nb_of_tests nb_of_tests in
-  let one_percent = Int64.(to_int (div nb_of_tests 100L)) in
-  let () = Printf.printf "There are %s tests to perform\n" 
-    (Int64.to_string nb_of_tests) in 
-  let percent = ref 0 in
-  let counter = ref 0 in 
-  while !ok do  
-    let at1' = hl_to_legacy !at1 in
-    let at2' = hl_to_legacy !at2 in
-    let at3  = hl_of_legacy (Ci_legacy.future_extension at1' at2')  in
-    fe1 := DD.join !at1 at3;
-    fe2 := Ci.future_extension !at1 !at2;
-    ok  := !fe1 = !fe2;
-    incr counter; 
-    if not !ok then (
-      print_endline "Mismatch:";
-      Printf.printf "at1 = %s\n" (HL.string_of !at1);
-      Printf.printf "at2 = %s\n" (HL.string_of !at2);
-      Printf.printf "fe1 = %s\n" (HL.string_of !fe1);
-      Printf.printf "fe2 = %s\n" (HL.string_of !fe2));
-    begin
-      try at2 := next !at2
-      with Exit -> (
-        try at1 := next !at1; at2 := DD.empty 
-        with Exit -> ok := false);
-    end;
-    if !counter = one_percent 
-    then (counter := 0; incr percent; if !percent < 100 then Printf.printf "%i%%\r%!" !percent else print_endline "100%")
-  done
-  
-let exhaustive_past_extension_on_circle max =
-  let next n = if n < max then n + 1 else raise Exit in
-  let next = DD.next next in
-  let at1 = ref DD.empty in
-  let at2 = ref DD.empty in
-  let fe1 = ref DD.empty in
-  let fe2 = ref DD.empty in
-  let ok = ref true in
-  let nb_of_tests = Int64.(shift_left 2L (2*max+1)) in
-  let nb_of_tests = Int64.mul nb_of_tests nb_of_tests in
-  let one_percent = Int64.(to_int (div nb_of_tests 100L)) in
-  let () = Printf.printf "There are %s tests to perform\n" 
-    (Int64.to_string nb_of_tests) in 
-  let percent = ref 0 in
-  let counter = ref 0 in 
-  while !ok do  
-    let at1' = hl_to_legacy !at1 in
-    let at2' = hl_to_legacy !at2 in
-    let at3  = hl_of_legacy (Ci_legacy.past_extension at1' at2')  in
-    fe1 := DD.join !at1 at3;
-    fe2 := Ci.past_extension !at1 !at2;
-    ok  := !fe1 = !fe2;
-    incr counter; 
-    if not !ok then (
-      print_endline "Mismatch:";
-      Printf.printf "at1 = %s\n" (HL.string_of !at1);
-      Printf.printf "at2 = %s\n" (HL.string_of !at2);
-      Printf.printf "fe1 = %s\n" (HL.string_of !fe1);
-      Printf.printf "fe2 = %s\n" (HL.string_of !fe2));
-    begin
-      try at2 := next !at2
-      with Exit -> (
-        try at1 := next !at1; at2 := DD.empty 
-        with Exit -> ok := false);
-    end;
-    if !counter = one_percent 
-    then (counter := 0; incr percent; if !percent < 100 then Printf.printf "%i%%\r%!" !percent else print_endline "100%")
-  done
-  
+let wrapper legacy_bin_op = 
+  fun at1 at2 ->
+    let at1' = hl_to_legacy at1 in
+    let at2' = hl_to_legacy at2 in
+    let at3' = legacy_bin_op at1' at2' in
+    hl_of_legacy at3'
 
+let exhaustive_future_extension_on_half_line max = 
+  let oracle at1 at2 = 
+    let bin_op = wrapper HL_legacy.future_extension in
+    DD.join at1 (bin_op at1 at2) in
+  let bin_op = HL.future_extension in
+  exhaustive_test bin_op oracle max
+
+let exhaustive_past_extension_on_half_line max = 
+  let oracle at1 at2 = 
+    let bin_op = wrapper HL_legacy.past_extension in
+    DD.join at1 (bin_op at1 at2) in
+  let bin_op = HL.past_extension in
+  exhaustive_test bin_op oracle max
+
+let exhaustive_future_extension_on_circle max = 
+  let oracle at1 at2 = 
+    let bin_op = wrapper Ci_legacy.future_extension in
+    DD.join at1 (bin_op at1 at2) in
+  let bin_op = Ci.future_extension in
+  exhaustive_test bin_op oracle max
+
+let exhaustive_past_extension_on_circle max = 
+  let oracle at1 at2 = 
+    let bin_op = wrapper Ci_legacy.past_extension in
+    DD.join at1 (bin_op at1 at2) in
+  let bin_op = Ci.past_extension in
+  exhaustive_test bin_op oracle max
   
 let command_line_options = [
-  "-all", Arg.String perform_all_tests, "Perform all tests in the specified directory." ;
-  "-future-extension-on-half-line", Arg.Unit (preparing "hl_future"), "Test future_extension on the half-line" ;
-  "-past-extension-on-half-line", Arg.Unit (preparing "hl_past"), "Test past_extension on the half-line" ;
-  "-future-extension-on-circle", Arg.Unit (preparing "ci_future"), "Test ci_future_extension" ;
-  "-past-extension-on-circle", Arg.Unit (preparing "ci_past"), "Test ci_past_extension" ;
-  "-meet", Arg.Unit (preparing "meet"), "Test meet" ;
-  "-join", Arg.Unit (preparing "join"), "Test join" ;
-  "-complement", Arg.Unit (preparing "complement"), "Test complement" ;
-  "-interior-on-half-line", Arg.Unit (preparing "hl_interior"), "Test interior on half-line" ;
-  "-closure-on-half-line", Arg.Unit (preparing "hl_closure"), "Test closure on half-line" ;
-  "-interior-on-circle", Arg.Unit (preparing "hl_interior"), "Test interior on circle" ;
-  "-closure-on-circle", Arg.Unit (preparing "hl_closure"), "Test closure on circle" ;
-  "-exhaustive-intervals",Arg.Int (exhaustive_intervals), "Compare the results of the current implementation with a previous one, on all possible intervals up to some extent.";
-  "-exhaustive-regions",Arg.Int (exhaustive_regions), "Compare the results of the current implementation with a previous one, on all possible regions up to some extent.";
-  "-exhaustive-future-extension-on-half-line",Arg.Int (exhaustive_future_extension_on_half_line),"Compare the new implementation of future_extension on half-line (~ 60 LoC) with the current one (~ 500 LoC)";
-  "-exhaustive-future-extension-on-circle",Arg.Int (exhaustive_future_extension_on_circle),"Compare the new implementation of future_extension on circle (~ 60 LoC) with the current one (~ 1000 LoC)";
-  "-exhaustive-past-extension-on-half-line",Arg.Int (exhaustive_past_extension_on_half_line),"Compare the new implementation of past_extension on half-line (~ 60 LoC) with the current one (~ 500 LoC)";
-  "-exhaustive-past-extension-on-circle",Arg.Int (exhaustive_past_extension_on_circle),"Compare the new implementation of past_extension on circle (~ 60 LoC) with the current one (~ 1000 LoC)";
-(*
-  "-exhaustive-meet",Arg.Int (exhaustive_meet), "Compare the results of the current implementation of meet with a previous one, on all possible regions up to some extent.";
-*)
+  "--all", Arg.String perform_all_tests, "Perform all tests in the specified directory." ;
+  "--future-extension-on-half-line", Arg.Unit (preparing "hl_future"), "Test future_extension on the half-line" ;
+  "--past-extension-on-half-line", Arg.Unit (preparing "hl_past"), "Test past_extension on the half-line" ;
+  "--future-extension-on-circle", Arg.Unit (preparing "ci_future"), "Test ci_future_extension" ;
+  "--past-extension-on-circle", Arg.Unit (preparing "ci_past"), "Test ci_past_extension" ;
+  "--meet", Arg.Unit (preparing "meet"), "Test meet" ;
+  "--join", Arg.Unit (preparing "join"), "Test join" ;
+  "--complement", Arg.Unit (preparing "complement"), "Test complement" ;
+  "--interior-on-half-line", Arg.Unit (preparing "hl_interior"), "Test interior on half-line" ;
+  "--closure-on-half-line", Arg.Unit (preparing "hl_closure"), "Test closure on half-line" ;
+  "--interior-on-circle", Arg.Unit (preparing "hl_interior"), "Test interior on circle" ;
+  "--closure-on-circle", Arg.Unit (preparing "hl_closure"), "Test closure on circle" ;
+  "--exhaustive-intervals",Arg.Int (exhaustive_intervals), "Compare the results of the current implementation with a previous one, on all possible intervals up to some extent.";
+  "--exhaustive-regions",Arg.Int (exhaustive_regions), "Compare the results of the current implementation with a previous one, on all possible regions up to some extent.";
+  "--exhaustive-future-extension-on-half-line",Arg.Int (exhaustive_future_extension_on_half_line),"Compare the new implementation of future_extension on half-line (~ 60 LoC) with the current one (~ 500 LoC)";
+  "--exhaustive-future-extension-on-circle",Arg.Int (exhaustive_future_extension_on_circle),"Compare the new implementation of future_extension on circle (~ 60 LoC) with the current one (~ 1000 LoC)";
+  "--exhaustive-past-extension-on-half-line",Arg.Int (exhaustive_past_extension_on_half_line),"Compare the new implementation of past_extension on half-line (~ 60 LoC) with the current one (~ 500 LoC)";
+  "--exhaustive-past-extension-on-circle",Arg.Int (exhaustive_past_extension_on_circle),"Compare the new implementation of past_extension on circle (~ 60 LoC) with the current one (~ 1000 LoC)";
 ]
 
 let msg = "This tool tests the DashDot library, which implements boolean, topological, 
