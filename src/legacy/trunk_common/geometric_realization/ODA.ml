@@ -2724,7 +2724,7 @@ struct
     let flag = ref false in
     let aux = future_extension ~flag at1 at2 in
     let () = set_flag !flag in
-    if !flag && (List.hd at2 = Cls zero || List.hd at2 = Iso zero)
+    if !flag && at2 <> [] && (List.hd at2 = Cls zero || List.hd at2 = Iso zero)
     then union (first_connected_component at2) aux
     else aux
 

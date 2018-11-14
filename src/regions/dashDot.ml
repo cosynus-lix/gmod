@@ -150,8 +150,10 @@ that way.*)
     {i p} to {i q} is contained in the union of [x] and [y].*)
 
     (** In this version, we consider the points {i q} of [y] ... *)
+(*
     val future_extension_1: t -> t -> t
     val future_extension_2: t -> t -> t
+*)
     
     val past_extension: t -> t -> t
     (** [past_extension x y] is the set of points {i q} of [y] such that 
@@ -180,11 +182,13 @@ that way.*)
   (** Alternative implementations of past_extension using future_extension 
   and «time» reversing. *)
   
+(*
   val hl_past_extension: t -> t -> t
   
   val ci_past_extension: t -> t -> t
 
   val past_extension_3: t -> t -> t
+*)
   
 end
 
@@ -1289,7 +1293,7 @@ let future_extension_3 at1 at2 =
   answer := List.rev !answer;
   of_intervals !answer
 
-let future_extension_3 at1 at2 = 
+let future_extension_3 at1 at2 =
   if is_empty at1 then empty 
   else future_extension_3 at1 at2
 
@@ -1420,6 +1424,10 @@ let past_extension_3 at1 at2 =
      otherwise. This side-effect is used to deduce the function
      future_extension on the directed circle from the function
      future_extension on the directed half-line.*)
+
+(* OFF *) (*
+
+    (* future_extension engine *)
 
     let unbounded = ref false
   
@@ -1889,6 +1897,8 @@ let past_extension_3 at1 at2 =
       | Some flag -> flag := !unbounded || !flag
       | None -> () in
     output
+
+  (* past_extension engine *)
 
   let kept = ref None
   
@@ -2870,6 +2880,8 @@ let past_extension_3 at1 at2 =
     let () = clear_all () in (* initialisation *)
     past_extension false (false,ar1) (false,ar2)
 
+*) (* ON *)
+
 (*
   let past_extension ?(circle_mode=false) ar1 ar2 = [Cls zero] (* Dummy function for checking tests*)
 *)
@@ -2915,8 +2927,10 @@ in the union of x and {p} *)
     val interior: t -> t
     val closure: t -> t
     val future_extension: t -> t -> t
+(*
     val future_extension_1: t -> t -> t
     val future_extension_2: t -> t -> t
+*)
     val past_extension: t -> t -> t
   end
 
@@ -3018,16 +3032,23 @@ struct
     | b::a -> b::closure a
     | [] -> []
 
+(*
   let future_extension ?flag ar1 ar2 = future_extension ?flag ar1 ar2
-  let future_extension ar1 ar2 = future_extension ar1 ar2
+*)
   let future_closure ar = future_closure ~circle_mode:false ar
-  let past_extension ar1 ar2 = past_extension ar1 ar2
 
+  let future_extension ar1 ar2 = future_extension_3 ar1 ar2
+  let past_extension   ar1 ar2 = past_extension_3   ar1 ar2
+
+(*
   let future_extension_1 ar1 ar2 = join ar1 (future_extension ar1 ar2)
+*)
 (*
   let future_extension_2 ar1 ar2 = FutureExtension.future_extension ar1 ar2
 *)
+(*
   let future_extension_2 ar1 ar2 = future_extension_3 ar1 ar2
+*)
 
   let boundary a = match a with
     | Cls x::a ->
@@ -3236,6 +3257,7 @@ struct
     at2). This can be done by passing an optional reference to
     HalfLine.future_extension.*)
 
+(*
   let future_extension ?flag at1 at2 =
     let set_flag b = match flag with
       | Some flag -> flag := !flag || b
@@ -3246,11 +3268,19 @@ struct
     if !flag && (List.hd at2 = Cls zero || List.hd at2 = Iso zero)
     then join (first_connected_component at2) aux
     else aux
+*)
 
-  let future_extension at1 at2 = future_extension at1 at2
+  let future_extension at1 at2 =
+    let at3 = future_extension_3 at1 at2 in
+    if HalfLine.is_bounded at3 || does_not_contain_zero at2
+    then at3
+    else join (first_connected_component at2) at3
 
+
+(*
   let future_extension_1 = future_extension (*TODO: write a new implementation*)
   let future_extension_2 = future_extension (*TODO: write a new implementation*)
+*)
 
   let future_closure at = future_closure ~circle_mode:true at
 
@@ -3260,8 +3290,17 @@ struct
     be able to systematically add the unbounded connected component if
     it is asked to. This can be done by using an option.*)
 
+(*
   let past_extension at1 at2 =
     past_extension ~circle_mode:(unbounded_connected_component_must_be_added at1 at2) at1 at2
+*)
+
+
+  let past_extension at1 at2 =
+    let at3 = past_extension_3 at1 at2 in
+    if contains_zero at3 && HalfLine.is_not_bounded at2
+    then join at3 (last_connected_component at2)
+    else at3
 
 end(*Circle*)
 
@@ -3271,6 +3310,7 @@ let string_of = fun x -> HalfLine.string_of x
 
 (* shape = true stands for half-line, shape = false stands for circle *)
 
+(*
 let past_extension shape cr1 cr2 =
   let unbounded1 = HalfLine.is_not_bounded cr1 in
   let unbounded2 = HalfLine.is_not_bounded cr2 in
@@ -3283,8 +3323,11 @@ let past_extension shape cr1 cr2 =
     loading (unbounded1,cr1') (unbounded2,cr2') in
   let () = reverse_bound_order () in
   List.rev cr3'
+*)
 
+(*
 let hl_past_extension cr1 cr2 = past_extension true cr1 cr2
+*)
 (*
   let () = print_endline "alternative hl past_extension" in
   let unbounded1 = HalfLine.is_not_bounded cr1 in
@@ -3299,7 +3342,9 @@ let hl_past_extension cr1 cr2 = past_extension true cr1 cr2
   List.rev cr3'
 *)
 
+(*
 let ci_past_extension cr1 cr2 = past_extension false cr1 cr2
+*)
 (*
   let () = print_endline "alternative ci past_extension" in
   let unbounded1 = HalfLine.is_not_bounded cr1 in
