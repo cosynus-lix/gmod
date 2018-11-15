@@ -1044,6 +1044,17 @@ let terminal_hull it = match it with
 
 (* is it2 strictly after it1 ? *)
 
+let ordered_disjoint it1 it2 = 
+  try
+    let b1 = right_bound it1 in
+    let a2 = left_bound it2 in
+    let y1 = rvb b1 in
+    let x2 = rvb a2 in 
+    (y1 < x2) || (y1 = x2 && (not (bob b1) || not (bob a2)))
+  with Undefined -> false
+
+let (<<) = ordered_disjoint
+
 let ordered_disconnected it1 it2 = 
   try
     let b1 = right_bound it1 in
@@ -1053,11 +1064,9 @@ let ordered_disconnected it1 it2 =
     (y1 < x2) || (y1 = x2 && not (bob b1) && not (bob a2))
   with Undefined -> false
 
-let (<-<) = ordered_disconnected
+let (<<<) = ordered_disconnected
 
-let disconnected it1 it2 = (it1 <-< it2) || (it2 <-< it1)
-
-
+let disconnected it1 it2 = (it1 <<< it2) || (it2 <<< it1)
 
 let is_in_the_initial_hull_of it1 it2 =
   (is_empty it1) || (
@@ -1091,7 +1100,7 @@ let future_extension at1 at2 =
   let () =
     try
       while true do
-        while !it2 <-< !it1 do
+        while !it2 <<< !it1 do
           let hnt2 = head_and_tail !at2 in
           it2 := fst hnt2;
           at2 := snd hnt2;
@@ -1241,13 +1250,9 @@ let past_extension at1 at2 =
      future_extension on the directed circle from the function
      future_extension on the directed half-line.*)
 
-
-(*
-  let past_extension ?(circle_mode=false) ar1 ar2 = [Cls zero] (* Dummy function for checking tests*)
+(*Add any point p that can be reached by a directed path starting in x, 
+arriving at p, and whose image is entirely contained in the union of x and {p} 
 *)
-
-(*Add any point p that can be reached by a directed path starting in x, arriving at p, and whose image is entirely contained
-in the union of x and {p} *)
 
   let future_closure ?(circle_mode=false) ar =
     let unbounded = ref false in
@@ -1265,8 +1270,9 @@ in the union of x and {p} *)
     then add_zero return
     else return) , !unbounded
 
-(*Add any point p that can be reached by an antidirected path starting in x, arriving at p, and whose image is entirely contained
-in the union of x and {p} *)
+(*Add any point p that can be reached by an antidirected path starting in x, 
+arriving at p, and whose image is entirely contained in the union of x and {p} 
+*)
 
   let past_closure ar =
     let unbounded = ref false in
@@ -1281,6 +1287,81 @@ in the union of x and {p} *)
       | [] -> (unbounded := loading ; []) in
     let return = past_closure false ar in
     return , !unbounded
+
+(*
+  TODO: implement meet, the template below is the code of future_extension
+*)
+
+(*BUG: traiter le cas Iso*)
+
+let rightmost_left_bound it1 it2 =
+  match (it1,it2) with
+  | (a1::_,a2::_) ->
+      let x1 = rvb a1 in
+      let x2 = rvb a2 in
+      if x1 < x2 || (x1 = x2 && (bob a1)) 
+      then a2
+      else a1
+  | _ -> assert false
+
+let leftmost_right_bound it1 it2 =
+  try
+    let b1 = right_bound it1 in (
+    try
+      let b2 = right_bound it2 in
+      let y1 = rvb b1 in
+      let y2 = rvb b2 in
+      if y1 < y2 || (y1 = y2 && (bob b2))
+      then b1
+      else b2
+    with Undefined -> b1)
+  with Undefined -> right_bound it2
+
+let iso2cls b = match b with 
+  | Iso x -> Cls x
+  | _ -> b
+
+
+let meet it1 it2 =
+  if it1 << it2 || it2 << it1 
+  then raise Undefined
+  else 
+    let a = iso2cls (rightmost_left_bound it1 it2) in (
+    try
+      let b = iso2cls (leftmost_right_bound it1 it2) in
+      if a <> b then [a;b] else [Iso (rvb a)]
+    with Undefined -> [a])
+  
+
+let meet at1 at2 =
+  let answer = ref [] in
+  let it1 = ref empty in
+  let at1 = ref at1 in
+  let it2 = ref empty in
+  let at2 = ref at2 in  
+  let pop it at =
+    let hnt = (try head_and_tail !at with Undefined -> raise Exit) in
+    it := fst hnt;
+    at := snd hnt in
+  let () = pop it1 at1 ; pop it2 at2 in
+  let () =
+    try
+      while true do
+        let () = try answer := (meet !it1 !it2) :: !answer
+          with Undefined -> () in
+        if is_in_the_initial_hull_of !it1 !it2
+        then pop it1 at1
+        else pop it2 at2
+      done 
+    with Exit -> () in
+  let () = answer := List.rev !answer in
+  of_intervals !answer
+
+let meet at1 at2 =
+  if is_empty at1 || is_empty at2 then empty 
+  else meet at1 at2
+
+
 
   module type DirectedTopology = sig
     val string_of: t -> string
@@ -1399,16 +1480,6 @@ struct
 
   let future_extension ar1 ar2 = future_extension ar1 ar2
   let past_extension   ar1 ar2 = past_extension   ar1 ar2
-
-(*
-  let future_extension_1 ar1 ar2 = join ar1 (future_extension ar1 ar2)
-*)
-(*
-  let future_extension_2 ar1 ar2 = FutureExtension.future_extension ar1 ar2
-*)
-(*
-  let future_extension_2 ar1 ar2 = future_extension ar1 ar2
-*)
 
   let boundary a = match a with
     | Cls x::a ->
