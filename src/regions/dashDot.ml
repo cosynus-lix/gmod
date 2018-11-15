@@ -1292,17 +1292,13 @@ arriving at p, and whose image is entirely contained in the union of x and {p}
   TODO: implement meet, the template below is the code of future_extension
 *)
 
-(*BUG: traiter le cas Iso*)
-
 let rightmost_left_bound it1 it2 =
-  match (it1,it2) with
-  | (a1::_,a2::_) ->
-      let x1 = rvb a1 in
-      let x2 = rvb a2 in
-      if x1 < x2 || (x1 = x2 && (bob a1)) 
-      then a2
-      else a1
-  | _ -> assert false
+  let a1 = left_bound it1 in
+  let a2 = left_bound it2 in
+  let x1 = rvb a1 in
+  let x2 = rvb a2 in
+  if x1 < x2 || (x1 = x2 && (bob a1)) 
+  then a2 else a1
 
 let leftmost_right_bound it1 it2 =
   try
@@ -1317,18 +1313,13 @@ let leftmost_right_bound it1 it2 =
     with Undefined -> b1)
   with Undefined -> right_bound it2
 
-let iso2cls b = match b with 
-  | Iso x -> Cls x
-  | _ -> b
-
-
 let meet it1 it2 =
   if it1 << it2 || it2 << it1 
   then raise Undefined
   else 
-    let a = iso2cls (rightmost_left_bound it1 it2) in (
+    let a = rightmost_left_bound it1 it2 in (
     try
-      let b = iso2cls (leftmost_right_bound it1 it2) in
+      let b = leftmost_right_bound it1 it2 in
       if a <> b then [a;b] else [Iso (rvb a)]
     with Undefined -> [a])
   
