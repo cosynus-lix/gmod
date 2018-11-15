@@ -81,6 +81,16 @@ module type S = sig
   *)
   val final: bool -> value -> t
   
+  val intervals_of: t -> t list
+  
+  val of_intervals: t list -> t
+
+  (** {2 Iterator and Enumerator}*)
+  
+  val next_interval: (value -> value) -> t -> t
+
+  val next: (value -> value) -> t -> t 
+    
   (** {2 Boolean operators} *)
   
   val complement: t -> t
@@ -150,10 +160,6 @@ that way.*)
     {i p} to {i q} is contained in the union of [x] and [y].*)
 
     (** In this version, we consider the points {i q} of [y] ... *)
-(*
-    val future_extension_1: t -> t -> t
-    val future_extension_2: t -> t -> t
-*)
     
     val past_extension: t -> t -> t
     (** [past_extension x y] is the set of points {i q} of [y] such that 
@@ -165,17 +171,7 @@ that way.*)
   module HalfLine:DirectedTopology
   
   module Circle:DirectedTopology
-  
-  (** {2 Iterator and Enumerator}*)
-  
-  val next_interval: (value -> value) -> t -> t
-
-  val next: (value -> value) -> t -> t 
-  
-  val intervals_of: t -> t list
-  
-  val of_intervals: t list -> t
- 
+   
 end
 
 (* One-dimensional isothetic regions over the halfline and the circle *)
@@ -466,30 +462,8 @@ struct
     | [] -> raise Undefined
     | _ -> failwith "head_and_tail"
     
-  (*Écrire une version alternative (plus simple) de la fonction future_extension *)
-  
-(*
-On veut caluculer future_extension at1 at2.
-at1 est l'union disjointe de it1 (sa première composente connexe) et at1' le 
-reste.
-
-On cherche la seule (si elle existe) composante connexe de at2 susceptible d'étendre it1.
-Cette recherche se fait en passant au crible les composantes connexes de at2.
-
-Si on en trouve une, notons la it2, on a Interval.future_extension it1 it2.
-
-On cherche alors la seule (si elle existe) composante connexe de at1 susceptible d'étendre Interval.future_extension it1 it2.
-Cette recherche se fait en passant au crible les composantes connexes de at1 \ it1.
-
-En «piochant» alternativement dans at1 et at2 on essaie d'étendre it1 au maximum.
-
-Lorsque l'on ne peut plus, on «repart» depuis la première composante connexe de at1 qui 
-na pas été «consommée». 
-
-On continue jusqu'à épuisement des composantes connexes de at1.
-*)
-
 (* Duplicata de la fonction du module HalfLine, provisoirement pour dubbugé le module FutureExtension *)
+
 let hl_string_of a =
   let empty_set_denotation = "Ø" in
   let infinity_denotation = "+oo" in
@@ -511,207 +485,6 @@ let hl_string_of a =
         else if open_infinity then "" else " {"^infinity_denotation^"}" in
   let answer = string_of false a in
   if answer <> "" then answer else empty_set_denotation
-
-
-module FutureExtension = struct
-
-let verbose = false
-
-(* est-ce que it2 prolonge strictement it1 dans le futur ? *)
-
-type position = Before | StrictlyAfter | Extending of t
-
-(*
-  Before : it2 est contenu dans le plus petit segment initial contenant it1
-  StrictlyAfter : it2 est contenu dans l'ensemble des majorants stricts de it1, et it1 et it2 sont déconnectés
-  Dans tous les autres cas il y a extension dans le futur et le résultat est 
-  [borne gauche de it1;borne droite (éventuellement infinie) de it2]
-*)
-
-(* test si it2 est avant it1 sous l'hypothèse que it1 et it2 ne sont pas vides *)
-
-let left_bound it = 
-  match it with 
-  | [Iso x] -> Cls x
-  | [a] | [a;_] -> a
-  | _ -> assert false
-
-let right_bound it = 
-  match it with
-  | [Iso x] -> Cls x 
-  | [_;b] -> b
-  | [_] | [] -> raise Undefined
-  | _ -> assert false
-
-(* is it2 before it1 ? *)
-
-let is_before it1 it2 =
-  (is_empty it2) || (
-  try 
-    let b1 = right_bound it1 in
-    (try 
-      let b2 = right_bound it2 in
-      let y1 = rvb b1 in
-      let y2 = rvb b2 in
-      y2 < y1 || (y2 = y1 && (bob b1 || not (bob b2)))
-    with Undefined -> false)
-  with Undefined -> true)
-
-let is_contained_in_the_initial_hull_of it1 it2 = 
-  is_before it2 it1
-
-let is_strictly_before it1 it2 = (* it2 < it1 et déconnectés *)
-  try
-    let b2 = right_bound it2 in
-    let a1 = left_bound it1 in
-    let y2 = rvb b2 in
-    let x1 = rvb a1 in
-    (y2 < x1) || (y2=x1 && not (bob a1) && not (bob b2))
-  with Undefined -> false
-
-(* is it2 strictly after it1 ? *)
-
-let ordered_disconnected it1 it2 = 
-  try
-    let b1 = right_bound it1 in
-    let a2 = left_bound it2 in
-    let y1 = rvb b1 in
-    let x2 = rvb a2 in 
-    (y1 < x2) || (y1 = x2 && not (bob b1) && not (bob a2))
-  with Undefined -> false
-
-let is_future_extending it1 it2 =
-  if verbose then Printf.printf "  is_future_extending ( %s , %s ) = " (hl_string_of it1) (hl_string_of it2) ;
-  if is_before it1 it2 then (if verbose then print_endline "Before"; Before)
-  else if ordered_disconnected it1 it2 then (if verbose then print_endline "StrictlyAfter"; StrictlyAfter)
-  else (*Ici les choses sont plus subtiles*)
-    try (let x = [left_bound it1;right_bound it2] in if verbose then print_endline (hl_string_of x) ; Extending x)
-    with Undefined -> (let x = [left_bound it1] in if verbose then print_endline (hl_string_of x) ; Extending x)
-
-(*
-Renvoie le prolongement dans le futur de it par at, autrement dit le 
-prolongement dans le futur de it par it', la dernière composante connexe de 
-at qui ne soit pas strictement après it. Renvoie également le «reste» de at, 
-c'est-à-dire les composantes connexes de at qui sont strictement après le 
-prolongement dans le futur de it par it'.
-
-En particulier, s'il n'y a pas prolongement strict, alors on a it = 
-future_extension it it'. Par convention on peut, du point de vue 
-théorique, supposer que it' est l'intervalle vide lorsque at est entièrement 
-avant it.
-*)
-
-let future_extension it at =
-  let msg = Printf.sprintf "  fe ( %s , %s ) ↦ " (hl_string_of it) (hl_string_of at) in
-  let at = ref at in
-  let hnt = try head_and_tail !at with Undefined -> (it,empty) in
-  let it' = ref (fst hnt) in
-  let at' = ref (snd hnt) in
-  let criterion = ref (is_future_extending it !it') in
-  while is_not_empty !at' && !criterion = Before do
-    let hnt = head_and_tail !at' in
-    at := !at';
-    it' := fst hnt;
-    at' := snd hnt;
-    criterion := is_future_extending it !it'
-  done;
-  if verbose then print_string msg;
-  match !criterion with
-  | StrictlyAfter ->  if verbose then Printf.printf "( %s , %s )\n" (hl_string_of it) (hl_string_of !at); (it,!at)
-  | Before ->  if verbose then Printf.printf "( %s , %s )\n" (hl_string_of it) (hl_string_of !at); (it,empty)
-  | Extending it -> if verbose then Printf.printf "( %s , %s )\n" (hl_string_of it) (hl_string_of !at'); (it,!at')
-
-(*
-Dans le calcul de future_extension at1 at2 on sépare at1 en it1 et at1', le 
-reste de at1, pour calculer la prochaine composante connexe du résultat. En 
-particulier, on sait déjà que future_extension it1 at1' va renvoyer (it1,at1'), 
-il faut donc commencer par future_extension it1 at2. Donc on fait l'hypothèse 
-que at1 est strictement après it. C'est cet invariant que l'on maintient.
-
-On revoie un triplet tel que:
-  le premier élément est l'extension dans le future de it obtenu en «piochant» 
-  les extensions potentielles alternativement dans at1 et at2. On note cette 
-  extension it'.
-  le second élément est le reste de at1 après it'. 
-  le troisième élément est le reste de at2 après it'. 
-  
-*)
-
-let next_connected_component it1 at1 at2 =
-  let rec next_connected_component twisted it1 at1 at2 =
-    let (it1',at2') = future_extension it1 at2 in
-    if it1' <> it1
-    then next_connected_component (not twisted) it1' at2' at1
-    else if twisted
-      then (it1,at2',at1)
-      else (it1,at1,at2') in
-  let (a,b,c) = next_connected_component false it1 at1 at2 in
-  if verbose then Printf.printf "  next_connected_component ( %s , %s , %s ) = ( %s , %s , %s )\n" 
-  (hl_string_of it1) (hl_string_of at1) (hl_string_of at2) 
-  (hl_string_of a) (hl_string_of b) (hl_string_of c);
-  (a,b,c)
-
-let future_extension at1 at2 =
-  let rec future_extension at1 at2 =
-    if is_empty at1 then empty
-    else (
-      let (it1,at1) = head_and_tail at1 in
-      let (ncc,at1,at2) = next_connected_component it1 at1 at2 in
-      if is_empty at1
-      then [ncc]
-      else if is_empty at2 
-        then ncc :: intervals_of at1
-        else ncc :: (future_extension at1 at2)) in
-  let answer = of_intervals ((future_extension at1 at2)) in
-  if verbose then Printf.printf "fe ( %s , %s ) ↦ %s\n" (hl_string_of at1) (hl_string_of at2) (hl_string_of answer);
-  answer
-
-let initial_hull it = match it with
-  | [_;b] -> [Cls zero;b]
-  | [Iso x] -> if x = zero then it (* [Iso zero] *) else [Cls zero;Cls x]
-  | [_] -> full
-  | [] -> it (*empty*)
-  | _ -> assert false
-
-let terminal_hull it = match it with
-  | [a;_] -> [a]
-  | [Iso x] -> [Cls x]  
-  | [_] -> it
-  | [] -> []
-  | _ -> assert false
-
-
-end (* FutureExtension *)
-
-
-module PastExtension = struct
-
-(*
-Soient it1 et it2, les plus petites composantes connexes (i.e. les «plus à 
-gauche») de at1 et at2. 
-
-1) Soit it3 le minimum (i.e. plus à gauche) de it1 et it2.
-
-Si it3 = it1, on calcule ncc = next_connected_component it3 at1' at2 (où at1' 
-est le reste de at1 après it3). On note it4 la dernière composante connexe de 
-at1 (i.e. «la plus à droite») contenue dans ncc. La composante connexe que l'on cherche est 
-alors l'intersection de ncc et du plus petit segment initial contenant it' 
-(i.e. meet ncc (initial_hull it4)).
-
-Le cas it3 = it1 est symétrique excepté que it4 est toujours la dernière 
-composante connexe de at1.
-
-Pb: comment trouve-t-on it4 ?
-
-PLUS EXPÉDITIF:
-On calcule at3 la réunion de at1 et at2.
-Pour chaque composante connexe cc de at3 on cherche la composante connexe de at1 
-la plus à droite qui soit incluse dans cc. 
-
-*)
-
-end (* PastExtension *)
-
 
   (* The normal form is a sorted list of bounds *)
 
@@ -1241,6 +1014,63 @@ end (* PastExtension *)
     | Cls x::a' -> if x <> zero then a else (Opn x) :: a'
     | _ -> a
 
+let left_bound it = 
+  match it with 
+  | [Iso x] -> Cls x
+  | [a] | [a;_] -> a
+  | _ -> assert false
+
+let right_bound it = 
+  match it with
+  | [Iso x] -> Cls x 
+  | [_;b] -> b
+  | [_] | [] -> raise Undefined
+  | _ -> assert false
+
+
+let initial_hull it = match it with
+  | [_;b] -> [Cls zero;b]
+  | [Iso x] -> if x = zero then it else [Cls zero;Cls x]
+  | [_] -> full
+  | [] -> it (*empty*)
+  | _ -> assert false
+
+let terminal_hull it = match it with
+  | [a;_] -> [a]
+  | [Iso x] -> [Cls x]  
+  | [_] -> it
+  | [] -> []
+  | _ -> assert false
+
+(* is it2 strictly after it1 ? *)
+
+let ordered_disconnected it1 it2 = 
+  try
+    let b1 = right_bound it1 in
+    let a2 = left_bound it2 in
+    let y1 = rvb b1 in
+    let x2 = rvb a2 in 
+    (y1 < x2) || (y1 = x2 && not (bob b1) && not (bob a2))
+  with Undefined -> false
+
+let (<-<) = ordered_disconnected
+
+let disconnected it1 it2 = (it1 <-< it2) || (it2 <-< it1)
+
+
+
+let is_in_the_initial_hull_of it1 it2 =
+  (is_empty it1) || (
+  try 
+    let b2 = right_bound it2 in
+    (try 
+      let b1 = right_bound it1 in
+      let y2 = rvb b2 in
+      let y1 = rvb b1 in
+      y1 < y2 || (y1 = y2 && (bob b2 || not (bob b1)))
+    with Undefined -> false)
+  with Undefined -> true)
+
 (*
   Idea: denote by at3 the union of at1 and at2. Every connected component it1 
   of at1 is included in a connected component it3 of at3. If it1 is the 
@@ -1261,14 +1091,14 @@ let future_extension at1 at2 =
   let () =
     try
       while true do
-        while FutureExtension.ordered_disconnected !it2 !it1 do
+        while !it2 <-< !it1 do
           let hnt2 = head_and_tail !at2 in
           it2 := fst hnt2;
           at2 := snd hnt2;
         done;
-        answer := (meet !it2 (FutureExtension.terminal_hull !it1)) :: !answer;
+        answer := (meet !it2 (terminal_hull !it1)) :: !answer;
         try 
-          while FutureExtension.is_contained_in_the_initial_hull_of !it1 !it2 do
+          while is_in_the_initial_hull_of !it1 !it2 do
             let hnt1 = head_and_tail !at1 in
             it1 := fst hnt1;
             at1 := snd hnt1;
@@ -1297,7 +1127,7 @@ let past_extension at1 at2 =
     try
       while true do
         let () = 
-          while FutureExtension.ordered_disconnected !it2 !it1 do
+          while ordered_disconnected !it2 !it1 do
             let hnt2 = head_and_tail !at2 in
             it2 := fst hnt2;
             at2 := snd hnt2;
@@ -1305,7 +1135,7 @@ let past_extension at1 at2 =
         let prev_it1 = ref !it1 in
         let prev_at1 = ref !at1 in
         let () = try
-          while FutureExtension.is_contained_in_the_initial_hull_of !it1 !it2 do
+          while is_in_the_initial_hull_of !it1 !it2 do
             prev_it1 := !it1;
             prev_at1 := !at1;
             let hnt1 = head_and_tail !at1 in
@@ -1313,9 +1143,9 @@ let past_extension at1 at2 =
             at1 := snd hnt1
           done;
         with Undefined -> 
-          answer := (meet !it2 (FutureExtension.initial_hull !it1)) :: !answer;
+          answer := (meet !it2 (initial_hull !it1)) :: !answer;
           raise Exit in
-        answer := (meet !it2 (FutureExtension.initial_hull !prev_it1)) :: !answer
+        answer := (meet !it2 (initial_hull !prev_it1)) :: !answer
       done
     with Exit -> () in
   answer := List.rev !answer;
@@ -1340,7 +1170,7 @@ let past_extension at1 at2 =
       | [_] -> set_flag () ; a
       | _ -> []
 
-  (* last_con nected_component was not tested *)
+  (* last_connected_component was not tested *)
 
   let rec last_connected_component ?(parity=false) a =
     match a with

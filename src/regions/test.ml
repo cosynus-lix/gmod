@@ -1,3 +1,5 @@
+module Legacy = ODA.BooleanAlgebra(Integer)
+
 module HL_legacy = ODA.RawHalfLine(Integer)
 
 module Ci_legacy = ODA.RawCircle(Integer)
@@ -28,13 +30,12 @@ let hl_of_legacy oda = List.map hl_of_legacy oda
 
 let rec of_string tl = Str.(
   match tl with 
-    | [] -> (DD.empty)
+    | [] | [Delim "["; Delim "]"] | [Delim "{"; Delim "}"] -> (DD.empty)
+    | [Delim l ; Text a ; Text "oo" ; Delim "["] 
     | [Delim l ; Text a] -> (
         let a = int_of_string a in
         let l = (l = "[") in
         DD.final l a  )
-    | Delim "[" :: Text a :: Delim "]" :: tl -> (
-        DD.(join (atom (int_of_string a))  (of_string tl)) )
     | Delim l :: Text a :: Text b :: Delim r :: tl -> (
         let a = int_of_string a in
         let b = int_of_string b in
@@ -42,6 +43,10 @@ let rec of_string tl = Str.(
         let l = (l = "[") in
         let r = (r = "]") in
         DD.(join (interval l r a b ) (of_string tl)))
+    | Delim "[" :: Text a :: Delim "]" :: tl 
+    | Delim "{" :: Text a :: Delim "}" :: tl 
+    | Text a :: tl -> (
+        DD.(join (atom (int_of_string a))  (of_string tl)) )
     | _ -> assert false)
 
 let of_string s = 
@@ -95,7 +100,14 @@ let test_binary op_name operator operand1 operand2 expected_result =
 
 let operator_name = ref ""
 
+let file_name = ref ""
+
 let operator = ref (Unary (fun x -> x)) (*dummy default value*)
+
+let preparing op_name () = 
+  operator_name := op_name ;
+  operator := operator_of_string op_name
+
 
 let anon_fun s =
   let chan = open_in s in
@@ -133,24 +145,6 @@ let anon_fun s =
           done
         with Exit -> print_endline "End of test")
 
-let preparing op_name () = 
-  operator_name := op_name ;
-  operator := operator_of_string op_name
-
-
-let perform_all_tests dir =
-  preparing "hl_future" (); anon_fun (dir ^ "hl_future.test");
-  preparing "ci_future" (); anon_fun (dir ^ "ci_future.test");
-  preparing "hl_past" (); anon_fun (dir ^ "hl_past.test");
-  preparing "ci_past" (); anon_fun (dir ^ "ci_past.test");
-  preparing "hl_closure" (); anon_fun (dir ^ "hl_closure.test");
-  preparing "ci_closure" (); anon_fun (dir ^ "ci_closure.test");
-  preparing "hl_interior" (); anon_fun (dir ^ "hl_interior.test");
-  preparing "ci_interior" (); anon_fun (dir ^ "ci_interior.test");
-  preparing "meet" (); anon_fun (dir ^ "meet.test");
-  preparing "join" (); anon_fun (dir ^ "join.test");
-  preparing "complement" (); anon_fun (dir ^ "complement.test")
-
 let exhaustive_intervals max = 
   let next n = if n < max then n + 1 else raise Exit in
   let next = DD.next_interval next in
@@ -163,7 +157,6 @@ let exhaustive_intervals max =
     done
   with Exit -> print_endline ""
 
-(* based on dashdot *)
 let exhaustive_regions max = 
   let next n = if n < max then n + 1 else raise Exit in
   let next = DD.next next in
@@ -224,31 +217,77 @@ let exhaustive_future_extension_on_half_line max =
     let bin_op = wrapper HL_legacy.future_extension in
     DD.join at1 (bin_op at1 at2) in
   let bin_op = HL.future_extension in
-  exhaustive_test bin_op oracle max
+  print_endline "Testing future_extension on half_line";
+  exhaustive_test oracle bin_op max
 
 let exhaustive_past_extension_on_half_line max = 
   let oracle at1 at2 = 
     let bin_op = wrapper HL_legacy.past_extension in
     DD.join at1 (bin_op at1 at2) in
   let bin_op = HL.past_extension in
-  exhaustive_test bin_op oracle max
+  print_endline "Testing past_extension on half_line";
+  exhaustive_test oracle bin_op max
 
 let exhaustive_future_extension_on_circle max = 
   let oracle at1 at2 = 
     let bin_op = wrapper Ci_legacy.future_extension in
     DD.join at1 (bin_op at1 at2) in
   let bin_op = Ci.future_extension in
-  exhaustive_test bin_op oracle max
+  print_endline "Testing future_extension on circle";
+  exhaustive_test oracle bin_op max
 
 let exhaustive_past_extension_on_circle max = 
   let oracle at1 at2 = 
     let bin_op = wrapper Ci_legacy.past_extension in
     DD.join at1 (bin_op at1 at2) in
   let bin_op = Ci.past_extension in
-  exhaustive_test bin_op oracle max
-  
+  print_endline "Testing past_extension on circle";
+  exhaustive_test oracle bin_op max
+
+let exhaustive_join max = 
+  let oracle = wrapper Legacy.union in
+  let bin_op = DD.join in
+  exhaustive_test oracle bin_op max
+
+let exhaustive_meet max = 
+  let oracle = wrapper Legacy.intersection in
+  let bin_op = DD.meet in
+  exhaustive_test oracle bin_op max
+
+let exhaustive_difference max = 
+  let oracle = wrapper Legacy.difference in
+  let bin_op = DD.difference in
+  exhaustive_test oracle bin_op max
+
+let exhaustive_all max =
+  exhaustive_future_extension_on_half_line max;
+  exhaustive_future_extension_on_circle max;
+  exhaustive_past_extension_on_half_line max;
+  exhaustive_past_extension_on_circle max;
+  exhaustive_join max;
+  exhaustive_meet max
+
+(*
+let exhaustive_all_in_parallel max = 
+  let pid_0 = Unix.(create_process "main" [|"--help"|] stdin stdout stderr) in
+  let pid_1 = Unix.(create_process "main" [|Printf.sprintf "--exhaustively-testing-future-extension-on-half-line %i" max|] stdin stdout stderr) in
+  let pid_2 = Unix.(create_process "main" [|Printf.sprintf "--exhaustively-testing-future-extension-on-circle %i" max|] stdin stdout stderr) in
+  Printf.printf "pid_0 = %i\npid_1 = %i\npid_2 = %i\n" pid_0 pid_1 pid_2
+*)
+
+let exhaustive_all_in_parallel max = 
+  let command = Printf.sprintf    
+  "./main --exhaustively-testing-future-extension-on-half-line %i &\ 
+   ./main --exhaustively-testing-future-extension-on-circle %i &\ 
+   ./main --exhaustively-testing-past-extension-on-half-line %i &\ 
+   ./main --exhaustively-testing-past-extension-on-circle %i &\
+   ./main --exhaustively-testing-join %i &\
+   ./main --exhaustively-testing-meet %i" 
+   max max max max max max in 
+  ignore (Sys.command command)
+
+
 let command_line_options = [
-  "--all", Arg.String perform_all_tests, "Perform all tests in the specified directory." ;
   "--future-extension-on-half-line", Arg.Unit (preparing "hl_future"), "Test future_extension on the half-line" ;
   "--past-extension-on-half-line", Arg.Unit (preparing "hl_past"), "Test past_extension on the half-line" ;
   "--future-extension-on-circle", Arg.Unit (preparing "ci_future"), "Test ci_future_extension" ;
@@ -260,43 +299,67 @@ let command_line_options = [
   "--closure-on-half-line", Arg.Unit (preparing "hl_closure"), "Test closure on half-line" ;
   "--interior-on-circle", Arg.Unit (preparing "hl_interior"), "Test interior on circle" ;
   "--closure-on-circle", Arg.Unit (preparing "hl_closure"), "Test closure on circle" ;
-  "--exhaustive-intervals",Arg.Int (exhaustive_intervals), "Compare the results of the current implementation with a previous one, on all possible intervals up to some extent.";
-  "--exhaustive-regions",Arg.Int (exhaustive_regions), "Compare the results of the current implementation with a previous one, on all possible regions up to some extent.";
-  "--exhaustive-future-extension-on-half-line",Arg.Int (exhaustive_future_extension_on_half_line),"Compare the new implementation of future_extension on half-line (~ 60 LoC) with the current one (~ 500 LoC)";
-  "--exhaustive-future-extension-on-circle",Arg.Int (exhaustive_future_extension_on_circle),"Compare the new implementation of future_extension on circle (~ 60 LoC) with the current one (~ 1000 LoC)";
-  "--exhaustive-past-extension-on-half-line",Arg.Int (exhaustive_past_extension_on_half_line),"Compare the new implementation of past_extension on half-line (~ 60 LoC) with the current one (~ 500 LoC)";
-  "--exhaustive-past-extension-on-circle",Arg.Int (exhaustive_past_extension_on_circle),"Compare the new implementation of past_extension on circle (~ 60 LoC) with the current one (~ 1000 LoC)";
+  "--enumerate-intervals",Arg.Int (exhaustive_intervals), "Compare the results of the current implementation with a previous one, on all possible intervals up to some extent.";
+  "--enumerate-regions",Arg.Int (exhaustive_regions), "Compare the results of the current implementation with a previous one, on all possible regions up to some extent.";
+  "--exhaustively-testing-all",Arg.Int (exhaustive_all),"Compare the new implementation of all operators on half-line and circle with the current one";
+  "--exhaustively-testing-all-in-parallel",Arg.Int (exhaustive_all_in_parallel),"Compare the new implementation of all operators on half-line and circle with the current one";
+  "--exhaustively-testing-future-extension-on-half-line",Arg.Int (exhaustive_future_extension_on_half_line),"Compare the new implementation of future_extension on half-line (~ 60 LoC) with the current one (~ 500 LoC)";
+  "--exhaustively-testing-future-extension-on-circle",Arg.Int (exhaustive_future_extension_on_circle),"Compare the new implementation of future_extension on circle (~ 60 LoC) with the current one (~ 1000 LoC)";
+  "--exhaustively-testing-past-extension-on-half-line",Arg.Int (exhaustive_past_extension_on_half_line),"Compare the new implementation of past_extension on half-line (~ 60 LoC) with the current one (~ 500 LoC)";
+  "--exhaustively-testing-past-extension-on-circle",Arg.Int (exhaustive_past_extension_on_circle),"Compare the new implementation of past_extension on circle (~ 60 LoC) with the current one (~ 1000 LoC)";
+  "--exhaustively-testing-join",Arg.Int (exhaustive_join),"Compare the new implementation of join with the current one)";
+  "--exhaustively-testing-meet",Arg.Int (exhaustive_meet),"Compare the new implementation of meet with the current one";
+  "--exhaustively-testing-difference",Arg.Int (exhaustive_difference),"Compare the new implementation of difference with the current one";
 ]
 
-let msg = "This tool tests the DashDot library, which implements boolean, topological, 
-and order theoretic operations on the finite union of intervals 
-(respectively on finite unions of arcs). 
-
-The tests to perform are stored in files.
-
-In case of a unary operator, each test is given by two lines, the first 
-one being the operand, the second one being the expected result.
-
-In case of a binary operator, each test is given by three lines, the first 
-two of them being the operands, the third one being the expected result.
-
-A value is described by a sequence of disconnected intervals such that if I 
-appears before J in the description, then I < J.
-
-Intervals are 
-  [x] : singlton
-  [x y] : closed interval
-  ]x y[ : open interval
-  [x y[ : left-closed right-open interval
-  ]x y] : left-open right-closed interval
-  [x    : closed terminal segment
-  ]x    : open terminal segment
+let msg = "This tool tests the DashDot library, which implements boolean, topological, \n\
+    and order theoretic operations on the finite union of intervals 
+    (respectively on finite unions of arcs).\n
+\
+    The tests to perform are stored in a file given as an argument.\n
+\
+    In case of a unary operator, each test is given by two lines, the first one \n\
+    being the operand, the second one being the expected result.\n
+\
+    In case of a binary operator, each test is given by three lines, the first \n\
+    two of them being the operands, the third one being the expected result.\n
+\
+    A value is described by a sequence of disconnected intervals such that if I \n\
+    appears before J in the description, then I < J.\n
+\
+    Intervals are 
+\  [x] : singleton
+\  [x y] : closed interval
+\  ]x y[ : open interval
+\  [x y[ : left-closed right-open interval
+\  ]x y] : left-open right-closed interval
+\  [x    : closed terminal segment
+\  ]x    : open terminal segment
 
 E.g.: [0] ]1 3[ [3 represents {0} U ]1,3[ U [3,+oo[.
   
-Choose an option, and a file or a directory.
+Lines starting with % are comments. Empty lines are ignored. A line made of 
+blanks represents the empty set.\n\ 
+The empty set can also be represented by {} or [].
 
-Lines starting with % are comments. Empty lines are ignored.
 Options are:"
 
 let () = Arg.parse command_line_options anon_fun msg
+
+(* TODO:
+  Mettre en place le test exhaustif pour toutes les fonctions que l'on souhaite 
+  garder. 
+  Mettre en place le test au détail.
+  Commencer la réécriture de DashDot à base d'intervalles et de manière 
+  abstraite.
+*)
+
+(*
+  ./main --exhaustively-testing-future-extension-on-half-line 5 &
+  ./main --exhaustively-testing-future-extension-on-circle 5 &
+  ./main --exhaustively-testing-past-extension-on-half-line 5 &
+  ./main --exhaustively-testing-past-extension-on-circle 5 &
+  ./main --exhaustively-testing-join 5 &
+  ./main --exhaustively-testing-meet 5 &
+  ./main --exhaustively-testing-difference 5
+*)
