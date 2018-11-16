@@ -247,16 +247,19 @@ let exhaustive_past_extension_on_circle max =
 let exhaustive_join max = 
   let oracle = wrapper Legacy.union in
   let bin_op = DD.join in
+  print_endline "Testing join";
   exhaustive_test oracle bin_op max
 
 let exhaustive_meet max = 
   let oracle = wrapper Legacy.intersection in
   let bin_op = DD.meet in
+  print_endline "Testing meet";
   exhaustive_test oracle bin_op max
 
 let exhaustive_difference max = 
   let oracle = wrapper Legacy.difference in
   let bin_op = DD.difference in
+  print_endline "Testing difference";
   exhaustive_test oracle bin_op max
 
 let exhaustive_all max =
@@ -265,7 +268,8 @@ let exhaustive_all max =
   exhaustive_past_extension_on_half_line max;
   exhaustive_past_extension_on_circle max;
   exhaustive_join max;
-  exhaustive_meet max
+  exhaustive_meet max;
+  exhaustive_difference max
 
 (*
 let exhaustive_all_in_parallel max = 
@@ -345,21 +349,3 @@ The empty set can also be represented by {} or [].
 Options are:"
 
 let () = Arg.parse command_line_options anon_fun msg
-
-(* TODO:
-  Mettre en place le test exhaustif pour toutes les fonctions que l'on souhaite 
-  garder. 
-  Mettre en place le test au détail.
-  Commencer la réécriture de DashDot à base d'intervalles et de manière 
-  abstraite.
-*)
-
-(*
-  ./main --exhaustively-testing-future-extension-on-half-line 5 &
-  ./main --exhaustively-testing-future-extension-on-circle 5 &
-  ./main --exhaustively-testing-past-extension-on-half-line 5 &
-  ./main --exhaustively-testing-past-extension-on-circle 5 &
-  ./main --exhaustively-testing-join 5 &
-  ./main --exhaustively-testing-meet 5 &
-  ./main --exhaustively-testing-difference 5
-*)

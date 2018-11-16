@@ -461,6 +461,19 @@ struct
     | a :: b :: at -> ([a;b] , at)
     | [] -> raise Undefined
     | _ -> failwith "head_and_tail"
+
+  let pop it at =
+    let hnt = (try head_and_tail !at with Undefined -> raise Exit) in
+    it := fst hnt;
+    at := snd hnt
+
+  let cut_off x = 
+    let hnt = head_and_tail !x in
+    x := snd hnt 
+
+  let clear x = x := empty
+
+  let push it answer = answer := it :: !answer
     
 (* Duplicata de la fonction du module HalfLine, provisoirement pour dubbugé le module FutureExtension *)
 
@@ -1053,7 +1066,7 @@ let ordered_disjoint it1 it2 =
     (y1 < x2) || (y1 = x2 && (not (bob b1) || not (bob a2)))
   with Undefined -> false
 
-let (<<) = ordered_disjoint
+let (<|<) = ordered_disjoint
 
 let ordered_disconnected it1 it2 = 
   try
@@ -1064,12 +1077,12 @@ let ordered_disconnected it1 it2 =
     (y1 < x2) || (y1 = x2 && not (bob b1) && not (bob a2))
   with Undefined -> false
 
-let (<<<) = ordered_disconnected
+let (<-<) = ordered_disconnected
 
-let disconnected it1 it2 = (it1 <<< it2) || (it2 <<< it1)
+let disconnected it1 it2 = (it1 <-< it2) || (it2 <-< it1)
 
 let is_in_the_initial_hull_of it1 it2 =
-  (is_empty it1) || (
+  (is_empty it1) || ((is_not_empty it2) &&
   try 
     let b2 = right_bound it2 in
     (try 
@@ -1080,6 +1093,33 @@ let is_in_the_initial_hull_of it1 it2 =
     with Undefined -> false)
   with Undefined -> true)
 
+let is_in_the_terminal_hull_of it1 it2 =
+  (is_empty it1) || ((is_not_empty it2) &&
+    let a2 = left_bound it2 in
+    let a1 = left_bound it1 in
+    let x2 = rvb a2 in
+    let x1 = rvb a1 in
+    x2 < x1 || (x2 = x1 && (bob a2 || not (bob a1))))
+    
+(*
+  it1 << it2 signifie que l'ensemble des minorants stricts de it1 est 
+  inclus dans celui de it2, et dans le cas où ils sont égaux, 
+  le plus petit segment initial contenant it1 est inclus dans 
+  le plus petit segment initial contenant it2.
+*)
+
+let compare_intervals it1 it2 = 
+  if it1 = it2 then 0
+  else if is_empty it1 then 1
+    else if is_empty it2 then -1
+      else if not (is_in_the_terminal_hull_of it2 it1) then 1
+        else if not (is_in_the_terminal_hull_of it1 it2) then -1 
+          else if is_in_the_initial_hull_of it1 it2 then -1
+            else 1
+  
+   let (<<) it1 it2 = Pervasives.(<=) (compare_intervals it1 it2) 0
+
+    
 (*
   Idea: denote by at3 the union of at1 and at2. Every connected component it1 
   of at1 is included in a connected component it3 of at3. If it1 is the 
@@ -1100,7 +1140,7 @@ let future_extension at1 at2 =
   let () =
     try
       while true do
-        while !it2 <<< !it1 do
+        while !it2 <-< !it1 do
           let hnt2 = head_and_tail !at2 in
           it2 := fst hnt2;
           at2 := snd hnt2;
@@ -1136,7 +1176,7 @@ let past_extension at1 at2 =
     try
       while true do
         let () = 
-          while ordered_disconnected !it2 !it1 do
+          while !it2 <-< !it1 do
             let hnt2 = head_and_tail !at2 in
             it2 := fst hnt2;
             at2 := snd hnt2;
@@ -1177,7 +1217,7 @@ let past_extension at1 at2 =
       | b :: Pun x :: _ -> [b ; Opn x]
       | b :: b' :: _ -> [b ; b']
       | [_] -> set_flag () ; a
-      | _ -> []
+      | [] -> []
 
   (* last_connected_component was not tested *)
 
@@ -1300,6 +1340,7 @@ let rightmost_left_bound it1 it2 =
   if x1 < x2 || (x1 = x2 && (bob a1)) 
   then a2 else a1
 
+
 let leftmost_right_bound it1 it2 =
   try
     let b1 = right_bound it1 in (
@@ -1308,13 +1349,13 @@ let leftmost_right_bound it1 it2 =
       let y1 = rvb b1 in
       let y2 = rvb b2 in
       if y1 < y2 || (y1 = y2 && (bob b2))
-      then b1
-      else b2
+      then b1 else b2
     with Undefined -> b1)
   with Undefined -> right_bound it2
 
+
 let meet it1 it2 =
-  if it1 << it2 || it2 << it1 
+  if it1 <|< it2 || it2 <|< it1 
   then raise Undefined
   else 
     let a = rightmost_left_bound it1 it2 in (
@@ -1330,10 +1371,6 @@ let meet at1 at2 =
   let at1 = ref at1 in
   let it2 = ref empty in
   let at2 = ref at2 in  
-  let pop it at =
-    let hnt = (try head_and_tail !at with Undefined -> raise Exit) in
-    it := fst hnt;
-    at := snd hnt in
   let () = pop it1 at1 ; pop it2 at2 in
   let () =
     try
@@ -1353,16 +1390,67 @@ let meet at1 at2 =
   else meet at1 at2
 
 
+let leftmost_left_bound it1 it2 =
+  let a1 = left_bound it1 in
+  let a2 = left_bound it2 in
+  let x1 = rvb a1 in
+  let x2 = rvb a2 in
+  if x1 < x2 || (x1 = x2 && (bob a1)) 
+  then a1 else a2
+
+let rightmost_right_bound it1 it2 =
+  let b1 = right_bound it1 in 
+  let b2 = right_bound it2 in
+  let y1 = rvb b1 in
+  let y2 = rvb b2 in
+  if y1 < y2 || (y1 = y2 && (bob b2))
+  then b2 else b1
+
+let join it1 it2 =  
+  if is_empty it1 then it2
+  else if is_empty it2 then it1
+    else (
+      if (it1 <-< it2) || (it2 <-< it1) then raise Undefined
+        else
+          let a = leftmost_left_bound it1 it2 in 
+          try
+            let b = rightmost_right_bound it1 it2 in
+            if a <> b then [a;b] else [Iso (rvb a)]
+          with Undefined -> [a])
+
+let join at1 at2 =
+  let answer = ref [] in
+  let at1 = ref at1 in
+  let at2 = ref at2 in
+  let accu = ref empty in
+  let update it at at' =
+    try accu := join !accu it; at := at'  
+    with Undefined -> (
+      push !accu answer;
+      accu := it;
+      at := at') in
+  let () =
+    try
+      while true do
+        let (it1,at3) = 
+          try head_and_tail !at1 
+          with Undefined -> (empty,empty) in
+        let (it2,at4) = 
+          try head_and_tail !at2 
+          with Undefined -> (empty,empty) in
+        if is_empty it1 && is_empty it2 then raise Exit;
+        if it1 << it2
+        then update it1 at1 at3
+        else update it2 at2 at4
+      done 
+    with Exit -> () in
+  of_intervals (List.rev (!accu::!answer))
 
   module type DirectedTopology = sig
     val string_of: t -> string
     val interior: t -> t
     val closure: t -> t
     val future_extension: t -> t -> t
-(*
-    val future_extension_1: t -> t -> t
-    val future_extension_2: t -> t -> t
-*)
     val past_extension: t -> t -> t
   end
 
@@ -1417,9 +1505,6 @@ struct
     | [] -> raise Undefined
 
   let rec lub a = 
-(*
-  print_string "lub "; print_string ((string_of a)^" = ");
-*)
     match a with
     | [] -> zero
     | [Iso x] -> x
@@ -1464,9 +1549,6 @@ struct
     | b::a -> b::closure a
     | [] -> []
 
-(*
-  let future_extension ?flag ar1 ar2 = future_extension ?flag ar1 ar2
-*)
   let future_closure ar = future_closure ~circle_mode:false ar
 
   let future_extension ar1 ar2 = future_extension ar1 ar2
