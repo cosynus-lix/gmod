@@ -10,7 +10,7 @@ module type S = sig
   type value
   type t
 
-(** {2 Exceptions}*)
+  (** {2 Exceptions}*)
 
   exception Undefined
   
