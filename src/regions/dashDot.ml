@@ -1328,10 +1328,6 @@ arriving at p, and whose image is entirely contained in the union of x and {p}
     let return = past_closure false ar in
     return , !unbounded
 
-(*
-  TODO: implement meet, the template below is the code of future_extension
-*)
-
 let rightmost_left_bound it1 it2 =
   let a1 = left_bound it1 in
   let a2 = left_bound it2 in
@@ -1339,7 +1335,6 @@ let rightmost_left_bound it1 it2 =
   let x2 = rvb a2 in
   if x1 < x2 || (x1 = x2 && (bob a1)) 
   then a2 else a1
-
 
 let leftmost_right_bound it1 it2 =
   try
@@ -1353,7 +1348,6 @@ let leftmost_right_bound it1 it2 =
     with Undefined -> b1)
   with Undefined -> right_bound it2
 
-
 let meet it1 it2 =
   if it1 <|< it2 || it2 <|< it1 
   then raise Undefined
@@ -1363,7 +1357,6 @@ let meet it1 it2 =
       let b = leftmost_right_bound it1 it2 in
       if a <> b then [a;b] else [Iso (rvb a)]
     with Undefined -> [a])
-  
 
 let meet at1 at2 =
   let answer = ref [] in
@@ -1388,7 +1381,6 @@ let meet at1 at2 =
 let meet at1 at2 =
   if is_empty at1 || is_empty at2 then empty 
   else meet at1 at2
-
 
 let leftmost_left_bound it1 it2 =
   let a1 = left_bound it1 in
@@ -1423,16 +1415,14 @@ if it1 is nonempty, then it1 << it2. *)
 
 let ordered_join it1 it2 = 
   if is_empty it1 then it2
-  (*else if is_empty it2 then it1*)
     else (
-      if (it1 <-< it2) (*|| (it2 <-< it1)*) then raise Undefined
+      if (it1 <-< it2) then raise Undefined
         else
-          let a = (*leftmost_*)left_bound it1 (*it2*) in 
+          let a = left_bound it1 in 
           try
             let b = rightmost_right_bound it1 it2 in
             if a <> b then [a;b] else [Iso (rvb a)]
           with Undefined -> [a])
-
 
 let join at1 at2 =
   let answer = ref [] in
@@ -1459,48 +1449,6 @@ let join at1 at2 =
       done 
     with Exit -> () in
   of_intervals (List.rev (!accu::!answer))
-
-let future_extension at1 at2 = 
-  let answer = ref [] in
-  let first_operand = ref false in
-  let loading = ref false in
-  let at1 = ref at1 in
-  let at2 = ref at2 in
-  let accu = ref empty in
-  let update it at at' =
-    try 
-      let x = ordered_join !accu it in 
-      if !first_operand && (not !loading)
-      then (loading := true; accu := meet (terminal_hull it) x) 
-      else accu := x; 
-      at := at'
-    with Undefined -> 
-      if !loading then push !accu answer;
-      accu := it; loading := !first_operand; at := at' in
-  let () =
-    try
-      while true do
-        let (it1,at3) = try head_and_tail !at1
-          with Undefined -> (empty,empty) in
-        let (it2,at4) = try head_and_tail !at2
-          with Undefined -> (empty,empty) in
-        if is_empty it1 && is_empty it2 then raise Exit;
-        if it1 << it2
-        then (first_operand := true; update it1 at1 at3)
-        else (first_operand := false; update it2 at2 at4)
-      done
-    with Exit -> () in
-  of_intervals (List.rev (if !loading then !accu::!answer else !answer))
-
-
-
-
-
-
-
-
-
-
 
 let future_extension at1 at2 =
   let answer = ref [] in
@@ -1532,9 +1480,6 @@ let future_extension at1 at2 =
       done 
     with Exit -> () in
   of_intervals (List.rev (((meet (terminal_hull !first_it1) !accu))::!answer))
-
-
-
 
 let past_extension at1 at2 =
   let answer = ref [] in
