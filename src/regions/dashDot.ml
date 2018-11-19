@@ -1448,11 +1448,9 @@ let join at1 at2 =
   let () =
     try
       while true do
-        let (it1,at3) = 
-          try head_and_tail !at1 
+        let (it1,at3) = try head_and_tail !at1 
           with Undefined -> (empty,empty) in
-        let (it2,at4) = 
-          try head_and_tail !at2 
+        let (it2,at4) = try head_and_tail !at2 
           with Undefined -> (empty,empty) in
         if is_empty it1 && is_empty it2 then raise Exit;
         if it1 << it2
@@ -1470,25 +1468,21 @@ let future_extension at1 at2 =
   let at2 = ref at2 in
   let accu = ref empty in
   let update it at at' =
-    try (
+    try 
       let x = ordered_join !accu it in 
       if !first_operand && (not !loading)
       then (loading := true; accu := meet (terminal_hull it) x) 
-      else accu := x); 
-      at := at';
+      else accu := x; 
+      at := at'
     with Undefined -> (
-      (if !loading then push !accu answer);
-      accu := it;
-      at := at';
-      loading := !first_operand) in
+      if !loading then push !accu answer;
+      accu := it; at := at'; loading := !first_operand) in
   let () =
     try
       while true do
-        let (it1,at3) =
-          try head_and_tail !at1
+        let (it1,at3) = try head_and_tail !at1
           with Undefined -> (empty,empty) in
-        let (it2,at4) =
-          try head_and_tail !at2
+        let (it2,at4) = try head_and_tail !at2
           with Undefined -> (empty,empty) in
         if is_empty it1 && is_empty it2 then raise Exit;
         if it1 << it2
@@ -1497,6 +1491,46 @@ let future_extension at1 at2 =
       done
     with Exit -> () in
   of_intervals (List.rev (if !loading then !accu::!answer else !answer))
+
+
+
+(*in progress*)
+
+let past_extension at1 at2 =
+  let answer = ref [] in
+  let first_operand = ref false in
+  let at1 = ref at1 in
+  let at2 = ref at2 in
+  let last_it1 = ref empty in
+  let accu = ref empty in
+  let update it at at' =
+    try 
+      accu := ordered_join !accu it; at := at'; 
+      if !first_operand then last_it1 := it;  
+    with Undefined -> (
+      push (meet (initial_hull !last_it1) !accu) answer;
+      accu := it;
+      if !first_operand then last_it1 := it;
+      at := at') in
+  let () =
+    try
+      while true do
+        let (it1,at3) = try head_and_tail !at1 
+          with Undefined -> (empty,empty) in
+        let (it2,at4) = try head_and_tail !at2 
+          with Undefined -> (empty,empty) in
+        if is_empty it1 && is_empty it2 then raise Exit;
+        if it1 << it2
+        then (first_operand := true; update it1 at1 at3)
+        else (first_operand := false; update it2 at2 at4)
+      done 
+    with Exit -> () in
+  of_intervals (List.rev (((meet (initial_hull !last_it1) !accu))::!answer))
+
+
+
+
+
 
   module type DirectedTopology = sig
     val string_of: t -> string
