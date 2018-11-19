@@ -1418,13 +1418,29 @@ let join it1 it2 =
             if a <> b then [a;b] else [Iso (rvb a)]
           with Undefined -> [a])
 
+(* More efficient implementation under the hypothesis that it2 is nonempty and 
+if it1 is nonempty, then it1 << it2. *)
+
+let ordered_join it1 it2 = 
+  if is_empty it1 then it2
+  (*else if is_empty it2 then it1*)
+    else (
+      if (it1 <-< it2) (*|| (it2 <-< it1)*) then raise Undefined
+        else
+          let a = (*leftmost_*)left_bound it1 (*it2*) in 
+          try
+            let b = rightmost_right_bound it1 it2 in
+            if a <> b then [a;b] else [Iso (rvb a)]
+          with Undefined -> [a])
+
+
 let join at1 at2 =
   let answer = ref [] in
   let at1 = ref at1 in
   let at2 = ref at2 in
   let accu = ref empty in
   let update it at at' =
-    try accu := join !accu it; at := at'  
+    try accu := ordered_join !accu it; at := at'  
     with Undefined -> (
       push !accu answer;
       accu := it;
@@ -1445,6 +1461,42 @@ let join at1 at2 =
       done 
     with Exit -> () in
   of_intervals (List.rev (!accu::!answer))
+
+let future_extension at1 at2 = 
+  let answer = ref [] in
+  let first_operand = ref false in
+  let loading = ref false in
+  let at1 = ref at1 in
+  let at2 = ref at2 in
+  let accu = ref empty in
+  let update it at at' =
+    try (
+      let x = ordered_join !accu it in 
+      if !first_operand && (not !loading)
+      then (loading := true; accu := meet (terminal_hull it) x) 
+      else accu := x); 
+      at := at';
+    with Undefined -> (
+      (if !loading then push !accu answer);
+      accu := it;
+      at := at';
+      loading := !first_operand) in
+  let () =
+    try
+      while true do
+        let (it1,at3) =
+          try head_and_tail !at1
+          with Undefined -> (empty,empty) in
+        let (it2,at4) =
+          try head_and_tail !at2
+          with Undefined -> (empty,empty) in
+        if is_empty it1 && is_empty it2 then raise Exit;
+        if it1 << it2
+        then (first_operand := true; update it1 at1 at3)
+        else (first_operand := false; update it2 at2 at4)
+      done
+    with Exit -> () in
+  of_intervals (List.rev (if !loading then !accu::!answer else !answer))
 
   module type DirectedTopology = sig
     val string_of: t -> string
