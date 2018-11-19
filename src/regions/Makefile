@@ -2,7 +2,9 @@ OCAMLMAKEFILE = ../OCamlMakefile
 COMMON = ../common/
 LEGACY_COMMON = ../legacy/trunk_common/
 GEOREAL = $(LEGACY_COMMON)/geometric_realization/
-SOURCES = bound.ml dashDot.ml $(COMMON)integer.ml $(LEGACY_COMMON)common.ml  \
+SOURCES = bound.ml dashDot.ml \
+interval2.ml dashDot2.ml \
+$(COMMON)integer.ml $(LEGACY_COMMON)common.ml  \
 $(GEOREAL)ODA.ml \
 test.ml
 RESULT = main

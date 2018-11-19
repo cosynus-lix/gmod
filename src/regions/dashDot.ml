@@ -1328,6 +1328,34 @@ arriving at p, and whose image is entirely contained in the union of x and {p}
     let return = past_closure false ar in
     return , !unbounded
 
+let after it = match it with
+  | [Iso x] | [_;Cls x] -> [Opn x]
+  | [_;Opn x] -> [Cls x]
+  | [_] -> empty
+  | [] -> full
+  | _ -> assert false
+
+let before it = match it with
+  | [Iso x] | [Cls x;_] | [Cls x] -> if x <> zero then [Cls zero;Opn x] else empty
+  | [Opn x;_] | [Opn x] -> if x <> zero then [Cls zero; Cls x] else [Iso x]
+  | [] -> full
+  | _ -> assert false
+
+let complement accu at =
+  let at = ref empty in
+  let it1 = ref empty in
+  let it2 = ref empty in
+  let accu = ref empty in
+  while true do
+    it1 := !it2
+    let hnt = head_and_tail !at in
+    it2 := fst hnt;
+    at := snd hnt;
+    match at with 
+    | [] -> full
+    | [it] -> List.concat (after it)
+  done
+
 let rightmost_left_bound it1 it2 =
   let a1 = left_bound it1 in
   let a2 = left_bound it2 in
