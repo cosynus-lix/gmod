@@ -467,12 +467,6 @@ struct
     it := fst hnt;
     at := snd hnt
 
-  let cut_off x = 
-    let hnt = head_and_tail !x in
-    x := snd hnt 
-
-  let clear x = x := empty
-
   let push it answer = answer := it :: !answer
     
 (* Duplicata de la fonction du module HalfLine, provisoirement pour dubbugé le module FutureExtension *)
@@ -563,6 +557,7 @@ let hl_string_of a =
 
   (* boolean algebra *)
 
+(*
   let complement a =
     match a with
       | Cls b::a ->
@@ -579,7 +574,11 @@ let hl_string_of a =
 					else Opn zero::(List.map reverse_bound a)
       | [] -> full
       | Pun _::_ -> invalid_arg "complement [DashDot]"
+*)
 
+let binary_boolean_operator test = failwith "No longer needed"
+
+(*
   let binary_boolean_operator test =
     let rec binary_boolean_operator ar1 ar2 =
       match ar1,ar2 with
@@ -738,7 +737,11 @@ let hl_string_of a =
   let join = binary_boolean_operator (||)
 
   let difference = binary_boolean_operator Pervasives.(>)
+*)
 
+  let exists test = failwith "exists is no longer needed"
+
+(*
   let exists test =
     let rec exists ar1 ar2 =
       match ar1,ar2 with
@@ -852,8 +855,12 @@ let hl_string_of a =
 	    | false,true  -> (b && is_not_full ar2) || (not b && is_not_full ar1)
 	    | true,true   -> true
 	    | false,false -> false
+*)
 
 
+  let for_all test = failwith "for_all is no longer needed"
+
+(*
   let for_all test =
     let rec for_all ar1 ar2 =
       match ar1,ar2 with
@@ -966,10 +973,15 @@ let hl_string_of a =
 	  | false,true  -> if b then is_not_empty ar2 else is_not_empty ar1
 	  | true,true   -> true
 	  | false,false -> false
+*)
 
+(*
   let is_included = for_all Pervasives.(<=)
+*)
 
+(*
   let is_not_included = exists Pervasives.(>)
+*)
 
   (* The compare function is actually a linear extension of both
      inclusion relation and linear order over the elements. It is
@@ -1128,6 +1140,7 @@ let compare_intervals it1 it2 =
   (terminal_hull it1) it3).
 *)
 
+(*
 let future_extension at1 at2 =
   let answer = ref [] in
   let at2 = ref (join at1 at2) in  
@@ -1161,8 +1174,10 @@ let future_extension at1 at2 =
 let future_extension at1 at2 =
   if is_empty at1 then empty 
   else future_extension at1 at2
+*)
 
 
+(*
 let past_extension at1 at2 =
   let answer = ref [] in
   let at2 = ref (join at1 at2) in  
@@ -1203,6 +1218,7 @@ let past_extension at1 at2 =
 let past_extension at1 at2 =
   if is_empty at1 then empty 
   else past_extension at1 at2
+*)
 
 
   (*The name is not well chosen in the case where the underlying space is the circle*)
@@ -1328,40 +1344,6 @@ arriving at p, and whose image is entirely contained in the union of x and {p}
     let return = past_closure false ar in
     return , !unbounded
 
-let after it = 
-  match it with
-  | [Iso x] | [_;Cls x] -> [Opn x]
-  | [_;Opn x] -> [Cls x]
-  | [_] -> empty
-  | [] -> full
-  | _ -> assert false
-
-let before it = 
-  match it with
-  | [Iso x] | [Cls x;_] | [Cls x] -> if x <> zero then [Cls zero;Opn x] else empty
-  | [Opn x;_] | [Opn x] -> if x <> zero then [Cls zero; Cls x] else [Iso x]
-  | [] -> full
-  | _ -> assert false
-
-let between it1 it2 = meet (after it1) (before it2)
-
-
-let complement at =
-  let at = ref at in
-  let it1 = ref empty in
-  let it2 = ref empty in
-  let answer = ref empty in
-  let () =
-    try
-      while true do
-        it1 := !it2;
-        let hnt = head_and_tail !at in
-        it2 := fst hnt;
-        at := snd hnt;
-        answer := (between !it1 !it2) :: !answer
-      done
-    with Undefined -> answer := after !it2 :: !answer in
-  of_intervals (List.rev !answer)
 
 let rightmost_left_bound it1 it2 =
   let a1 = left_bound it1 in
@@ -1416,6 +1398,42 @@ let meet at1 at2 =
 let meet at1 at2 =
   if is_empty at1 || is_empty at2 then empty 
   else meet at1 at2
+
+let after it = 
+  match it with
+  | [Iso x] | [_;Cls x] -> [Opn x]
+  | [_;Opn x] -> [Cls x]
+  | [_] -> empty
+  | [] -> full
+  | _ -> assert false
+
+let before it = 
+  match it with
+  | [Iso x] | [Cls x;_] | [Cls x] -> if x <> zero then [Cls zero;Opn x] else empty
+  | [Opn x;_] | [Opn x] -> if x <> zero then [Cls zero; Cls x] else [Iso x]
+  | [] -> full
+  | _ -> assert false
+
+let between it1 it2 = meet (after it1) (before it2)
+
+
+let complement at =
+  let at = ref at in
+  let it1 = ref empty in
+  let it2 = ref empty in
+  let answer = ref empty in
+  let () =
+    try
+      while true do
+        it1 := !it2;
+        let hnt = head_and_tail !at in
+        it2 := fst hnt;
+        at := snd hnt;
+        answer := (between !it1 !it2) :: !answer
+      done
+    with Undefined -> answer := after !it2 :: !answer in
+  of_intervals (List.rev !answer)
+
 
 let leftmost_left_bound it1 it2 =
   let a1 = left_bound it1 in
@@ -1486,6 +1504,11 @@ let join at1 at2 =
     with Exit -> () in
   of_intervals (List.rev (!accu::!answer))
 
+let difference at1 at2 = meet at1 (complement at2)
+
+let symmetric_difference at1 at2 = 
+  join (difference at1 at2) (difference at2 at1)
+
 (* version intervalle *)
 
 let is_included it1 it2 = 
@@ -1508,6 +1531,8 @@ let is_included at1 at2 =
     done;
     true
   with Undefined -> false
+
+let is_not_included at1 at2 = not (is_included at1 at2)
 
 let future_extension at1 at2 =
   let answer = ref [] in
