@@ -648,8 +648,6 @@ struct
 
   *)
 
-(* The following function is buggy: e.g. is_included {0} Ø *)
-
   let for_all test =
     let rec for_all ar1 ar2 =
       match ar1,ar2 with
@@ -759,7 +757,7 @@ struct
 	let b = is_empty ar1 in
 	match test (not b) b,test false false with
 	  | true,false  -> if b then is_full ar2 else is_full ar1
-	  | false,true  -> if b then is_not_empty ar2 else is_not_empty ar1
+	  | false,true  -> if b then is_empty ar2 else is_empty ar1 (* corrected 20181120 is_empty instead of is_not_empty *)
 	  | true,true   -> true
 	  | false,false -> false
 
@@ -772,7 +770,9 @@ struct
 
   let is_not_included = exists Pervasives.(>)
 
+(*
   let is_included x y = not (is_not_included x y) 
+*)
 
   (* The compare function is actually a linear extension of both
      inclusion relation and linear order over the elements. It is
