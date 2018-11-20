@@ -308,6 +308,46 @@ let exhaustive_complement max =
   print_endline "Testing complement";
   exhaustive_test_unary oracle un_op max DD.empty HL.string_of HL.string_of
 
+
+
+let exhaustive_mem max =
+  let next_value n = if n < max then n + 1 else raise Exit in
+  let next = DD.next next_value in
+  let p = ref DD.zero in
+  let at = ref DD.empty in
+  let fe1 = ref false in
+  let fe2 = ref false in
+  let ok = ref true in
+  let nb_of_tests = Int64.(shift_left 2L (2*max+1)) in
+  let nb_of_tests = Int64.mul (Int64.of_int (max+1)) nb_of_tests in
+  let one_percent = Int64.(to_int (div nb_of_tests 100L)) in
+  let () = Printf.printf "There are %s tests to perform\n" 
+    (Int64.to_string nb_of_tests) in 
+  let percent = ref 0 in
+  let counter = ref 0 in
+  while !ok do
+    fe1 := Legacy.belongs_to !p (hl_to_legacy !at);
+    fe2 := DD.mem !p !at;
+    ok  := !fe1 = !fe2;
+    incr counter; 
+    if not !ok then (
+      print_endline "Mismatch:";
+      Printf.printf "operand_1 = %s\n" (string_of_int !p);
+      Printf.printf "operand_2 = %s\n" (HL.string_of !at);
+      Printf.printf "oracle    = %s\n" (string_of_bool !fe1);
+      Printf.printf "candidate = %s\n" (string_of_bool !fe2));
+    begin
+      try p := next_value !p
+      with Exit -> (
+        try at := next !at; p := DD.zero 
+        with Exit -> ok := false);
+    end;
+    if !counter = one_percent 
+    then (counter := 0; incr percent; if !percent < 100 then Printf.printf "%i%%\r%!" !percent else print_endline "100%")
+  done
+
+
+
 let exhaustive_all max =
   exhaustive_future_extension_on_half_line max;
   exhaustive_future_extension_on_circle max;
@@ -363,6 +403,7 @@ let command_line_options = [
   "--exhaustively-testing-difference",Arg.Int (exhaustive_difference),"Compare the new implementation of difference with the current one";
   "--exhaustively-testing-complement",Arg.Int (exhaustive_complement),"Compare the new implementation of complement with the current one";
   "--exhaustively-testing-is_included",Arg.Int (exhaustive_is_included),"Compare the new implementation of is_included with the current one";
+  "--exhaustively-testing-mem",Arg.Int (exhaustive_mem),"Compare the new implementation of mem with the current one";
 ]
 
 let msg = "This tool tests the DashDot library, which implements boolean, topological, \n\

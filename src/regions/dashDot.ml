@@ -288,8 +288,8 @@ struct
   (* Tests *)
 
   (* Criterion for a list of bounds to be valid: the number of Opn _
-     and Cls _ values before any Iso _ value must be even and the
-     number of Opn _ and Cls _ values before any Pun _ value must be
+     and Cls _ values strict_lower_bounds any Iso _ value must be even and the
+     number of Opn _ and Cls _ values strict_lower_bounds any Pun _ value must be
      odd. In other words a puncture must occur in the interior of a
      connected component while an isolated point must be a connected
      component. *)
@@ -557,431 +557,11 @@ let hl_string_of a =
 
   (* boolean algebra *)
 
-(*
-  let complement a =
-    match a with
-      | Cls b::a ->
-					if b <> zero
-					then Cls zero::Opn b::(List.map reverse_bound a)
-					else (List.map reverse_bound a)
-      | Opn b::a ->
-					if b <> zero
-					then Cls zero::Cls b::(List.map reverse_bound a)
-					else Iso zero::(List.map reverse_bound a)
-      | Iso b::a ->
-					if b <> zero
-					then Cls zero::Pun b::(List.map reverse_bound a)
-					else Opn zero::(List.map reverse_bound a)
-      | [] -> full
-      | Pun _::_ -> invalid_arg "complement [DashDot]"
-*)
-
-let binary_boolean_operator test = failwith "No longer needed"
-
-(*
-  let binary_boolean_operator test =
-    let rec binary_boolean_operator ar1 ar2 =
-      match ar1,ar2 with
-				(* Induction *)
-				| (p1,b1::ar1 as x1),(p2,b2::ar2 as x2) ->
-				  (
-				    let v1 = rvb b1 in
-				    let v2 = rvb b2 in
-				    if v1<v2
-				    then
-				      let p1' = if alter_parity b1 then not p1 else p1 in
-				      let remaining () = binary_boolean_operator (p1',ar1) x2 in
-				      let middle = test (bob b1) p2 in
-				      match test p1 p2,test p1' p2 with
-								| false,false -> if middle then Iso v1::remaining () else         remaining ()
-								| true ,true  -> if middle then         remaining () else Pun v1::remaining ()
-								| _           -> if middle then Cls v1::remaining () else Opn v1::remaining ()
-				    else
-				      if v1>v2
-				      then
-								let p2' = if alter_parity b2 then not p2 else p2 in
-								let remaining () = binary_boolean_operator x1 (p2',ar2) in
-								let middle = test p1 (bob b2) in
-								match test p1 p2,test p1 p2' with
-								  | false,false -> if middle then Iso v2::remaining () else         remaining ()
-								  | true ,true  -> if middle then         remaining () else Pun v2::remaining ()
-								  | _           -> if middle then Cls v2::remaining () else Opn v2::remaining ()
-				      else (*v1=v2*)
-								let p1' = if alter_parity b1 then not p1 else p1 in
-								let p2' = if alter_parity b2 then not p2 else p2 in
-								let remaining () = binary_boolean_operator (p1',ar1) (p2',ar2) in
-								let middle = test (bob b1) (bob b2) in
-								match test p1 p2,test p1' p2' with
-								  | false,false -> if middle then Iso v1::remaining () else         remaining ()
-								  | true ,true  -> if middle then         remaining () else Pun v1::remaining ()
-								  | _           -> if middle then Cls v1::remaining () else Opn v1::remaining ()
-				  )
-				(* Terminal *)
-				| (p1,[]),(p2,ar2') ->
-				  (
-				    match test p1 true,test p1 false with
-				      | true,false -> ar2'
-				      | false,true -> List.map reverse_bound ar2'
-				      | _   -> []
-				  )
-				| (p1,ar1'),(p2,[]) ->
-				  (
-				    match test true p2,test false p2 with
-				      | true,false  -> ar1'
-				      | false,true  -> List.map reverse_bound ar1'
-				      | _   -> []
-				  )
-    in (*The first round should be treated separately*)
-    fun ar1 ar2 -> match ar1,ar2 with
-      | (b1::ar1 as x1'),(b2::ar2 as x2') ->
-				let v1 = rvb b1 in
-				let v2 = rvb b2 in
-				if v1<v2
-				then (
-          let p1' = alter_parity b1 in
-          let x2 = (false,x2') in
-          let middle = test (bob b1) false in
-          let remaining () = binary_boolean_operator (p1',ar1) x2 in
-          if v1=zero
-          then match middle,test p1' false with
-            | false,false ->           remaining ()
-            | true ,true  -> Cls zero::remaining ()
-            | true ,false -> Iso zero::remaining ()
-            | false,true  -> Opn zero::remaining ()
-          else match test false false,test p1' false with
-            | false,false ->
-              if middle
-              then           Iso v1::remaining ()
-              else                   remaining ()
-            | false,true  ->
-              if middle
-              then           Cls v1::remaining ()
-              else           Opn v1::remaining ()
-            | true ,true  -> (*first round specific*)
-              if middle
-              then Cls zero::        remaining ()
-              else Cls zero::Pun v1::remaining ()
-            | true,false  -> (*first round specific*)
-              if middle
-              then Cls zero::Cls v1::remaining ()
-              else Cls zero::Opn v1::remaining ())
-				else if v1>v2
-				  then (
-            let p2' = alter_parity b2 in
-            let x1 = (false,x1') in
-            let middle = test false (bob b2) in
-            let remaining () = binary_boolean_operator x1 (p2',ar2) in
-            if v2=zero
-            then match middle,test false p2' with
-              | false,false ->           remaining ()
-              | true ,true  -> Cls zero::remaining ()
-              | true ,false -> Iso zero::remaining ()
-              | false,true  -> Opn zero::remaining ()
-            else match test false false,test false p2' with
-              | false,false ->
-                if middle
-                then           Iso v2::remaining ()
-                else                   remaining ()
-              | false,true  ->
-                if middle
-                then           Cls v2::remaining ()
-                else           Opn v2::remaining ()
-              | true ,true  -> (*first round specific*)
-                if middle
-                then Cls zero::        remaining ()
-                else Cls zero::Pun v2::remaining ()
-              | true,false  -> (*first round specific*)
-                if middle
-                then Cls zero::Cls v2::remaining ()
-                else Cls zero::Opn v2::remaining ())
-				  else ((*v1=v2*)
-				      let p1' = alter_parity b1 in
-				      let p2' = alter_parity b2 in
-				      let middle = test (bob b1) (bob b2) in
-				      let remaining () = binary_boolean_operator (p1',ar1) (p2',ar2) in
-				      if v1=zero
-				      then match middle,test p1' p2' with
-                | false,false ->           remaining ()
-                | true ,true  -> Cls zero::remaining ()
-                | true ,false -> Iso zero::remaining ()
-                | false,true  -> Opn zero::remaining ()
-				      else match test false false,test p1' p2' with
-                | false,false ->
-                  if middle
-                  then           Iso v1::remaining ()
-                  else                   remaining ()
-                | false,true  ->
-                  if middle
-                  then           Cls v1::remaining ()
-                  else           Opn v1::remaining ()
-                | true ,true  -> (*first round specific*)
-                  if middle
-                  then Cls zero::        remaining ()
-                  else Cls zero::Pun v1::remaining ()
-                | true,false  -> (*first round specific*)
-                  if middle
-                  then Cls zero::Cls v1::remaining ()
-                  else Cls zero::Opn v1::remaining ())
-		      | _ -> (*at least one of the arguments is empty*)
-							let b = is_empty ar1 in
-							match test (not b) b,test false false with
-							  | true,false  -> if b then ar2 else ar1
-							  | false,true  -> complement (if b then ar2 else ar1)
-							  | true,true   -> full
-							  | false,false -> empty
-
-  let symmetric_difference = binary_boolean_operator (<>)
-
-  let meet = binary_boolean_operator (&&)
-
-  let join = binary_boolean_operator (||)
-
-  let difference = binary_boolean_operator Pervasives.(>)
-*)
+  let binary_boolean_operator test = failwith "No longer needed"
 
   let exists test = failwith "exists is no longer needed"
 
-(*
-  let exists test =
-    let rec exists ar1 ar2 =
-      match ar1,ar2 with
-	(* Induction *)
-	| (p1,b1::ar1 as x1),(p2,b2::ar2 as x2) ->
-	  (
-	    let v1 = rvb b1 in
-	    let v2 = rvb b2 in
-	    if v1<v2
-	    then
-	      let p1' = if alter_parity b1 then not p1 else p1 in
-	      let remaining () = exists (p1',ar1) x2 in
-	      let middle = test (bob b1) p2 in
-	      match test p1 p2,test p1' p2 with
-		| false,false -> middle || remaining ()
-		| _           -> true
-	    else
-	      if v1>v2
-	      then
-		let p2' = if alter_parity b2 then not p2 else p2 in
-		let remaining () = exists x1 (p2',ar2) in
-		let middle = test p1 (bob b2) in
-		match test p1 p2,test p1 p2' with
-		  | false,false -> middle || remaining ()
-		  | _           -> true
-	      else (*v1=v2*)
-		let p1' = if alter_parity b1 then not p1 else p1 in
-		let p2' = if alter_parity b2 then not p2 else p2 in
-		let remaining () = exists (p1',ar1) (p2',ar2) in
-		let middle = test (bob b1) (bob b2) in
-		match test p1 p2,test p1' p2' with
-		  | false,false -> middle || remaining ()
-		  | _           -> true
-	  )
-	(* Terminal *)
-	| (p1,[]),(p2,ar2') ->
-	  (
-	    match test p1 true,test p1 false with
-	      | true,true   -> true
-	      | false,false -> false
-	      | _           -> ar2'<>[]
-	  )
-	| (p1,ar1'),(p2,[]) ->
-	  (
-	    match test true p2,test false p2 with
-	      | true,true   -> true
-	      | false,false -> false
-	      | _           -> ar1'<>[]
-	  )
-    in (*The first round should be treated separately*)
-    fun ar1 ar2 ->
-      match ar1,ar2 with
-	| (b1::ar1 as x1'),(b2::ar2 as x2') ->
-	  let v1 = rvb b1 in
-	  let v2 = rvb b2 in
-	  if v1<v2
-	  then
-	    (
-	      let p1' = alter_parity b1 in
-	      let x2 = (false,x2') in
-	      let middle = test (bob b1) false in
-	      let remaining () = exists (p1',ar1) x2 in
-	      if v1=zero
-	      then
-		match middle,test p1' false with
-		  | false,false -> remaining ()
-		  | _  -> true
-	      else
-		match test false false,test p1' false with
-		  | false,false -> middle || remaining ()
-		  | _  -> true
-	    )
-	  else
-	    if v1>v2
-	    then
-	      (
-		let p2' = alter_parity b2 in
-		let x1 = (false,x1') in
-		let middle = test false (bob b2) in
-		let remaining () = exists x1 (p2',ar2) in
-		if v2=zero
-		then
-		  match middle,test false p2' with
-		    | false,false -> remaining ()
-		    | _  -> true
-		else
-		  match test false false,test false p2' with
-		    | false,false -> middle || remaining ()
-		    | _  -> true
-	      )
-	    else (*v1=v2*)
-	      (
-		let p1' = alter_parity b1 in
-		let p2' = alter_parity b2 in
-		let middle = test (bob b1) (bob b2) in
-		let remaining () = exists (p1',ar1) (p2',ar2) in
-		if v1=zero
-		then
-		  match middle,test p1' p2' with
-		    | false,false -> remaining ()
-		    | _ -> true
-		else
-		  match test false false,test p1' p2' with
-		    | false,false -> middle || remaining ()
-		    | _  -> true
-	      )
-	| _ -> (*at least one of the arguments is empty*)
-	  let b = is_empty ar1 in
-	  match test (not b) b,test false false with
-	    | true,false  -> not b || is_not_empty ar2
-	    | false,true  -> (b && is_not_full ar2) || (not b && is_not_full ar1)
-	    | true,true   -> true
-	    | false,false -> false
-*)
-
-
   let for_all test = failwith "for_all is no longer needed"
-
-(*
-  let for_all test =
-    let rec for_all ar1 ar2 =
-      match ar1,ar2 with
-	(* Induction *)
-	| (p1,b1::ar1 as x1),(p2,b2::ar2 as x2) ->
-	  (
-	    let v1 = rvb b1 in
-	    let v2 = rvb b2 in
-	    if v1<v2
-	    then
-	      let p1' = if alter_parity b1 then not p1 else p1 in
-	      let remaining () = for_all (p1',ar1) x2 in
-	      let middle = test (bob b1) p2 in
-	      match test p1 p2,test p1' p2 with
-		| true ,true -> middle && remaining ()
-		| _          -> false
-	    else
-	      if v1>v2
-	      then
-		let p2' = if alter_parity b2 then not p2 else p2 in
-		let remaining () = for_all x1 (p2',ar2) in
-		let middle = test p1 (bob b2) in
-		match test p1 p2,test p1 p2' with
-		  | true ,true  -> middle && remaining ()
-		  | _           -> false
-	      else (*v1=v2*)
-		let p1' = if alter_parity b1 then not p1 else p1 in
-		let p2' = if alter_parity b2 then not p2 else p2 in
-		let remaining () = for_all (p1',ar1) (p2',ar2) in
-		let middle = test (bob b1) (bob b2) in
-		match test p1 p2,test p1' p2' with
-		  | true ,true -> middle && remaining ()
-		  | _          -> false
-	  )
-	(* Terminal *)
-	| (p1,[]),(p2,ar2') ->
-	  (
-	    match test p1 true,test p1 false with
-	      | true,true   -> true
-	      | false,false -> false
-	      | _ -> ar2'=[]
-	  )
-	| (p1,ar1'),(p2,[]) ->
-	  (
-	    match test true p2,test false p2 with
-	      | true,true   -> true
-	      | false,false -> false
-	      | _   -> ar1'=[]
-	  )
-    in (*The first round should be treated separately*)
-    fun ar1 ar2 -> match ar1,ar2 with
-      | (b1::ar1 as x1'),(b2::ar2 as x2') ->
-	let v1 = rvb b1 in
-	let v2 = rvb b2 in
-	if v1<v2
-	then
-	  (
-	    let p1' = alter_parity b1 in
-	    let x2 = (false,x2') in
-	    let middle = test (bob b1) false in
-	    let remaining () = for_all (p1',ar1) x2 in
-	    if v1=zero
-	    then
-	      match middle,test p1' false with
-		| true ,true -> remaining ()
-		| _ -> false
-	    else
-	      match test false false,test p1' false with
-		| true ,true -> middle && remaining ()
-		| _ -> false
-	  )
-	else
-	  if v1>v2
-	  then
-	    (
-	      let p2' = alter_parity b2 in
-	      let x1 = (false,x1') in
-	      let middle = test false (bob b2) in
-	      let remaining () = for_all x1 (p2',ar2) in
-	      if v2=zero
-	      then
-		match middle,test false p2' with
-		  | true ,true  -> remaining ()
-		  | _ -> false
-	      else
-		match test false false,test false p2' with
-		  | true ,true  -> middle && remaining ()
-		  | _ -> false
-	    )
-	  else (*v1=v2*)
-	    (
-	      let p1' = alter_parity b1 in
-	      let p2' = alter_parity b2 in
-	      let middle = test (bob b1) (bob b2) in
-	      let remaining () = for_all (p1',ar1) (p2',ar2) in
-	      if v1=zero
-	      then
-		match middle,test p1' p2' with
-		  | true ,true -> remaining ()
-		  | _ -> false
-	      else
-		match test false false,test p1' p2' with
-		  | true ,true -> middle && remaining ()
-		  | _ -> false
-	    )
-      | _ -> (*at least one of the arguments is empty*)
-	let b = is_empty ar1 in
-	match test (not b) b,test false false with
-	  | true,false  -> if b then is_full ar2 else is_full ar1
-	  | false,true  -> if b then is_not_empty ar2 else is_not_empty ar1
-	  | true,true   -> true
-	  | false,false -> false
-*)
-
-(*
-  let is_included = for_all Pervasives.(<=)
-*)
-
-(*
-  let is_not_included = exists Pervasives.(>)
-*)
 
   (* The compare function is actually a linear extension of both
      inclusion relation and linear order over the elements. It is
@@ -1067,7 +647,7 @@ let terminal_hull it = match it with
   | [] -> []
   | _ -> assert false
 
-(* is it2 strictly after it1 ? *)
+(* is it2 strictly strict_upper_bounds it1 ? *)
 
 let ordered_disjoint it1 it2 = 
   try
@@ -1140,85 +720,7 @@ let compare_intervals it1 it2 =
   (terminal_hull it1) it3).
 *)
 
-(*
-let future_extension at1 at2 =
-  let answer = ref [] in
-  let at2 = ref (join at1 at2) in  
-  let hnt1 = head_and_tail at1 in
-  let it1 = ref (fst hnt1) in
-  let at1 = ref (snd hnt1) in
-  let hnt2 = head_and_tail !at2 in
-  let () = at2 := snd hnt2 in
-  let it2 = ref (fst hnt2) in
-  let () =
-    try
-      while true do
-        while !it2 <-< !it1 do
-          let hnt2 = head_and_tail !at2 in
-          it2 := fst hnt2;
-          at2 := snd hnt2;
-        done;
-        answer := (meet !it2 (terminal_hull !it1)) :: !answer;
-        try 
-          while is_in_the_initial_hull_of !it1 !it2 do
-            let hnt1 = head_and_tail !at1 in
-            it1 := fst hnt1;
-            at1 := snd hnt1;
-          done;
-        with Undefined -> raise Exit
-      done 
-    with Exit -> () in
-  answer := List.rev !answer;
-  of_intervals !answer
 
-let future_extension at1 at2 =
-  if is_empty at1 then empty 
-  else future_extension at1 at2
-*)
-
-
-(*
-let past_extension at1 at2 =
-  let answer = ref [] in
-  let at2 = ref (join at1 at2) in  
-  let hnt1 = head_and_tail at1 in
-  let it1 = ref (fst hnt1) in
-  let at1 = ref (snd hnt1) in
-  let hnt2 = head_and_tail !at2 in
-  let () = at2 := snd hnt2 in
-  let it2 = ref (fst hnt2) in 
-  let () = 
-    try
-      while true do
-        let () = 
-          while !it2 <-< !it1 do
-            let hnt2 = head_and_tail !at2 in
-            it2 := fst hnt2;
-            at2 := snd hnt2;
-          done in
-        let prev_it1 = ref !it1 in
-        let prev_at1 = ref !at1 in
-        let () = try
-          while is_in_the_initial_hull_of !it1 !it2 do
-            prev_it1 := !it1;
-            prev_at1 := !at1;
-            let hnt1 = head_and_tail !at1 in
-            it1 := fst hnt1;
-            at1 := snd hnt1
-          done;
-        with Undefined -> 
-          answer := (meet !it2 (initial_hull !it1)) :: !answer;
-          raise Exit in
-        answer := (meet !it2 (initial_hull !prev_it1)) :: !answer
-      done
-    with Exit -> () in
-  answer := List.rev !answer;
-  of_intervals !answer
-
-let past_extension at1 at2 =
-  if is_empty at1 then empty 
-  else past_extension at1 at2
-*)
 
 
   (*The name is not well chosen in the case where the underlying space is the circle*)
@@ -1399,7 +901,7 @@ let meet at1 at2 =
   if is_empty at1 || is_empty at2 then empty 
   else meet at1 at2
 
-let after it = 
+let strict_upper_bounds it = 
   match it with
   | [Iso x] | [_;Cls x] -> [Opn x]
   | [_;Opn x] -> [Cls x]
@@ -1407,15 +909,15 @@ let after it =
   | [] -> full
   | _ -> assert false
 
-let before it = 
+let strict_lower_bounds it = 
   match it with
   | [Iso x] | [Cls x;_] | [Cls x] -> if x <> zero then [Cls zero;Opn x] else empty
   | [Opn x;_] | [Opn x] -> if x <> zero then [Cls zero; Cls x] else [Iso x]
   | [] -> full
   | _ -> assert false
 
-let between it1 it2 = meet (after it1) (before it2)
-
+let between it1 it2 =
+  meet (strict_upper_bounds it1) (strict_lower_bounds it2)
 
 let complement at =
   let at = ref at in
@@ -1431,7 +933,7 @@ let complement at =
         at := snd hnt;
         answer := (between !it1 !it2) :: !answer
       done
-    with Undefined -> answer := after !it2 :: !answer in
+    with Undefined -> answer := strict_upper_bounds !it2 :: !answer in
   of_intervals (List.rev !answer)
 
 
@@ -1509,6 +1011,29 @@ let difference at1 at2 = meet at1 (complement at2)
 let symmetric_difference at1 at2 = 
   join (difference at1 at2) (difference at2 at1)
 
+(* version intervalle *)
+
+let mem p it = 
+  match it with
+  | [] -> false
+  | [Iso x] -> p = x
+  | [a] -> ((rvb a) < p) || (((rvb a) = p) && bob a)
+  | [a;b] -> 
+      (((rvb a) < p) || (((rvb a) = p) && bob a))
+      && ((p < (rvb b)) || (((rvb b) = p) && bob b))
+  | _ -> assert false
+
+let mem p at =
+  let at = ref at in
+  try
+    while is_not_empty !at do
+      let (it,at') = head_and_tail !at in
+      if mem p it then raise Exit
+      else at := at'
+    done;
+    false
+  with Exit -> true
+  
 (* version intervalle *)
 
 let is_included it1 it2 = 
