@@ -648,6 +648,8 @@ struct
 
   *)
 
+(* The following function is buggy: e.g. is_included {0} Ø *)
+
   let for_all test =
     let rec for_all ar1 ar2 =
       match ar1,ar2 with
@@ -761,9 +763,16 @@ struct
 	  | true,true   -> true
 	  | false,false -> false
 
+(* The following function is buggy *)
   let is_included = for_all Pervasives.(<=)
+  
+(*
+  let is_included x y = (union x y) = y
+*)
 
   let is_not_included = exists Pervasives.(>)
+
+  let is_included x y = not (is_not_included x y) 
 
   (* The compare function is actually a linear extension of both
      inclusion relation and linear order over the elements. It is

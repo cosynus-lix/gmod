@@ -1328,33 +1328,40 @@ arriving at p, and whose image is entirely contained in the union of x and {p}
     let return = past_closure false ar in
     return , !unbounded
 
-let after it = match it with
+let after it = 
+  match it with
   | [Iso x] | [_;Cls x] -> [Opn x]
   | [_;Opn x] -> [Cls x]
   | [_] -> empty
   | [] -> full
   | _ -> assert false
 
-let before it = match it with
+let before it = 
+  match it with
   | [Iso x] | [Cls x;_] | [Cls x] -> if x <> zero then [Cls zero;Opn x] else empty
   | [Opn x;_] | [Opn x] -> if x <> zero then [Cls zero; Cls x] else [Iso x]
   | [] -> full
   | _ -> assert false
 
-let complement accu at =
-  let at = ref empty in
+let between it1 it2 = meet (after it1) (before it2)
+
+
+let complement at =
+  let at = ref at in
   let it1 = ref empty in
   let it2 = ref empty in
-  let accu = ref empty in
-  while true do
-    it1 := !it2
-    let hnt = head_and_tail !at in
-    it2 := fst hnt;
-    at := snd hnt;
-    match at with 
-    | [] -> full
-    | [it] -> List.concat (after it)
-  done
+  let answer = ref empty in
+  let () =
+    try
+      while true do
+        it1 := !it2;
+        let hnt = head_and_tail !at in
+        it2 := fst hnt;
+        at := snd hnt;
+        answer := (between !it1 !it2) :: !answer
+      done
+    with Undefined -> answer := after !it2 :: !answer in
+  of_intervals (List.rev !answer)
 
 let rightmost_left_bound it1 it2 =
   let a1 = left_bound it1 in
@@ -1426,6 +1433,7 @@ let rightmost_right_bound it1 it2 =
   if y1 < y2 || (y1 = y2 && (bob b2))
   then b2 else b1
 
+(* version intervalle *)
 let join it1 it2 =  
   if is_empty it1 then it2
   else if is_empty it2 then it1
@@ -1477,6 +1485,29 @@ let join at1 at2 =
       done 
     with Exit -> () in
   of_intervals (List.rev (!accu::!answer))
+
+(* version intervalle *)
+
+let is_included it1 it2 = 
+  is_in_the_initial_hull_of it1 it2 
+  && is_in_the_terminal_hull_of it1 it2
+
+let is_included at1 at2 = 
+  let at1 = ref at1 in
+  let at2 = ref at2 in
+  let it2 = ref empty in
+  try
+    while is_not_empty !at1 do
+      let (it1,at3) = head_and_tail !at1 in
+      while not (is_included it1 !it2) do
+        let hnt2 = head_and_tail !at2 in
+        it2 := fst hnt2;
+        at2 := snd hnt2
+      done;
+      at1 := at3
+    done;
+    true
+  with Undefined -> false
 
 let future_extension at1 at2 =
   let answer = ref [] in

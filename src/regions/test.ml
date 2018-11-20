@@ -169,13 +169,13 @@ let exhaustive_regions max =
   with Exit -> ()
 
 
-let exhaustive_test oracle bin_op max =
+let exhaustive_test_binary oracle bin_op max dummy string_of_operand string_of_result =
   let next n = if n < max then n + 1 else raise Exit in
   let next = DD.next next in
   let at1 = ref DD.empty in
   let at2 = ref DD.empty in
-  let fe1 = ref DD.empty in
-  let fe2 = ref DD.empty in
+  let fe1 = ref dummy in
+  let fe2 = ref dummy in
   let ok = ref true in
   let nb_of_tests = Int64.(shift_left 2L (2*max+1)) in
   let nb_of_tests = Int64.mul nb_of_tests nb_of_tests in
@@ -191,10 +191,10 @@ let exhaustive_test oracle bin_op max =
     incr counter; 
     if not !ok then (
       print_endline "Mismatch:";
-      Printf.printf "at1 = %s\n" (HL.string_of !at1);
-      Printf.printf "at2 = %s\n" (HL.string_of !at2);
-      Printf.printf "fe1 = %s\n" (HL.string_of !fe1);
-      Printf.printf "fe2 = %s\n" (HL.string_of !fe2));
+      Printf.printf "operand_1 = %s\n" (string_of_operand !at1);
+      Printf.printf "operand_2 = %s\n" (string_of_operand !at2);
+      Printf.printf "oracle    = %s\n" (string_of_result !fe1);
+      Printf.printf "candidate = %s\n" (string_of_result !fe2));
     begin
       try at2 := next !at2
       with Exit -> (
@@ -218,7 +218,7 @@ let exhaustive_future_extension_on_half_line max =
     DD.join at1 (bin_op at1 at2) in
   let bin_op = HL.future_extension in
   print_endline "Testing future_extension on half_line";
-  exhaustive_test oracle bin_op max
+  exhaustive_test_binary oracle bin_op max DD.empty HL.string_of HL.string_of
 
 let exhaustive_past_extension_on_half_line max = 
   let oracle at1 at2 = 
@@ -226,7 +226,7 @@ let exhaustive_past_extension_on_half_line max =
     DD.join at1 (bin_op at1 at2) in
   let bin_op = HL.past_extension in
   print_endline "Testing past_extension on half_line";
-  exhaustive_test oracle bin_op max
+  exhaustive_test_binary oracle bin_op max DD.empty HL.string_of HL.string_of
 
 let exhaustive_future_extension_on_circle max = 
   let oracle at1 at2 = 
@@ -234,7 +234,7 @@ let exhaustive_future_extension_on_circle max =
     DD.join at1 (bin_op at1 at2) in
   let bin_op = Ci.future_extension in
   print_endline "Testing future_extension on circle";
-  exhaustive_test oracle bin_op max
+  exhaustive_test_binary oracle bin_op max DD.empty HL.string_of HL.string_of
 
 let exhaustive_past_extension_on_circle max = 
   let oracle at1 at2 = 
@@ -242,25 +242,71 @@ let exhaustive_past_extension_on_circle max =
     DD.join at1 (bin_op at1 at2) in
   let bin_op = Ci.past_extension in
   print_endline "Testing past_extension on circle";
-  exhaustive_test oracle bin_op max
+  exhaustive_test_binary oracle bin_op max DD.empty HL.string_of HL.string_of
 
 let exhaustive_join max = 
   let oracle = wrapper Legacy.union in
   let bin_op = DD.join in
   print_endline "Testing join";
-  exhaustive_test oracle bin_op max
+  exhaustive_test_binary oracle bin_op max DD.empty HL.string_of HL.string_of
 
 let exhaustive_meet max = 
   let oracle = wrapper Legacy.intersection in
   let bin_op = DD.meet in
   print_endline "Testing meet";
-  exhaustive_test oracle bin_op max
+  exhaustive_test_binary oracle bin_op max DD.empty HL.string_of HL.string_of
 
 let exhaustive_difference max = 
   let oracle = wrapper Legacy.difference in
   let bin_op = DD.difference in
   print_endline "Testing difference";
-  exhaustive_test oracle bin_op max
+  exhaustive_test_binary oracle bin_op max DD.empty HL.string_of HL.string_of
+
+let exhaustive_is_included max = 
+  let oracle at1 at2 = Legacy.is_included (hl_to_legacy at1) (hl_to_legacy at2) in
+  let bin_op = DD.is_included in
+  print_endline "Testing is_included";
+  exhaustive_test_binary oracle bin_op max false HL.string_of string_of_bool 
+
+let exhaustive_test_unary oracle un_op max dummy string_of_operand string_of_result =
+  let next n = if n < max then n + 1 else raise Exit in
+  let next = DD.next next in
+  let at = ref DD.empty in
+  let fe1 = ref dummy in
+  let fe2 = ref dummy in
+  let ok = ref true in
+  let nb_of_tests = Int64.(shift_left 2L (2*max+1)) in
+  let one_percent = Int64.(to_int (div nb_of_tests 100L)) in
+  let () = Printf.printf "There are %s tests to perform\n" 
+    (Int64.to_string nb_of_tests) in 
+  let percent = ref 0 in
+  let counter = ref 0 in
+  while !ok do
+    fe1 := oracle !at;
+    fe2 := un_op !at;
+    ok  := !fe1 = !fe2;
+    incr counter; 
+    if not !ok then (
+      print_endline "Mismatch:";
+      Printf.printf "operand   = %s\n" (string_of_operand !at);
+      Printf.printf "oracle    = %s\n" (string_of_result !fe1);
+      Printf.printf "candidate = %s\n" (string_of_result !fe2));
+    begin
+        try at := next !at 
+        with Exit -> ok := false
+    end;
+    if !counter = one_percent 
+    then (counter := 0; incr percent; if !percent < 100 then Printf.printf "%i%%\r%!" !percent else print_endline "100%")
+  done
+
+let wrapper legacy_un_op = 
+  fun at1 -> hl_of_legacy (legacy_un_op (hl_to_legacy at1))
+
+let exhaustive_complement max = 
+  let oracle = wrapper Legacy.complement in
+  let un_op = DD.complement in
+  print_endline "Testing complement";
+  exhaustive_test_unary oracle un_op max DD.empty HL.string_of HL.string_of
 
 let exhaustive_all max =
   exhaustive_future_extension_on_half_line max;
@@ -269,7 +315,8 @@ let exhaustive_all max =
   exhaustive_past_extension_on_circle max;
   exhaustive_join max;
   exhaustive_meet max;
-  exhaustive_difference max
+  exhaustive_difference max;
+  exhaustive_complement max
 
 (*
 let exhaustive_all_in_parallel max = 
@@ -314,6 +361,8 @@ let command_line_options = [
   "--exhaustively-testing-join",Arg.Int (exhaustive_join),"Compare the new implementation of join with the current one)";
   "--exhaustively-testing-meet",Arg.Int (exhaustive_meet),"Compare the new implementation of meet with the current one";
   "--exhaustively-testing-difference",Arg.Int (exhaustive_difference),"Compare the new implementation of difference with the current one";
+  "--exhaustively-testing-complement",Arg.Int (exhaustive_complement),"Compare the new implementation of complement with the current one";
+  "--exhaustively-testing-is_included",Arg.Int (exhaustive_is_included),"Compare the new implementation of is_included with the current one";
 ]
 
 let msg = "This tool tests the DashDot library, which implements boolean, topological, \n\
