@@ -879,19 +879,18 @@ let meet it1 it2 =
 
 let meet at1 at2 =
   let answer = ref [] in
-  let it1 = ref empty in
   let at1 = ref at1 in
-  let it2 = ref empty in
   let at2 = ref at2 in  
-  let () = pop it1 at1 ; pop it2 at2 in
   let () =
     try
       while true do
-        let () = try answer := (meet !it1 !it2) :: !answer
+        let it1,at3 = try head_and_tail !at1 with Undefined -> raise Exit in
+        let it2,at4 = try head_and_tail !at2 with Undefined -> raise Exit in
+        let () = try answer := (meet it1 it2) :: !answer
           with Undefined -> () in
-        if is_in_the_initial_hull_of !it1 !it2
-        then pop it1 at1
-        else pop it2 at2
+        if is_in_the_initial_hull_of it1 it2
+        then at1 := at3
+        else at2 := at4
       done 
     with Exit -> () in
   let () = answer := List.rev !answer in
@@ -935,7 +934,6 @@ let complement at =
       done
     with Undefined -> answer := strict_upper_bounds !it2 :: !answer in
   of_intervals (List.rev !answer)
-
 
 let leftmost_left_bound it1 it2 =
   let a1 = left_bound it1 in

@@ -9,14 +9,23 @@ module type S = sig
   type value
   type t
   
+  (** {2 Constants} *)
+
+  val zero: value
+  val full: t
+
   (** {2 Constructors}*)
   
-  val empty: t
-  val full: t
   val singleton: value -> t
-  val interval: bool -> value -> value -> bool -> t
+  val bounded: bool -> value -> value -> bool -> t
   val initial: value -> bool -> t
   val terminal: bool -> value -> t
+
+ (** {2 Iterator and Enumerator}*)
+  
+  val next: (value -> value) -> t -> t
+
+  val nonempty_disconnected_next: (value -> value) -> t -> t
 
   (** {2 Unary operators}*)
 
@@ -31,64 +40,305 @@ module type S = sig
 
   (** The set of points that are greater than some point of the argument.*)
   val terminal_hull: t -> t
+
+  (** {2 Binary operators}*)
+  
+  (** Returns the (set theoretic) intersection of the arguments.*)
+  val meet: t -> t -> t
+  
+  (** Returns the (set theoretic) union of the arguments when they are 
+  connected. Raise the exception Undefined otherwise*)
+  val join: t -> t -> t
+  val ordered_join: t -> t -> t
+
+
+  (** Assuming that there exists a value which is both a strict upper 
+  bound of the first argument and a strict lower bound of the second argument, 
+  the function returns the interval of all such values.*)
+  val between: t -> t -> t
+
+  (** {2 Display}*)
+  
+  val string_of: t -> string
+  
+  (** {2 Compare}*)
+
+  (** it1 << it2 means that the set of strict lower bounds of it1 is included 
+  in that of it2. When they are equal, the least initial segment contenaining 
+  it1 is included in that contenaining it2.*)
+  val compare: t -> t -> int
+
+  (** {2 Tests}*)
+
+  val ordered_disjoint: t -> t -> bool
+  val ordered_disconnected: t -> t -> bool
+  val is_in_the_initial_hull_of: t -> t -> bool
+  val is_in_the_terminal_hull_of: t -> t -> bool
   
 end (* S *)
 
 module Raw(B:Bound.S) = struct
 
-  let zero = B.least_regular_value
+let zero = B.least_regular_value
 
-  let (<) x y = B.compare x y < 0
+exception Undefined
 
-  let (>) x y = B.compare x y > 0
+type value = B.t
 
-  let (<=) x y = B.compare x y <= 0
+type t =
+| Te of (bool * value)                (* final     *)
+| Bn of (bool * value * value * bool) (* bounded   *)
+| Si of value                         (* singleton *)
 
-  let (>=) x y = B.compare x y >= 0
+(* Display *)
 
-  exception Undefined
+let string_of it =
+  match it with 
+  | Bn (a,x,y,b) -> Printf.sprintf "%s%s,%s%s" 
+      (if a then "[" else "]")
+      (B.string_of x)
+      (B.string_of y)
+      (if b then "]" else "[")
+  | Te (a,x) -> Printf.sprintf "%s%s,+oo[" 
+      (if a then "[" else "]")
+      (B.string_of x)
+  | Si x -> "{"^(B.string_of x)^"}" 
 
-  type value = B.t
+(* Constants *)
 
-  type t =
-  | Te of (bool * value)                (* final     *)
-  | Bn of (bool * value * value * bool) (* bounded   *)
-  | Si of value                         (* singleton *)
-  | Em                                  (* empty     *)
+let zero = B.least_regular_value
 
-  (* Constructors *)
+let full = Te (true,zero)
+
+(* Constructors *)
+
+let singleton x = Si x
+
+let bounded a x y b = Bn (a,x,y,b)
+
+let terminal a x = Te (a,x)
+
+let initial y b = 
+  if y <> zero then bounded true zero y b 
+  else if b then singleton zero
+    else raise Undefined
+
+(* Enumerator *)
+
+let next next it = 
+  let next_bound b = match b with
+    | y,false -> y,true
+    | y,true -> (next y),false in
+  match it with
+    | Si x -> (try bounded true x (next x) false with Exit -> terminal true x)
+    | Bn (a,x,y,b) -> (
+        try 
+          let y,b = next_bound (y,b) in 
+          bounded a x y b 
+        with Exit -> terminal a x) 
+    | Te (true,x) -> (
+        try bounded false x (next x) false 
+        with Exit -> terminal false x)
+    | Te (false,x) -> Si (next x) 
+
+let nonempty_disconnected_next next it =
+  match it with
+    | Te _ -> raise Exit
+    | Bn (_,_,x,false) -> (
+        try bounded false x (next x) false
+        with Exit -> terminal false x)
+    | Si y | Bn (_,_,y,true) -> Si (next y)
+
+(* Internals *)
+
+let left_bound it = 
+  match it with 
+  | Si x -> true,x
+  | Te (a,x) | Bn (a,x,_,_) -> a,x
   
-  let empty = Em
-  
-  let full = Te (true,zero)
-  
-  let singleton x = Si x
-  
-  let interval a x y b = Bn (a,x,y,b)
-  
-  let terminal a x = Te (a,x)
-  
-  let initial y b = 
-    if y <> zero then interval true zero y b 
-    else if b then singleton zero
-      else empty
+let right_bound it = 
+  match it with
+  | Si x -> x,true
+  | Bn (_,_,y,b) -> y,b
+  | Te _ -> raise Undefined
 
-  (* Unary operators *)
+(* Tests *)
 
-  let strict_upper_bounds i = 
-    match i with
-    | Em -> full
-    | Si x -> terminal false x
-    | Bn (_,_,y,b) -> terminal (not b) y
-    | Te _ -> empty
+let ordered_disjoint it1 it2 = 
+  try
+    let y1,b1 = right_bound it1 in
+    let a2,x2 = left_bound it2 in
+    let delta = B.compare y1 x2 in
+    (delta < 0) || (delta = 0 && (not b1 || not a2))
+  with Undefined -> false
 
-  let strict_lower_bounds i = 
-    match i with
-    | Em -> full
-    | Si x -> initial x false
-    | Bn (a,x,_,_) | Te (a,x) -> initial x (not a)
+let (<|<) = ordered_disjoint
+
+let ordered_disconnected it1 it2 = 
+  try
+    let y1,b1 = right_bound it1 in
+    let a2,x2 = left_bound it2 in
+    let delta = B.compare y1 x2 in
+    delta < 0 || (delta = 0 && not b1 && not a2)
+  with Undefined -> false
+
+let (<-<) = ordered_disconnected
+
+let is_in_the_initial_hull_of it1 it2 =
+  try 
+    let y2,b2 = right_bound it2 in
+    (try 
+      let y1,b1 = right_bound it1 in
+      let delta = B.compare y1 y2 in
+      delta < 0 || (delta = 0 && (b2 || not b1))
+    with Undefined -> false)
+  with Undefined -> true
+
+let is_in_the_terminal_hull_of it1 it2 =
+    let a1,x1 = left_bound it1 in
+    let a2,x2 = left_bound it2 in
+    let delta = B.compare x2 x1 in
+    delta < 0 || (delta = 0 && (a2 || not a1))
+
+(* Compare *)
+
+let compare it1 it2 = 
+  if it1 = it2 then 0
+    else if not (is_in_the_terminal_hull_of it2 it1) then 1
+      else if not (is_in_the_terminal_hull_of it1 it2) then -1 
+        else if is_in_the_initial_hull_of it1 it2 then -1
+          else 1
+  
+
+(* Unary operators *)
+
+let strict_upper_bounds i = 
+  match i with
+  | Si x -> terminal false x
+  | Bn (_,_,y,b) -> terminal (not b) y
+  | Te _ -> raise Undefined
+
+let strict_lower_bounds i = 
+  match i with
+  | Si x -> initial x false
+  | Bn (a,x,_,_) | Te (a,x) -> initial x (not a)
+
+let initial_hull it = match it with
+  | Bn(_,_,y,b) -> initial y b
+  | Si y -> initial y true
+  | Te _ -> full
+
+let terminal_hull it = match it with
+  | Bn(a,x,_,_) -> terminal a x
+  | Si x -> terminal true x  
+  | _ -> it
+
+let compement it = failwith "NIY"
+
+(* Binary operators *)
+
+(* meet *)
+
+let rightmost_left_bound it1 it2 =
+  let a1,x1 as u = left_bound it1 in
+  let a2,x2 = left_bound it2 in
+  let delta = B.compare x1 x2 in
+  if delta < 0 || (delta = 0 && a1) 
+  then (a2,x2) else (a1,x1)
+
+let leftmost_right_bound it1 it2 =
+  try
+    let y1,b1 = right_bound it1 in (
+    try
+      let y2,b2 = right_bound it2 in
+      let delta = B.compare y1 y2 in
+      if delta < 0 || (delta = 0 && b2)
+      then y1,b1 else y2,b2
+    with Undefined -> y1,b1)
+  with Undefined -> right_bound it2
+
+let meet it1 it2 =
+  if it1 <|< it2 || it2 <|< it1 
+  then raise Undefined
+  else 
+    let a,x = rightmost_left_bound it1 it2 in (
+    try
+      let y,b = leftmost_right_bound it1 it2 in
+      if x <> y then bounded a x y b else singleton x 
+    with Undefined -> terminal a x)
+
+(* join *)
+
+let leftmost_left_bound it1 it2 =
+  let a1,x1 = left_bound it1 in
+  let a2,x2 = left_bound it2 in
+  let delta = B.compare x1 x2 in
+  if delta < 0 || (delta = 0 && a1) 
+  then (a1,x1) else (a2,x2)
+
+let rightmost_right_bound it1 it2 =
+  let y1,b1 = right_bound it1 in 
+  let y2,b2 = right_bound it2 in
+  let delta = B.compare y1 y2 in
+  if delta < 0 || (delta = 0 && b2)
+  then (y2,b2) else (y1,b1)
+
+let join it1 it2 =  
+  if (it1 <-< it2) || (it2 <-< it1) then raise Undefined
+    else
+      let (a,x) = leftmost_left_bound it1 it2 in 
+      try
+        let (y,b) = rightmost_right_bound it1 it2 in
+        if x <> y then bounded a x y b else singleton x
+      with Undefined -> terminal a x
+
+(* More efficient implementation under the hypothesis that it1 << it2. *)
+
+let ordered_join it1 it2 =
+  if it1 <-< it2 then raise Undefined
+    else
+      let (a,x) = left_bound it1 in 
+      try
+        let (y,b) = rightmost_right_bound it1 it2 in
+        if x <> y then bounded a x y b else singleton x
+      with Undefined -> terminal a x
+
+let between it1 it2 =
+  let y1,b1 = right_bound it1 in
+  let a2,x2 = left_bound it2 in
+  if B.compare y1 x2 < 0 then bounded (not b1) y1 x2 (not a2)
+  else singleton y1
+  
+  
+(*
+  meet (strict_upper_bounds it1) (strict_lower_bounds it2)
+*)
+
 
 end (* Raw *)
 
 module Make(B:Bound.S): S with type value = B.t 
   = Raw(B)
+
+(* 
+––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
+                                  TESTS
+––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
+
+module I = Raw(Integer)
+
+let exhaustive_intervals max = 
+  let next n = if n < max then n + 1 else raise Exit in
+  let next = I.next next in
+  let x = ref (I.singleton I.zero) in
+  try
+    while true do
+      print_string (I.string_of !x);
+      x := next !x;
+      print_endline ""
+    done
+  with Exit -> print_endline ""
+
+let () = exhaustive_intervals 20
+
+*)
