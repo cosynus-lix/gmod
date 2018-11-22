@@ -6,7 +6,7 @@ SOURCES = bound.ml dashDot.ml \
 $(COMMON)integer.ml $(LEGACY_COMMON)common.ml  \
 interval2.ml dashDot2.ml \
 $(GEOREAL)ODA.ml \
-test.ml
+test.ml test2.ml
 RESULT = main
 ANNOTATE = true
 DOC_FILES = bound.ml dashDot.ml

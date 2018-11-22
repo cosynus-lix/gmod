@@ -40,6 +40,12 @@ module type S = sig
 
   (** The set of points that are greater than some point of the argument.*)
   val terminal_hull: t -> t
+  
+  (** Least upper bound.*)
+  val lub: t -> value
+  
+  (** Greatest lower bound.*)
+  val glb: t -> value
 
   (** {2 Binary operators}*)
   
@@ -70,6 +76,8 @@ module type S = sig
 
   (** {2 Tests}*)
 
+  val is_singleton: t -> bool
+  val is_bounded: t -> bool
   val ordered_disjoint: t -> t -> bool
   val ordered_disconnected: t -> t -> bool
   val is_in_the_initial_hull_of: t -> t -> bool
@@ -164,6 +172,16 @@ let right_bound it =
 
 (* Tests *)
 
+let is_singleton it = 
+  match it with
+  | Si _ -> true
+  | _ -> false
+
+let is_bounded it =
+  match it with
+  | Te _ -> false
+  | _ -> true
+
 let ordered_disjoint it1 it2 = 
   try
     let y1,b1 = right_bound it1 in
@@ -233,7 +251,12 @@ let terminal_hull it = match it with
   | Si x -> terminal true x  
   | _ -> it
 
-let compement it = failwith "NIY"
+let lub it = match it with
+  | Bn (_,_,y,_) | Si y -> y
+  | Te _ -> raise Undefined
+
+let glb it = match it with
+  | Bn (_,x,_,_) | Si x | Te (_,x) -> x
 
 (* Binary operators *)
 
@@ -294,7 +317,7 @@ let join it1 it2 =
 
 (* More efficient implementation under the hypothesis that it1 << it2. *)
 
-let ordered_join it1 it2 =
+let ordered_join it1 it2 = let x = 
   if it1 <-< it2 then raise Undefined
     else
       let (a,x) = left_bound it1 in 
@@ -302,6 +325,11 @@ let ordered_join it1 it2 =
         let (y,b) = rightmost_right_bound it1 it2 in
         if x <> y then bounded a x y b else singleton x
       with Undefined -> terminal a x
+in 
+(*
+  Printf.printf "  it1 = %s\n  it2 = %s\n  ord_join = %s\n%!" (string_of it1) (string_of it2) (string_of x); 
+*)
+  x
 
 let between it1 it2 =
   let y1,b1 = right_bound it1 in
