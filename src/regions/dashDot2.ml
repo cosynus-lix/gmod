@@ -367,17 +367,29 @@ let rec last_connected_component at =
   | _::at -> last_connected_component at
   | [] -> raise Undefined
 
-let is_bounded at = I.is_bounded (last_connected_component at)
+let is_bounded at = 
+  try I.is_bounded (last_connected_component at)
+  with Undefined -> true
+  
+let closure at = assert false
 
-end (* HalfLine *)
+let interior at = assert false
 
+let string_of at = assert false
 
 let first_connected_component at = 
   match at with 
   | it :: _ -> it
   | _ -> raise Undefined
+
+
+end (* HalfLine *)
+
+
   
-let contains_zero at = I.contains_zero (first_connected_component at)
+let contains_zero at = 
+  try I.contains_zero (HalfLine.first_connected_component at)
+  with Undefined -> false
 
 module Circle = struct
 
@@ -385,13 +397,19 @@ let future_extension at1 at2 =
   let at3 = HalfLine.future_extension at1 at2 in
   if HalfLine.is_bounded at3 || not (contains_zero at2)
   then at3
-  else join (of_interval(first_connected_component at2)) at3
+  else join (of_interval(HalfLine.first_connected_component at2)) at3
 
 let past_extension at1 at2 =
   let at3 = HalfLine.past_extension at1 at2 in
   if contains_zero at3 && not (HalfLine.is_bounded at2)
   then join at3 (of_interval (HalfLine.last_connected_component at2))
   else at3
+
+let closure at = assert false
+
+let interior at = assert false
+
+let string_of at = assert false
 
 end (* Circle *)
 
