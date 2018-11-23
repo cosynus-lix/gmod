@@ -34,10 +34,52 @@ module type S = sig
   
   val string_of: t -> string
 
-  (* {2 Enumerator} *)
+  (** {2 Enumerator} *)
 
   val next: (value -> value) -> t -> t
   
+  (** {2 Boolean operators} *)
+  
+  val meet: t -> t -> t
+  val join: t -> t -> t
+  val complement: t -> t
+  val difference: t -> t -> t
+  
+(*
+  module type DirectedTopology = sig
+
+    val string_of: t -> string
+    (** Shape dependent string converter.*)
+
+    val interior: t -> t
+    (** [interior x] is the {i interior} of the set [x] with respect to the 
+    topology of the half-line/circle depending on the module from which it is 
+    called.*)
+    
+    val closure: t -> t
+    (** [closure x] is the {i closure} of the set [x] with respect to the 
+    topology of the half-line/circle depending on the module from which it is 
+    called.*)
+
+    val future_extension: t -> t -> t
+    (** [future_extension x y] is the set of points {i q} of the union of [x] 
+    and [y] such that there exists a point {i p} of [x] such the 
+    interval/anticlockwise arc from {i p} to {i q} is contained in the union of 
+    [x] and [y].*)
+
+    val past_extension: t -> t -> t
+    (** [past_extension x y] is the set of points {i q} of the union of [x] and 
+    [y] such that there exists a point {i p} of [x] such the 
+    interval/anticlockwise arc from {i q} to {i p} is contained in the union of 
+    [x] and [y].*)
+
+  end
+  
+  module HalfLine:DirectedTopology
+  
+  module Circle:DirectedTopology
+*)
+
 end (* S *)
 
 module Raw(I:Interval2.S) = struct
@@ -139,6 +181,8 @@ let rec finish answer accu at =
       with I.Undefined -> (List.rev (it :: accu :: answer)) @ at)
   | [] -> List.rev (accu :: answer) 
 
+let difference at1 at2 = meet at1 (complement at2)
+
 let join at1 at2 =
   let answer = ref [] in
   try
@@ -179,6 +223,55 @@ let pir msg it =
 
 let prr msg at = 
   Printf.printf "%s = %s\n" msg (string_of at)
+
+
+(* Enumerator *)
+
+let next next_value re = 
+  let next it = I.next next_value it in
+  let next_with_lesser_lub it =
+    let x = ref it in
+    let y = ref (next it) in
+    while (
+      (I.is_bounded !x) && (not (I.is_bounded !y)) || 
+      (I.is_bounded !x && I.is_bounded !y && I.lub !x <= I.lub !y))
+    do x := !y ; y := next !y
+    done;
+    !y in
+  let rec init k re =
+    if (Pervasives.(>)) k 0 
+    then 
+      init (pred k) (
+        match re with 
+          | it :: _ -> I.nonempty_disconnected_next next_value it :: re
+          | []      -> [I.singleton I.zero])
+    else re in
+  let init k re = List.rev (init k re) in
+  let rec next_region len re =
+      match re with
+        (*| [it] -> assert (len = 1); [next it]*) (* petite optimisation *)
+        | it :: re' -> (
+            try it :: next_region (pred len) re'
+            with Exit -> (
+             try init (pred len) [next it]
+             with Exit -> init (pred len) [next_with_lesser_lub it] ))
+        | [] -> raise Exit (* assert false *) in
+  try
+    match re with 
+      | [] -> [I.singleton I.zero]
+      | _ -> next_region (List.length re) re 
+  with Exit -> init (succ (List.length re)) []
+
+module type DirectedTopology = sig
+  val string_of: t -> string
+  val interior: t -> t
+  val closure: t -> t
+  val future_extension: t -> t -> t
+  val past_extension: t -> t -> t
+end
+
+
+module HalfLine = struct
 
 let future_extension at1 at2 =
   let answer = ref [] in
@@ -268,42 +361,40 @@ let past_extension at1 at2 =
     with Exit -> () in
   !answer
 
-(* Enumerator *)
+let rec last_connected_component at = 
+  match at with
+  | [it] -> it
+  | _::at -> last_connected_component at
+  | [] -> raise Undefined
 
-let next next_value re = 
-  let next it = I.next next_value it in
-  let next_with_lesser_lub it =
-    let x = ref it in
-    let y = ref (next it) in
-    while (
-      (I.is_bounded !x) && (not (I.is_bounded !y)) || 
-      (I.is_bounded !x && I.is_bounded !y && I.lub !x <= I.lub !y))
-    do x := !y ; y := next !y
-    done;
-    !y in
-  let rec init k re =
-    if (Pervasives.(>)) k 0 
-    then 
-      init (pred k) (
-        match re with 
-          | it :: _ -> I.nonempty_disconnected_next next_value it :: re
-          | []      -> [I.singleton I.zero])
-    else re in
-  let init k re = List.rev (init k re) in
-  let rec next_region len re =
-      match re with
-        (*| [it] -> assert (len = 1); [next it]*) (* petite optimisation *)
-        | it :: re' -> (
-            try it :: next_region (pred len) re'
-            with Exit -> (
-             try init (pred len) [next it]
-             with Exit -> init (pred len) [next_with_lesser_lub it] ))
-        | [] -> raise Exit (* assert false *) in
-  try
-    match re with 
-      | [] -> [I.singleton I.zero]
-      | _ -> next_region (List.length re) re 
-  with Exit -> init (succ (List.length re)) []
+let is_bounded at = I.is_bounded (last_connected_component at)
+
+end (* HalfLine *)
+
+
+let first_connected_component at = 
+  match at with 
+  | it :: _ -> it
+  | _ -> raise Undefined
+  
+let contains_zero at = I.contains_zero (first_connected_component at)
+
+module Circle = struct
+
+let future_extension at1 at2 =
+  let at3 = HalfLine.future_extension at1 at2 in
+  if HalfLine.is_bounded at3 || not (contains_zero at2)
+  then at3
+  else join (of_interval(first_connected_component at2)) at3
+
+let past_extension at1 at2 =
+  let at3 = HalfLine.past_extension at1 at2 in
+  if contains_zero at3 && not (HalfLine.is_bounded at2)
+  then join at3 (of_interval (HalfLine.last_connected_component at2))
+  else at3
+
+end (* Circle *)
+
 
 end (* Raw *)
 

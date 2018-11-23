@@ -82,6 +82,8 @@ module type S = sig
   val ordered_disconnected: t -> t -> bool
   val is_in_the_initial_hull_of: t -> t -> bool
   val is_in_the_terminal_hull_of: t -> t -> bool
+  val mem: value -> t -> bool
+  val contains_zero: t -> bool
   
 end (* S *)
 
@@ -217,6 +219,23 @@ let is_in_the_terminal_hull_of it1 it2 =
     let a2,x2 = left_bound it2 in
     let delta = B.compare x2 x1 in
     delta < 0 || (delta = 0 && (a2 || not a1))
+
+let mem v it =
+  match it with 
+  | Bn(a,x,y,b) -> 
+      let delta_a = B.compare x v in
+      let delta_b = B.compare v y in
+      (delta_a < 0) || (delta_a = 0 && a) 
+      && (delta_b < 0) || (delta_b = 0 && b)
+  | Te(a,x) -> 
+      let delta_a = B.compare x v in
+      (delta_a < 0) || (delta_a = 0 && a) 
+  | Si x -> v = x
+  
+let contains_zero it =
+  match it with 
+  | Bn(a,x,_,_) | Te(a,x) -> a && x = zero
+  | Si x -> x = zero
 
 (* Compare *)
 

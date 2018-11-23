@@ -120,14 +120,14 @@ let exhaustive_meet max =
 
 let exhaustive_future_extension max = 
   let oracle = wrapper (fun x y -> Legacy.union x (HL_legacy.future_extension x y)) in
-  let bin_op = DD2.future_extension in
-  print_endline "Testing DashDot2.future_extension";
+  let bin_op = DD2.HalfLine.future_extension in
+  print_endline "Testing DashDot2.HalfLine.future_extension";
   exhaustive_test_binary oracle bin_op max DD2.empty DD2.string_of DD2.string_of
 
 let exhaustive_past_extension max = 
   let oracle = wrapper (fun x y -> Legacy.union x (HL_legacy.past_extension x y)) in
-  let bin_op = DD2.past_extension in
-  print_endline "Testing DashDot2.past_extension";
+  let bin_op = DD2.HalfLine.past_extension in
+  print_endline "Testing DashDot2.HalfLine.past_extension";
   exhaustive_test_binary oracle bin_op max DD2.empty DD2.string_of DD2.string_of
 
 let exhaustive_test_unary oracle un_op max dummy string_of_operand string_of_result =
