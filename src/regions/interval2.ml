@@ -327,7 +327,7 @@ let ordered_join it1 it2 = let x =
       with Undefined -> terminal a x
 in 
 (*
-  Printf.printf "  it1 = %s\n  it2 = %s\n  ord_join = %s\n%!" (string_of it1) (string_of it2) (string_of x); 
+  Printf.printf "  op1 = %s  op2 = %s  ord_join = %s\n%!" (string_of it1) (string_of it2) (string_of x); 
 *)
   x
 

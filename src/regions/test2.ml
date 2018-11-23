@@ -63,12 +63,21 @@ let test_binary op_name operator operand1 operand2 expected_result =
     (DD2.string_of result)
     (DD2.string_of expected_result)
 
+(*
+
+Mismatch:
+operand_1 = [0,1[ 
+operand_2 = {0} 
+oracle    = [0,1[ 
+candidate = [0,+oo[ 
+
+*)
+
+
 let exhaustive_test_binary oracle bin_op max dummy string_of_operand string_of_result =
   let next n = if n < max then n + 1 else raise Exit in
   let next = DD2.next next in
   let at1 = ref DD2.empty in
-  let at2 = ref DD2.empty in
-  let at1 = ref DD2.empty in (*mettre le bon cex ici*)
   let at2 = ref DD2.empty in
   let fe1 = ref dummy in
   let fe2 = ref dummy in
@@ -120,6 +129,53 @@ let exhaustive_meet max =
   print_endline "Testing DashDot2.meet";
   exhaustive_test_binary oracle bin_op max DD2.empty DD2.string_of DD2.string_of
 
+let exhaustive_future_extension max = 
+  let oracle = wrapper (fun x y -> Legacy.union x (HL_legacy.future_extension x y)) in
+  let bin_op = DD2.future_extension in
+  print_endline "Testing DashDot2.future_extension";
+  exhaustive_test_binary oracle bin_op max DD2.empty DD2.string_of DD2.string_of
+
+let exhaustive_test_unary oracle un_op max dummy string_of_operand string_of_result =
+  let next n = if n < max then n + 1 else raise Exit in
+  let next = DD2.next next in
+  let at = ref DD2.empty in
+  let fe1 = ref dummy in
+  let fe2 = ref dummy in
+  let ok = ref true in
+  let nb_of_tests = Int64.(shift_left 2L (2*max+1)) in
+  let one_percent = Int64.(to_int (div nb_of_tests 100L)) in
+  let () = Printf.printf "There are %s tests to perform\n" 
+    (Int64.to_string nb_of_tests) in 
+  let percent = ref 0 in
+  let counter = ref 0 in
+  while !ok do
+    fe1 := oracle !at;
+    fe2 := un_op !at;
+    ok  := !fe1 = !fe2;
+    incr counter; 
+    if not !ok then (
+      print_endline "Mismatch:";
+      Printf.printf "operand   = %s\n" (string_of_operand !at);
+      Printf.printf "oracle    = %s\n" (string_of_result !fe1);
+      Printf.printf "candidate = %s\n" (string_of_result !fe2));
+    begin
+        try at := next !at 
+        with Exit -> ok := false
+    end;
+    if !counter = one_percent 
+    then (counter := 0; incr percent; if !percent < 100 then Printf.printf "%i%%\r%!" !percent else print_endline "100%")
+  done
+
+let wrapper legacy_un_op = 
+  fun at1 -> dd2_of_legacy (legacy_un_op (dd2_to_legacy at1))
+
+let exhaustive_complement max = 
+  let oracle = wrapper Legacy.complement in
+  let un_op = DD2.complement in
+  print_endline "Testing complement";
+  exhaustive_test_unary oracle un_op max DD2.empty DD2.string_of DD2.string_of
+
+
 let exhaustive_regions max = 
   let next n = if n < max then n + 1 else raise Exit in
   let next = DD2.next next in
@@ -132,14 +188,7 @@ let exhaustive_regions max =
   with Exit -> ()
 
 
+let () = exhaustive_future_extension 6
+let () = exhaustive_complement 9
 let () = exhaustive_join 4
-
-(*
-
-Mismatch:
-operand_1 = [0,1[ 
-operand_2 = {0} 
-oracle    = [0,1[ 
-candidate = [0,+oo[ 
-
-*)
+let () = exhaustive_meet 4

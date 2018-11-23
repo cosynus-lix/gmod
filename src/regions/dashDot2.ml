@@ -104,71 +104,150 @@ let meet at1 at2 =
   else meet at1 at2
 
 let complement at =
-  let last',at' = head_and_tail at in
-  let answer = ref (
-    try of_interval (I.strict_lower_bounds last') 
-    with Undefined -> empty) in
-  let at = ref at' in
-  let last = ref last' in
-  let () =
-    try
-      while true do
-        let last',at' = head_and_tail !at in
-        answer := (I.between !last last') :: !answer;
-        at := at';
-        last := last';
-      done
-    with Undefined -> answer := I.strict_upper_bounds !last :: !answer in
-  List.rev !answer
-
-let complement at = 
-  if is_empty at then full
-  else complement at
+  let answer = ref empty in
+  try
+    let at = ref at in
+    let last = ref I.full in (* dummy value *)
+    let () = 
+      match !at with 
+      | last' :: at' -> (
+          answer := (
+            try of_interval (I.strict_lower_bounds last') 
+            with I.Undefined -> empty);
+          last := last';
+          at := at')
+      | [] -> (answer := full; raise Exit) in
+    while true do
+      match !at with 
+      | last' :: at' -> (
+          answer := (I.between !last last') :: !answer;
+          at := at';
+          last := last')
+      | [] -> (
+          try answer := I.strict_upper_bounds !last :: !answer; raise Exit
+          with I.Undefined -> raise Exit) 
+    done;
+    assert false
+  with Exit -> List.rev !answer
 
 let (<<) it1 it2 = I.compare it1 it2 <= 0
 
+let rec finish answer accu at = 
+  match at with 
+  | it :: at -> (
+      try finish answer (I.ordered_join accu it) at
+      with I.Undefined -> (List.rev (it :: accu :: answer)) @ at)
+  | [] -> List.rev (accu :: answer) 
+
 let join at1 at2 =
-  let answer = ref empty in
-  let first_finished = ref false in
-  let second_finished = ref false in
-  let at1 = ref at1 in
-  let at2 = ref at2 in
-  let (it1,at3) = head_and_tail !at1 in
-  let (it2,at4) = head_and_tail !at2 in
-  let accu = ref (
-    if it1 << it2
-    then (at1 := at3; it1)
-    else (at2 := at4; it2)) in
-  let update it at at' =
-    try accu := I.ordered_join !accu it; at := at'  
-    with I.Undefined -> (
-      answer := !accu :: !answer;
-      accu := it;
-      at := at') in
-  let dummy = I.full,full in
-  let () =
-    try
-      while true do
-        let (it1,at3) = try head_and_tail !at1 
-          with Undefined -> (first_finished := true; dummy) in
-        let (it2,at4) = try head_and_tail !at2 
-          with Undefined -> (second_finished := true; dummy) in
-        if !first_finished && !second_finished then raise Exit;
-        if (not !first_finished) && (not !second_finished) && it1 << it2
-        then update it1 at1 at3
-        else update it2 at2 at4;
-        if !first_finished
-        then update it2 at2 at4
-        else update it1 at1 at3
-      done 
-    with Exit -> () in
-  List.rev (!accu::!answer)
+  let answer = ref [] in
+  try
+    let at1 = ref at1 in
+    let at2 = ref at2 in
+    let accu = ref (
+      match !at1,!at2 with
+      | (it1::at3),(it2::at4) -> (
+          if it1 << it2
+          then (at1 := at3; it1)
+          else (at2 := at4; it2))
+      | (_::_),[] -> (answer := !at1; raise Exit)
+      | [],(_::_) -> (answer := !at2; raise Exit)
+      | _ -> raise Exit) in
+    let update it at at' =
+      try accu := I.ordered_join !accu it; at := at'  
+      with I.Undefined -> (
+        answer := !accu :: !answer;
+        accu := it;
+        at := at') in
+    while true do
+      match !at1,!at2 with
+      | (it1::at3),(it2::at4) -> (
+          if it1 << it2
+          then update it1 at1 at3
+          else update it2 at2 at4)
+      | (_::_),[] -> (answer := finish !answer !accu !at1; raise Exit)
+      | [],(_::_) -> (answer := finish !answer !accu !at2; raise Exit)
+      | _ -> assert false
+    done;
+    assert false
+  with Exit -> !answer
+
+let counter = ref 0
+
+let pir msg it = 
+  Printf.printf "%s = %s\n" msg (I.string_of it)
+
+let prr msg at = 
+  Printf.printf "%s = %s\n" msg (string_of at)
 
 
-let join a1 a2 =
-  if is_empty a1 then a2
-    else if is_empty a2 then a1
-      else join a1 a2
+
+
+
+
+
+
+
+
+
+
+
+let future_extension at1 at2 =
+  let answer = ref [] in
+  let () = 
+  try
+    let first_operand = ref false in
+    let at1 = ref at1 in
+    let at2 = ref at2 in
+    let first_it1 = ref None in
+    let accu = ref (
+      match !at1,!at2 with
+      | (it1::at3),(it2::at4) -> (
+          if it1 << it2
+          then (at1 := at3; first_it1 := Some it1; it1)
+          else (at2 := at4; it2))
+      | (_::_),[] -> (answer := !at1; raise Exit)
+      | [],(_::_) -> (answer := empty; raise Exit)
+      | _ -> raise Exit) in 
+    let update it at at' =
+      try
+        accu := I.ordered_join !accu it; at := at'; 
+        if !first_operand && !first_it1 = None then first_it1 := Some it;  
+      with I.Undefined ->
+        (match !first_it1 with 
+        | Some it -> answer := (I.meet (I.terminal_hull it) !accu) :: !answer
+        | None -> ());
+        accu := it;
+        (if !first_operand then first_it1 := Some it else first_it1 := None);
+        at := at' in
+    while true do
+      match !at1,!at2 with
+      | (it1::at3),(it2::at4) -> (
+          if it1 << it2
+          then (first_operand := true; update it1 at1 at3)
+          else (first_operand := false; update it2 at2 at4))
+      | (it1::at3),[] -> (first_operand := true; update it1 at1 at3)
+      | [],(it2::at4) -> (first_operand := false; update it2 at2 at4)
+      | [],[] -> (
+          match !first_it1 with 
+          | Some it -> answer := List.rev ((I.meet (I.terminal_hull it) !accu) :: !answer); raise Exit
+          | None -> answer := List.rev !answer; raise Exit)
+    done 
+  with Exit -> () in
+  !answer
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 (* Enumerator *)
 
