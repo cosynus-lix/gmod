@@ -247,12 +247,10 @@ let past_extension at1 at2 =
           if !first_operand then last_it1 := Some it;  
         with I.Undefined -> 
           (match !last_it1 with
-          | Some last -> answer := (
-              try (I.meet (I.initial_hull last) !accu) :: !answer 
-              with I.Undefined -> !answer)
+          | Some last -> answer := (I.meet (I.initial_hull last) !accu) :: !answer
           | None -> ());
           accu := it;
-          if !first_operand then last_it1 := Some it;
+          if !first_operand then last_it1 := Some it else last_it1 := None;
           at := at' in
       while true do
         match !at1,!at2 with
@@ -264,9 +262,7 @@ let past_extension at1 at2 =
         | [],(it2::at4) -> (first_operand := false; update it2 at2 at4)
         | [],[] -> (
             match !last_it1 with 
-            | Some it -> answer := List.rev (
-                try ((I.meet (I.initial_hull it) !accu))::!answer 
-                with I.Undefined -> !answer); raise Exit
+            | Some it -> answer := List.rev ((I.meet (I.initial_hull it) !accu)::!answer); raise Exit
             | None -> answer := List.rev !answer; raise Exit)
       done 
     with Exit -> () in
