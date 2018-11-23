@@ -63,17 +63,6 @@ let test_binary op_name operator operand1 operand2 expected_result =
     (DD2.string_of result)
     (DD2.string_of expected_result)
 
-(*
-
-Mismatch:
-operand_1 = [0,1[ 
-operand_2 = {0} 
-oracle    = [0,1[ 
-candidate = [0,+oo[ 
-
-*)
-
-
 let exhaustive_test_binary oracle bin_op max dummy string_of_operand string_of_result =
   let next n = if n < max then n + 1 else raise Exit in
   let next = DD2.next next in
@@ -135,6 +124,12 @@ let exhaustive_future_extension max =
   print_endline "Testing DashDot2.future_extension";
   exhaustive_test_binary oracle bin_op max DD2.empty DD2.string_of DD2.string_of
 
+let exhaustive_past_extension max = 
+  let oracle = wrapper (fun x y -> Legacy.union x (HL_legacy.past_extension x y)) in
+  let bin_op = DD2.past_extension in
+  print_endline "Testing DashDot2.past_extension";
+  exhaustive_test_binary oracle bin_op max DD2.empty DD2.string_of DD2.string_of
+
 let exhaustive_test_unary oracle un_op max dummy string_of_operand string_of_result =
   let next n = if n < max then n + 1 else raise Exit in
   let next = DD2.next next in
@@ -188,7 +183,8 @@ let exhaustive_regions max =
   with Exit -> ()
 
 
-let () = exhaustive_future_extension 6
+let () = exhaustive_past_extension 4
+let () = exhaustive_future_extension 4
 let () = exhaustive_complement 9
 let () = exhaustive_join 4
 let () = exhaustive_meet 4

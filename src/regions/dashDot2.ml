@@ -180,83 +180,102 @@ let pir msg it =
 let prr msg at = 
   Printf.printf "%s = %s\n" msg (string_of at)
 
-
-
-
-
-
-
-
-
-
-
-
-
 let future_extension at1 at2 =
   let answer = ref [] in
   let () = 
-  try
-    let first_operand = ref false in
-    let at1 = ref at1 in
-    let at2 = ref at2 in
-    let first_it1 = ref None in
-    let accu = ref (
-      match !at1,!at2 with
-      | (it1::at3),(it2::at4) -> (
-          if it1 << it2
-          then (at1 := at3; first_it1 := Some it1; it1)
-          else (at2 := at4; it2))
-      | (_::_),[] -> (answer := !at1; raise Exit)
-      | [],(_::_) -> (answer := empty; raise Exit)
-      | _ -> raise Exit) in 
-    let update it at at' =
-      try
-        accu := I.ordered_join !accu it; at := at'; 
-        if !first_operand && !first_it1 = None then first_it1 := Some it;  
-      with I.Undefined ->
-        (match !first_it1 with 
-        | Some it -> answer := (I.meet (I.terminal_hull it) !accu) :: !answer
-        | None -> ());
-        accu := it;
-        (if !first_operand then first_it1 := Some it else first_it1 := None);
-        at := at' in
-    while true do
-      match !at1,!at2 with
-      | (it1::at3),(it2::at4) -> (
-          if it1 << it2
-          then (first_operand := true; update it1 at1 at3)
-          else (first_operand := false; update it2 at2 at4))
-      | (it1::at3),[] -> (first_operand := true; update it1 at1 at3)
-      | [],(it2::at4) -> (first_operand := false; update it2 at2 at4)
-      | [],[] -> (
-          match !first_it1 with 
-          | Some it -> answer := List.rev ((I.meet (I.terminal_hull it) !accu) :: !answer); raise Exit
-          | None -> answer := List.rev !answer; raise Exit)
-    done 
-  with Exit -> () in
+    try
+      let first_operand = ref false in
+      let at1 = ref at1 in
+      let at2 = ref at2 in
+      let first_it1 = ref None in
+      let accu = ref (
+        match !at1,!at2 with
+        | (it1::at3),(it2::at4) -> (
+            if it1 << it2
+            then (at1 := at3; first_it1 := Some it1; it1)
+            else (at2 := at4; it2))
+        | (_::_),[] -> (answer := !at1; raise Exit)
+        | [],(_::_) -> (answer := empty; raise Exit)
+        | _ -> raise Exit) in 
+      let update it at at' =
+        try
+          accu := I.ordered_join !accu it; at := at'; 
+          if !first_operand && !first_it1 = None then first_it1 := Some it;  
+        with I.Undefined ->
+          (match !first_it1 with 
+          | Some it -> answer := (I.meet (I.terminal_hull it) !accu) :: !answer
+          | None -> ());
+          accu := it;
+          (if !first_operand then first_it1 := Some it else first_it1 := None);
+          at := at' in
+      while true do
+        match !at1,!at2 with
+        | (it1::at3),(it2::at4) -> (
+            if it1 << it2
+            then (first_operand := true; update it1 at1 at3)
+            else (first_operand := false; update it2 at2 at4))
+        | (it1::at3),[] -> (first_operand := true; update it1 at1 at3)
+        | [],(it2::at4) -> (first_operand := false; update it2 at2 at4)
+        | [],[] -> (
+            match !first_it1 with 
+            | Some it -> answer := List.rev ((I.meet (I.terminal_hull it) !accu) :: !answer); raise Exit
+            | None -> answer := List.rev !answer; raise Exit)
+      done 
+    with Exit -> () in
   !answer
 
-
-
-
-
-
-
-
-
-
-
-
-
+let past_extension at1 at2 =
+  let answer = ref [] in
+  let () = 
+    try
+      let first_operand = ref false in
+      let at1 = ref at1 in
+      let at2 = ref at2 in
+      let last_it1 = ref None in
+      let accu = ref (
+        match !at1,!at2 with
+        | (it1::at3),(it2::at4) -> (
+            if it1 << it2
+            then (at1 := at3; last_it1 := Some it1; it1)
+            else (at2 := at4; it2))
+        | (_::_),[] -> (answer := !at1; raise Exit)
+        | [],(_::_) -> (answer := empty; raise Exit)
+        | _ -> raise Exit) in 
+      let update it at at' =
+        try
+          accu := I.ordered_join !accu it; at := at'; 
+          if !first_operand then last_it1 := Some it;  
+        with I.Undefined -> 
+          (match !last_it1 with
+          | Some last -> answer := (
+              try (I.meet (I.initial_hull last) !accu) :: !answer 
+              with I.Undefined -> !answer)
+          | None -> ());
+          accu := it;
+          if !first_operand then last_it1 := Some it;
+          at := at' in
+      while true do
+        match !at1,!at2 with
+        | (it1::at3),(it2::at4) -> (
+            if it1 << it2
+            then (first_operand := true; update it1 at1 at3)
+            else (first_operand := false; update it2 at2 at4))
+        | (it1::at3),[] -> (first_operand := true; update it1 at1 at3)
+        | [],(it2::at4) -> (first_operand := false; update it2 at2 at4)
+        | [],[] -> (
+            match !last_it1 with 
+            | Some it -> answer := List.rev (
+                try ((I.meet (I.initial_hull it) !accu))::!answer 
+                with I.Undefined -> !answer); raise Exit
+            | None -> answer := List.rev !answer; raise Exit)
+      done 
+    with Exit -> () in
+  !answer
 
 (* Enumerator *)
 
 let next next_value re = 
   let next it = I.next next_value it in
-(*
-    let next = I.next next_value it in
-    if next <> [] then next else raise Exit in
-*)
   let next_with_lesser_lub it =
     let x = ref it in
     let y = ref (next it) in
@@ -289,8 +308,6 @@ let next next_value re =
       | [] -> [I.singleton I.zero]
       | _ -> next_region (List.length re) re 
   with Exit -> init (succ (List.length re)) []
-
-
 
 end (* Raw *)
 
