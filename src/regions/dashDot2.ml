@@ -29,6 +29,8 @@ module type S = sig
   (** {2 Tests} *)
   
   val is_empty: t -> bool
+  val mem: value -> t -> bool
+  val is_included: t -> t -> bool
 
   (** {2 Enumerator} *)
 
@@ -273,7 +275,7 @@ let next next_value re =
       init (pred k) (
         match re with 
           | it :: _ -> I.nonempty_disconnected_next next_value it :: re
-          | []      -> [I.singleton I.zero])
+          | []      -> [I.atom I.zero])
     else re in
   let init k re = List.rev (init k re) in
   let rec next_region len re =
@@ -287,7 +289,7 @@ let next next_value re =
         | [] -> raise Exit (* assert false *) in
   try
     match re with 
-      | [] -> [I.singleton I.zero]
+      | [] -> [I.atom I.zero]
       | _ -> next_region (List.length re) re 
   with Exit -> init (succ (List.length re)) []
 
@@ -428,8 +430,6 @@ let first_connected_component at =
 
 end (* HalfLine *)
 
-
-  
 let contains_zero at = 
   try I.contains_zero (HalfLine.first_connected_component at)
   with Undefined -> false
@@ -438,13 +438,35 @@ module Circle = struct
 
 (* Display *)
 
+(*
 let string_of a = 
   if is_empty a then "Ø"
   else if is_full a then "S¹"
     else 
       let string_of = I.string_of "(" ")" "{" "}" "0" in
-      List.fold_right (fun x accu -> (string_of x)^" "^accu) a "" 
+      if contains_zero a 
+      then
+        let first = List.hd a in
+        let a = ref (List.tl a) in
+        let answer = ref "" in
+        let () = 
+          try
+            while true do
+              match !a with
+                | [it] -> (
+                  if I.is_bounded it 
+                  then answer := !answer ^ (string_of it)
+                  else )
+                | it :: a' -> ()
+                | [] -> (; raise Exit)
+            done
+          with Exit -> () in
+        !answer
+      else
+        List.fold_right (fun x accu -> (string_of x)^" "^accu) a "" 
+*)
 
+let string_of a = assert false
 
 let future_extension at1 at2 =
   let at3 = HalfLine.future_extension at1 at2 in
@@ -461,8 +483,6 @@ let past_extension at1 at2 =
 let closure at = assert false
 
 let interior at = assert false
-
-let string_of at = assert false
 
 end (* Circle *)
 

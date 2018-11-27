@@ -16,7 +16,7 @@ module type S = sig
 
   (** {2 Constructors}*)
   
-  val singleton: value -> t
+  val atom: value -> t
   val bounded: bool -> value -> value -> bool -> t
   val initial: value -> bool -> t
   val terminal: bool -> value -> t
@@ -77,7 +77,7 @@ module type S = sig
 
   (** {2 Tests}*)
 
-  val is_singleton: t -> bool
+  val is_atom: t -> bool
   val is_bounded: t -> bool
   val ordered_disjoint: t -> t -> bool
   val ordered_disconnected: t -> t -> bool
@@ -100,7 +100,7 @@ type value = B.t
 type t =
 | Te of (bool * value)                (* final     *)
 | Bn of (bool * value * value * bool) (* bounded   *)
-| Si of value                         (* singleton *)
+| Si of value                         (* atom *)
 
 (* Display *)
 
@@ -125,7 +125,7 @@ let full = Te (true,zero)
 
 (* Constructors *)
 
-let singleton x = Si x
+let atom x = Si x
 
 let bounded a x y b = Bn (a,x,y,b)
 
@@ -133,7 +133,7 @@ let terminal a x = Te (a,x)
 
 let initial y b = 
   if y <> zero then bounded true zero y b 
-  else if b then singleton zero
+  else if b then atom zero
     else raise Undefined
 
 (* Enumerator *)
@@ -177,7 +177,7 @@ let right_bound it =
 
 (* Tests *)
 
-let is_singleton it = 
+let is_atom it = 
   match it with
   | Si _ -> true
   | _ -> false
@@ -313,7 +313,7 @@ let meet it1 it2 =
     let a,x = rightmost_left_bound it1 it2 in (
     try
       let y,b = leftmost_right_bound it1 it2 in
-      if x <> y then bounded a x y b else singleton x 
+      if x <> y then bounded a x y b else atom x 
     with Undefined -> terminal a x)
 
 (* join *)
@@ -338,7 +338,7 @@ let join it1 it2 =
       let (a,x) = leftmost_left_bound it1 it2 in 
       try
         let (y,b) = rightmost_right_bound it1 it2 in
-        if x <> y then bounded a x y b else singleton x
+        if x <> y then bounded a x y b else atom x
       with Undefined -> terminal a x
 
 (* More efficient implementation under the hypothesis that it1 << it2. *)
@@ -349,7 +349,7 @@ let ordered_join it1 it2 = let x =
       let (a,x) = left_bound it1 in 
       try
         let (y,b) = rightmost_right_bound it1 it2 in
-        if x <> y then bounded a x y b else singleton x
+        if x <> y then bounded a x y b else atom x
       with Undefined -> terminal a x
 in 
 (*
@@ -361,7 +361,7 @@ let between it1 it2 =
   let y1,b1 = right_bound it1 in
   let a2,x2 = left_bound it2 in
   if B.compare y1 x2 < 0 then bounded (not b1) y1 x2 (not a2)
-  else singleton y1
+  else atom y1
   
   
 (*
@@ -384,7 +384,7 @@ module I = Raw(Integer)
 let exhaustive_intervals max = 
   let next n = if n < max then n + 1 else raise Exit in
   let next = I.next next in
-  let x = ref (I.singleton I.zero) in
+  let x = ref (I.atom I.zero) in
   try
     while true do
       print_string (I.string_of !x);

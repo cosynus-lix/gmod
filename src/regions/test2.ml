@@ -35,7 +35,7 @@ let rec dd2_of_legacy hl =
   |  Legacy.Cls x :: Legacy.Cls y :: hl -> (I.bounded true x y true) :: dd2_of_legacy hl
   |  Legacy.Cls x :: (Legacy.Pun y :: hl) -> (I.bounded true x y false) :: dd2_of_legacy (Legacy.Opn y :: hl)
   |  Legacy.Opn x :: (Legacy.Pun y :: hl) -> (I.bounded false x y false) :: dd2_of_legacy (Legacy.Opn y :: hl)
-  |  Legacy.Iso x :: hl -> (I.singleton x) :: dd2_of_legacy hl
+  |  Legacy.Iso x :: hl -> (I.atom x) :: dd2_of_legacy hl
   | [Legacy.Opn x] -> [I.Te (false,x)]
   | [Legacy.Cls x] -> [I.Te (true,x)]
   | [] -> []
@@ -279,7 +279,7 @@ let rec of_string tl = Str.(
     | Delim "[" :: Text a :: Delim "]" :: tl 
     | Delim "{" :: Text a :: Delim "}" :: tl 
     | Text a :: tl -> (
-        DD2.(join (of_interval (I.singleton (int_of_string a)))  (of_string tl)) )
+        DD2.(join (of_interval (I.atom (int_of_string a)))  (of_string tl)) )
     | _ -> assert false)
 
 let of_string s = 
@@ -381,7 +381,7 @@ let anon_fun s =
 let exhaustive_intervals max = 
   let next n = if n < max then n + 1 else raise Exit in
   let next = I.next next in
-  let x = ref (I.singleton 0) in
+  let x = ref (I.atom 0) in
   try
     while true do
       print_string (I.string_of "[" "]" "{" "}" "+oo"  !x);
