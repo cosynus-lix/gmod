@@ -30,10 +30,6 @@ module type S = sig
   
   val is_empty: t -> bool
 
-  (** {2 Display} *)
-  
-  val string_of: t -> string
-
   (** {2 Enumerator} *)
 
   val next: (value -> value) -> t -> t
@@ -114,12 +110,7 @@ let connected_components x = x
 (* Tests *)
 
 let is_empty a = (a = [])
-
-(* Display *)
-
-let string_of a = 
-  if is_empty a then "Ø"
-  else List.fold_right (fun x accu -> (I.string_of x)^" "^accu) a "" 
+let is_full a = (a = full)
 
 (* Binary operators *)
   
@@ -216,13 +207,51 @@ let join at1 at2 =
     assert false
   with Exit -> !answer
 
+let (<|<) it1 it2 = I.ordered_disjoint it1 it2
+
+let is_included at1 at2 =
+  let answer = ref false in
+  let () = 
+    try
+      let at1 = ref at1 in
+      let at2 = ref at2 in
+      while true do
+        match !at1,!at2 with
+        | (it1::at3),(it2::at4) -> (
+          if it1 <|< it2 then raise Exit 
+          else if it2 <|< it1 then at2 := at4
+            else if I.is_included it1 it2 then at1 := at3
+              else raise Exit)
+        | (_::_),[] -> raise Exit
+        | _ -> (answer := true; raise Exit)
+      done
+    with Exit -> () in
+  !answer
+
+let mem v at =
+  let at = ref at in
+  let answer = ref false in
+  let () =
+    try
+      while true do
+        match !at with
+        | (it::at') -> (
+          if (try I.mem v (I.strict_lower_bounds it) with I.Undefined -> false)
+          then (answer := false; raise Exit)
+          else if I.mem v it then (answer := true; raise Exit)
+            else at := at')
+        | _ -> raise Exit
+      done 
+    with Exit -> () in
+  !answer
+
 let counter = ref 0
 
-let pir msg it = 
-  Printf.printf "%s = %s\n" msg (I.string_of it)
+let pir msg it =
+  Printf.printf "%s = %s\n" msg (I.string_of "[" "]" "{" "}" "+oo" it)
 
 let prr msg at = 
-  Printf.printf "%s = %s\n" msg (string_of at)
+  List.iter (pir "") at
 
 
 (* Enumerator *)
@@ -272,6 +301,16 @@ end
 
 
 module HalfLine = struct
+
+(* Display *)
+
+let string_of a = 
+  if is_empty a then "Ø"
+  else
+    let string_of = I.string_of "[" "]" "{" "}" "+oo" in
+    List.fold_right (fun x accu -> (string_of x)^" "^accu) a "" 
+
+(* Direction *)
 
 let future_extension at1 at2 =
   let answer = ref [] in
@@ -361,6 +400,8 @@ let past_extension at1 at2 =
     with Exit -> () in
   !answer
 
+(* Internals *)
+
 let rec last_connected_component at = 
   match at with
   | [it] -> it
@@ -375,7 +416,9 @@ let closure at = assert false
 
 let interior at = assert false
 
+(*
 let string_of at = assert false
+*)
 
 let first_connected_component at = 
   match at with 
@@ -392,6 +435,16 @@ let contains_zero at =
   with Undefined -> false
 
 module Circle = struct
+
+(* Display *)
+
+let string_of a = 
+  if is_empty a then "Ø"
+  else if is_full a then "S¹"
+    else 
+      let string_of = I.string_of "(" ")" "{" "}" "0" in
+      List.fold_right (fun x accu -> (string_of x)^" "^accu) a "" 
+
 
 let future_extension at1 at2 =
   let at3 = HalfLine.future_extension at1 at2 in

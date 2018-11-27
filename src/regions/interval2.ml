@@ -65,7 +65,8 @@ module type S = sig
 
   (** {2 Display}*)
   
-  val string_of: t -> string
+  (** Te two first *)
+  val string_of: string -> string -> string -> string -> string -> t -> string
   
   (** {2 Compare}*)
 
@@ -84,6 +85,7 @@ module type S = sig
   val is_in_the_terminal_hull_of: t -> t -> bool
   val mem: value -> t -> bool
   val contains_zero: t -> bool
+  val is_included: t -> t -> bool
   
 end (* S *)
 
@@ -102,16 +104,17 @@ type t =
 
 (* Display *)
 
-let string_of it =
+let string_of ld rd ls rs infty it =
   match it with 
   | Bn (a,x,y,b) -> Printf.sprintf "%s%s,%s%s" 
       (if a then "[" else "]")
       (B.string_of x)
       (B.string_of y)
       (if b then "]" else "[")
-  | Te (a,x) -> Printf.sprintf "%s%s,+oo[" 
+  | Te (a,x) -> Printf.sprintf "%s%s,%s[" 
       (if a then "[" else "]")
       (B.string_of x)
+      infty
   | Si x -> "{"^(B.string_of x)^"}" 
 
 (* Constants *)
@@ -225,8 +228,8 @@ let mem v it =
   | Bn(a,x,y,b) -> 
       let delta_a = B.compare x v in
       let delta_b = B.compare v y in
-      (delta_a < 0) || (delta_a = 0 && a) 
-      && (delta_b < 0) || (delta_b = 0 && b)
+      ((delta_a < 0) || (delta_a = 0 && a))
+      && ((delta_b < 0) || (delta_b = 0 && b))
   | Te(a,x) -> 
       let delta_a = B.compare x v in
       (delta_a < 0) || (delta_a = 0 && a) 
@@ -237,6 +240,10 @@ let contains_zero it =
   | Bn(a,x,_,_) | Te(a,x) -> a && x = zero
   | Si x -> x = zero
 
+let is_included it1 it2 =
+  is_in_the_initial_hull_of it1 it2
+  && is_in_the_terminal_hull_of it1 it2
+    
 (* Compare *)
 
 let compare it1 it2 = 
