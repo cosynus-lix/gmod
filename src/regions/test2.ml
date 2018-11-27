@@ -240,6 +240,8 @@ let exhaustive_regions max =
   try
     while true do 
       print_endline (DD2.HalfLine.string_of !x);
+      print_endline (DD2.Circle.string_of !x);
+      print_endline "";
       x := next !x
     done
   with Exit -> ()

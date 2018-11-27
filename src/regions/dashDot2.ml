@@ -438,35 +438,35 @@ module Circle = struct
 
 (* Display *)
 
-(*
 let string_of a = 
   if is_empty a then "Ø"
   else if is_full a then "S¹"
     else 
       let string_of = I.string_of "(" ")" "{" "}" "0" in
-      if contains_zero a 
-      then
-        let first = List.hd a in
-        let a = ref (List.tl a) in
-        let answer = ref "" in
-        let () = 
-          try
-            while true do
-              match !a with
-                | [it] -> (
-                  if I.is_bounded it 
-                  then answer := !answer ^ (string_of it)
-                  else )
-                | it :: a' -> ()
-                | [] -> (; raise Exit)
-            done
-          with Exit -> () in
-        !answer
-      else
-        List.fold_right (fun x accu -> (string_of x)^" "^accu) a "" 
-*)
-
-let string_of a = assert false
+      let first = List.hd a in
+      let a = ref (List.tl a) in
+      let answer = ref "" in
+      let () = 
+        try
+          while true do
+            match !a with
+              | [last] -> 
+                let () = 
+                  try 
+                    let it = I.co_bounded first last in
+                    let x = I.glb it in
+                    let it = if x <> I.lub it then string_of it else "S¹\\"^(string_of (I.atom x)) in
+                  answer := it ^ " " ^ !answer 
+                  with I.Undefined -> answer := (string_of first) ^ " " ^ !answer ^ (if !answer <> "" then " " else "") ^ (string_of last) in
+                raise Exit
+              | it :: a' -> a := a'; answer := !answer ^ (if !answer <> "" then " " else "") ^ (string_of it)
+              | [] -> 
+                if first <> I.terminal false I.zero
+                then answer := string_of first
+                else answer := "S¹\\"^(string_of (I.atom I.zero)); raise Exit
+          done
+        with Exit -> () in
+      !answer
 
 let future_extension at1 at2 =
   let at3 = HalfLine.future_extension at1 at2 in

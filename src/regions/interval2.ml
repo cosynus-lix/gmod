@@ -18,6 +18,7 @@ module type S = sig
   
   val atom: value -> t
   val bounded: bool -> value -> value -> bool -> t
+  val co_bounded: t -> t -> t
   val initial: value -> bool -> t
   val terminal: bool -> value -> t
 
@@ -65,7 +66,7 @@ module type S = sig
 
   (** {2 Display}*)
   
-  (** Te two first *)
+  (** The two first argument provide the delimiters for intervals *)
   val string_of: string -> string -> string -> string -> string -> t -> string
   
   (** {2 Compare}*)
@@ -107,15 +108,16 @@ type t =
 let string_of ld rd ls rs infty it =
   match it with 
   | Bn (a,x,y,b) -> Printf.sprintf "%s%s,%s%s" 
-      (if a then "[" else "]")
+      (if a then ld else rd)
       (B.string_of x)
       (B.string_of y)
-      (if b then "]" else "[")
-  | Te (a,x) -> Printf.sprintf "%s%s,%s[" 
-      (if a then "[" else "]")
+      (if b then rd else ld)
+  | Te (a,x) -> Printf.sprintf "%s%s,%s%s" 
+      (if a then ld else rd)
       (B.string_of x)
       infty
-  | Si x -> "{"^(B.string_of x)^"}" 
+      ld
+  | Si x -> ls^(B.string_of x)^rs 
 
 (* Constants *)
 
@@ -135,6 +137,16 @@ let initial y b =
   if y <> zero then bounded true zero y b 
   else if b then atom zero
     else raise Undefined
+
+let co_bounded it1 it2 = 
+  match (it1,it2) with
+  | Bn(a',x',y,b),Te(a,x) -> 
+    if a' && x' = zero then (if x<>y then Bn(a,x,y,b) else Si x) 
+    else raise Undefined 
+  | Si x',Te(a,x) -> 
+    if x' = zero then Bn(a,x,zero,true) 
+    else raise Undefined 
+  | _ -> raise Undefined
 
 (* Enumerator *)
 
