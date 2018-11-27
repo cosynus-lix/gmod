@@ -414,13 +414,23 @@ let is_bounded at =
   try I.is_bounded (last_connected_component at)
   with Undefined -> true
   
-let closure at = assert false
+let rec interior at =
+  match at with 
+  | it :: at -> (
+    try (I.interior it) :: interior at 
+    with I.Undefined -> interior at)
+  | _ -> empty
 
-let interior at = assert false
-
-(*
-let string_of at = assert false
-*)
+let rec closure at =
+  match at with
+  | [] -> empty
+  | [it] -> of_interval (I.closure it)
+  | it1 :: ((it2 :: at'') as at') -> (
+    let it1 = I.closure it1 in
+    try 
+      let it1 = I.ordered_join it1 (I.closure it2) in 
+      closure (it1 :: at'')
+    with I.Undefined -> it1 :: closure at')
 
 let first_connected_component at = 
   match at with 

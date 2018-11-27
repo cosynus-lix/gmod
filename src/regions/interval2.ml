@@ -48,6 +48,10 @@ module type S = sig
   (** Greatest lower bound.*)
   val glb: t -> value
 
+  val interior: t -> t
+
+  val closure: t -> t
+
   (** {2 Binary operators}*)
   
   (** Returns the (set theoretic) intersection of the arguments.*)
@@ -264,7 +268,6 @@ let compare it1 it2 =
       else if not (is_in_the_terminal_hull_of it1 it2) then -1 
         else if is_in_the_initial_hull_of it1 it2 then -1
           else 1
-  
 
 (* Unary operators *)
 
@@ -295,6 +298,16 @@ let lub it = match it with
 
 let glb it = match it with
   | Bn (_,x,_,_) | Si x | Te (_,x) -> x
+
+let interior it = match it with
+  | Bn(a,x,y,_) -> Bn(a && x = zero,x,y,false)
+  | Te(a,x) -> Te(a && x = zero,x)
+  | Si _ -> raise Undefined
+
+let closure it = match it with
+  | Bn(_,x,y,_) -> Bn(true,x,y,true)
+  | Te(_,x) -> Te(true,x)
+  | Si _ -> it
 
 (* Binary operators *)
 
@@ -355,7 +368,7 @@ let join it1 it2 =
 
 (* More efficient implementation under the hypothesis that it1 << it2. *)
 
-let ordered_join it1 it2 = let x = 
+let ordered_join it1 it2 =
   if it1 <-< it2 then raise Undefined
     else
       let (a,x) = left_bound it1 in 
@@ -363,17 +376,14 @@ let ordered_join it1 it2 = let x =
         let (y,b) = rightmost_right_bound it1 it2 in
         if x <> y then bounded a x y b else atom x
       with Undefined -> terminal a x
-in 
-(*
-  Printf.printf "  op1 = %s  op2 = %s  ord_join = %s\n%!" (string_of it1) (string_of it2) (string_of x); 
-*)
-  x
 
 let between it1 it2 =
   let y1,b1 = right_bound it1 in
   let a2,x2 = left_bound it2 in
   if B.compare y1 x2 < 0 then bounded (not b1) y1 x2 (not a2)
   else atom y1
+  
+
   
   
 (*

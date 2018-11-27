@@ -195,6 +195,17 @@ let exhaustive_complement max =
   print_endline "Testing DashDot2.complement";
   exhaustive_test_unary oracle un_op max DD2.empty DD2.HalfLine.string_of DD2.HalfLine.string_of
 
+let exhaustive_closure_on_half_line max = 
+  let oracle = wrapper HL_legacy.closure in
+  let un_op = DD2.HalfLine.closure in
+  print_endline "Testing DashDot2.closure on half_line";
+  exhaustive_test_unary oracle un_op max DD2.empty DD2.HalfLine.string_of DD2.HalfLine.string_of
+
+let exhaustive_interior_on_half_line max = 
+  let oracle = wrapper HL_legacy.interior in
+  let un_op = DD2.HalfLine.interior in
+  print_endline "Testing DashDot2.interior on half-line";
+  exhaustive_test_unary oracle un_op max DD2.empty DD2.HalfLine.string_of DD2.HalfLine.string_of
 
 let exhaustive_mem max =
   let next_value n = if n < max then n + 1 else raise Exit in
@@ -246,21 +257,20 @@ let exhaustive_regions max =
     done
   with Exit -> ()
 
-
-
 let exhaustive_all max =
   exhaustive_future_extension_on_half_line max;
   exhaustive_past_extension_on_half_line max;
   exhaustive_future_extension_on_circle max;
   exhaustive_past_extension_on_circle max;
   exhaustive_complement max;
+  exhaustive_interior_on_half_line max;
+  exhaustive_closure_on_half_line max;
   exhaustive_meet max;
   exhaustive_difference max;
   exhaustive_join max;
   exhaustive_is_included max;
   exhaustive_mem max
   
-
 (* -- *)
 
 let rec of_string tl = Str.(
@@ -428,6 +438,8 @@ let command_line_options = [
   "--exhaustively-testing-meet",Arg.Int (exhaustive_meet),"Compare the new implementation of meet with the current one";
   "--exhaustively-testing-difference",Arg.Int (exhaustive_difference),"Compare the new implementation of difference with the current one";
   "--exhaustively-testing-complement",Arg.Int (exhaustive_complement),"Compare the new implementation of complement with the current one";
+  "--exhaustively-testing-interior-on-half-line",Arg.Int (exhaustive_interior_on_half_line),"Compare the new implementation of interior on half-line with the current one";
+  "--exhaustively-testing-closure-on-half-line",Arg.Int (exhaustive_closure_on_half_line),"Compare the new implementation of closure on half-line with the current one";
   "--exhaustively-testing-is_included",Arg.Int (exhaustive_is_included),"Compare the new implementation of is_included with the current one";
   "--exhaustively-testing-mem",Arg.Int (exhaustive_mem),"Compare the new implementation of mem with the current one";
 ]
