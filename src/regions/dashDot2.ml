@@ -255,7 +255,6 @@ let pir msg it =
 let prr msg at = 
   List.iter (pir "") at
 
-
 (* Enumerator *)
 
 let next next_value re = 
@@ -437,7 +436,6 @@ let first_connected_component at =
   | it :: _ -> it
   | _ -> raise Undefined
 
-
 end (* HalfLine *)
 
 let contains_zero at = 
@@ -465,7 +463,9 @@ let string_of a =
                   try 
                     let it = I.co_bounded first last in
                     let x = I.glb it in
-                    let it = if x <> I.lub it then string_of it else "S¹\\"^(string_of (I.atom x)) in
+                    let it = 
+                      if x <> I.lub it then string_of it 
+                      else "S¹\\"^(string_of (I.atom x)) in
                   answer := it ^ " " ^ !answer 
                   with I.Undefined -> answer := (string_of first) ^ " " ^ !answer ^ (if !answer <> "" then " " else "") ^ (string_of last) in
                 raise Exit
@@ -490,7 +490,31 @@ let past_extension at1 at2 =
   then join at3 (of_interval (HalfLine.last_connected_component at2))
   else at3
 
-let closure at = assert false
+let closure at =
+  if is_empty at then empty
+  else
+    let first = I.closure (List.hd at) in
+    let at = ref (List.tl at) in
+    let answer = ref (of_interval first) in
+    let () =
+      try
+        while true do
+          match !at with
+          | [last] ->
+            let () = answer := List.rev ((I.closure last) :: !answer) in
+            if not (I.is_bounded last) && not (I.contains_zero first)
+            then answer := I.(atom zero) :: !answer 
+          | it1 :: ((it2 :: at'') as at') -> (
+            let it1 = I.closure it1 in
+            try 
+              let it1 = I.ordered_join it1 (I.closure it2) in 
+              closure (it1 :: at'')
+            with I.Undefined -> it1 :: closure at')
+
+        done
+      with Exit -> ()
+    in
+    !answer
 
 let interior at = assert false
 
