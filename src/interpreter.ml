@@ -1,4 +1,4 @@
-open Stdlib
+open Mystdlib
 open Lang
 
 (** State of the interpreter. *)

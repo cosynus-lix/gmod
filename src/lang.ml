@@ -1,6 +1,6 @@
 (** Internal representation of programs. *)
 
-open Stdlib
+open Mystdlib
 
 (** Types. *)
 module T = struct
