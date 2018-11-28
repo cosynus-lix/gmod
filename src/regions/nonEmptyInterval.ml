@@ -399,39 +399,8 @@ let between it1 it2 =
   let a2,x2 = left_bound it2 in
   if B.compare y1 x2 < 0 then bounded (not b1) y1 x2 (not a2)
   else atom y1
-  
-
-  
-  
-(*
-  meet (strict_upper_bounds it1) (strict_lower_bounds it2)
-*)
-
 
 end (* Raw *)
 
 module Make(B:Bound.S): S with type value = B.t 
   = Raw(B)
-
-(* 
-––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
-                                  TESTS
-––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
-
-module I = Raw(Integer)
-
-let exhaustive_intervals max = 
-  let next n = if n < max then n + 1 else raise Exit in
-  let next = I.next next in
-  let x = ref (I.atom I.zero) in
-  try
-    while true do
-      print_string (I.string_of !x);
-      x := next !x;
-      print_endline ""
-    done
-  with Exit -> print_endline ""
-
-let () = exhaustive_intervals 20
-
-*)

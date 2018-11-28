@@ -2,11 +2,11 @@ OCAMLMAKEFILE = ../OCamlMakefile
 COMMON = ../common/
 LEGACY_COMMON = ../legacy/trunk_common/
 GEOREAL = $(LEGACY_COMMON)/geometric_realization/
-SOURCES = bound.ml dashDot.ml \
+SOURCES = bound.ml \
 $(COMMON)integer.ml $(LEGACY_COMMON)common.ml  \
-interval2.ml dashDot2.ml \
 $(GEOREAL)ODA.ml \
-test2.ml
+nonEmptyInterval.ml dashDot.ml \
+test.ml
 RESULT = main
 ANNOTATE = true
 DOC_FILES = bound.ml dashDot.ml
