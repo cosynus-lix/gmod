@@ -80,7 +80,7 @@ module type S = sig
 
 end (* S *)
 
-module Raw(I:Interval2.S) = struct
+module Raw(I:NonEmptyInterval.S) = struct
 
 exception Undefined
 
@@ -522,5 +522,5 @@ end (* Circle *)
 
 end (* Raw *)
 
-module Make(I:Interval2.S): S with type value = I.value and type interval = I.t 
+module Make(I:NonEmptyInterval.S): S with type value = I.value and type interval = I.t 
   = Raw(I)
