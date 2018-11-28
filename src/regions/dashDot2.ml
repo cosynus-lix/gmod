@@ -300,6 +300,12 @@ module type DirectedTopology = sig
   val past_extension: t -> t -> t
 end
 
+let remove_zero at = 
+  match at with
+  | it :: at -> (
+    try (I.remove_zero it) :: at
+    with I.Undefined -> at)
+  | [] -> []
 
 module HalfLine = struct
 
@@ -412,24 +418,34 @@ let rec last_connected_component at =
 let is_bounded at = 
   try I.is_bounded (last_connected_component at)
   with Undefined -> true
-  
+
+let interior_is_bounded = ref false
+
 let rec interior at =
   match at with 
   | it :: at -> (
+    let () = 
+      if at = [] 
+      then interior_is_bounded := I.is_bounded it in
     try (I.interior it) :: interior at 
     with I.Undefined -> interior at)
   | _ -> empty
 
+let closure_is_bounded = ref true
+
 let rec closure at =
   match at with
-  | [] -> empty
-  | [it] -> of_interval (I.closure it)
   | it1 :: ((it2 :: at'') as at') -> (
     let it1 = I.closure it1 in
     try 
       let it1 = I.ordered_join it1 (I.closure it2) in 
       closure (it1 :: at'')
     with I.Undefined -> it1 :: closure at')
+  | [it] -> 
+    let it = I.closure it in
+    let () = closure_is_bounded := I.is_bounded it in
+    of_interval it
+  | [] -> closure_is_bounded := true; empty
 
 let first_connected_component at = 
   match at with 
@@ -491,35 +507,18 @@ let past_extension at1 at2 =
   else at3
 
 let closure at =
-  if is_empty at then empty
-  else
-    let first = I.closure (List.hd at) in
-    let at = ref (List.tl at) in
-    let answer = ref (of_interval first) in
-    let () =
-      try
-        while true do
-          match !at with
-          | [last] ->
-            let () = answer := List.rev ((I.closure last) :: !answer) in
-            if not (I.is_bounded last) && not (I.contains_zero first)
-            then answer := I.(atom zero) :: !answer 
-          | it1 :: ((it2 :: at'') as at') -> (
-            let it1 = I.closure it1 in
-            try 
-              let it1 = I.ordered_join it1 (I.closure it2) in 
-              closure (it1 :: at'')
-            with I.Undefined -> it1 :: closure at')
+  let at = HalfLine.closure at in
+  if !HalfLine.closure_is_bounded || contains_zero at
+  then at
+  else I.(atom zero) :: at
 
-        done
-      with Exit -> ()
-    in
-    !answer
-
-let interior at = assert false
+let interior at =
+  let at = HalfLine.interior at in
+  if !HalfLine.interior_is_bounded
+  then remove_zero at
+  else at
 
 end (* Circle *)
-
 
 end (* Raw *)
 

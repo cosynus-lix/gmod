@@ -52,6 +52,10 @@ module type S = sig
 
   val closure: t -> t
 
+  val remove_zero: t -> t
+  
+  val add_zero: t -> t
+  
   (** {2 Binary operators}*)
   
   (** Returns the (set theoretic) intersection of the arguments.*)
@@ -308,6 +312,19 @@ let closure it = match it with
   | Bn(_,x,y,_) -> Bn(true,x,y,true)
   | Te(_,x) -> Te(true,x)
   | Si _ -> it
+
+let remove_zero it = 
+  match it with
+  | Bn (a,x,y,b) -> if x <> zero then it else Bn (false,x,y,b)
+  | Te (a,x) -> if x <> zero then it else  Te (false,x)
+  | Si x -> if x <> zero then it else raise Undefined
+
+let add_zero it = 
+  match it with
+  | Bn (a,x,y,b) -> if x = zero then Bn (true,x,y,b) else raise Undefined
+  | Te (a,x) -> if x = zero then Te (true,x) else raise Undefined
+  | Si x -> if x = zero then  it else raise Undefined
+
 
 (* Binary operators *)
 

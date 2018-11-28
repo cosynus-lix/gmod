@@ -198,7 +198,25 @@ let exhaustive_complement max =
 let exhaustive_closure_on_half_line max = 
   let oracle = wrapper HL_legacy.closure in
   let un_op = DD2.HalfLine.closure in
-  print_endline "Testing DashDot2.closure on half_line";
+  print_endline "Testing DashDot2.closure on half-line";
+  exhaustive_test_unary oracle un_op max DD2.empty DD2.HalfLine.string_of DD2.HalfLine.string_of
+
+let exhaustive_closure_on_circle max = 
+  let oracle = wrapper Ci_legacy.closure in
+  let un_op = DD2.Circle.closure in
+  print_endline "Testing DashDot2.closure on circle";
+  exhaustive_test_unary oracle un_op max DD2.empty DD2.HalfLine.string_of DD2.HalfLine.string_of
+
+let exhaustive_interior_on_half_line max = 
+  let oracle = wrapper HL_legacy.interior in
+  let un_op = DD2.HalfLine.interior in
+  print_endline "Testing DashDot2.interior on half-line";
+  exhaustive_test_unary oracle un_op max DD2.empty DD2.HalfLine.string_of DD2.HalfLine.string_of
+
+let exhaustive_interior_on_circle max = 
+  let oracle = wrapper Ci_legacy.interior in
+  let un_op = DD2.Circle.interior in
+  print_endline "Testing DashDot2.interior on circle";
   exhaustive_test_unary oracle un_op max DD2.empty DD2.HalfLine.string_of DD2.HalfLine.string_of
 
 let exhaustive_interior_on_half_line max = 
@@ -243,7 +261,6 @@ let exhaustive_mem max =
     then (counter := 0; incr percent; if !percent < 100 then Printf.printf "%i%%\r%!" !percent else print_endline "100%")
   done
 
-
 let exhaustive_regions max = 
   let next n = if n < max then n + 1 else raise Exit in
   let next = DD2.next next in
@@ -258,21 +275,21 @@ let exhaustive_regions max =
   with Exit -> ()
 
 let exhaustive_all max =
-  exhaustive_future_extension_on_half_line max;
-  exhaustive_past_extension_on_half_line max;
-  exhaustive_future_extension_on_circle max;
-  exhaustive_past_extension_on_circle max;
-  exhaustive_complement max;
-  exhaustive_interior_on_half_line max;
-  exhaustive_closure_on_half_line max;
-  exhaustive_meet max;
-  exhaustive_difference max;
-  exhaustive_join max;
+  exhaustive_mem max;
   exhaustive_is_included max;
-  exhaustive_mem max
+  exhaustive_complement (2 * max + 1);
+  exhaustive_meet max;
+  exhaustive_join max;
+  exhaustive_difference max;
+  exhaustive_future_extension_on_half_line max;
+  exhaustive_future_extension_on_circle max;
+  exhaustive_past_extension_on_half_line max;
+  exhaustive_past_extension_on_circle max;
+  exhaustive_interior_on_half_line (2 * max + 1);
+  exhaustive_interior_on_circle (2 * max + 1);
+  exhaustive_closure_on_half_line (2 * max + 1);
+  exhaustive_closure_on_circle (2 * max + 1)
   
-(* -- *)
-
 let rec of_string tl = Str.(
   match tl with 
     | [] | [Delim "["; Delim "]"] | [Delim "{"; Delim "}"] -> (DD2.empty)
@@ -352,7 +369,6 @@ let operator = ref (Unary (fun x -> x)) (*dummy default value*)
 let preparing op_name () = 
   operator_name := op_name ;
   operator := operator_of_string op_name
-
 
 let anon_fun s =
   let chan = open_in s in
@@ -439,7 +455,9 @@ let command_line_options = [
   "--exhaustively-testing-difference",Arg.Int (exhaustive_difference),"Compare the new implementation of difference with the current one";
   "--exhaustively-testing-complement",Arg.Int (exhaustive_complement),"Compare the new implementation of complement with the current one";
   "--exhaustively-testing-interior-on-half-line",Arg.Int (exhaustive_interior_on_half_line),"Compare the new implementation of interior on half-line with the current one";
+  "--exhaustively-testing-interior-on-circle",Arg.Int (exhaustive_interior_on_circle),"Compare the new implementation of interior on circle with the current one";
   "--exhaustively-testing-closure-on-half-line",Arg.Int (exhaustive_closure_on_half_line),"Compare the new implementation of closure on half-line with the current one";
+  "--exhaustively-testing-closure-on-circle",Arg.Int (exhaustive_closure_on_circle),"Compare the new implementation of closure on circle with the current one";
   "--exhaustively-testing-is_included",Arg.Int (exhaustive_is_included),"Compare the new implementation of is_included with the current one";
   "--exhaustively-testing-mem",Arg.Int (exhaustive_mem),"Compare the new implementation of mem with the current one";
 ]

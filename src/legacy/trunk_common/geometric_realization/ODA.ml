@@ -2688,7 +2688,9 @@ struct
       | [] -> unbounded:=u;[]
     in
     let answer = closure false a in
-    if !unbounded && (try List.hd answer <> Cls zero with | _ -> (print_endline "Iso zero should be added" ; false))
+    if !unbounded 
+      && (try List.hd answer <> Cls zero && List.hd answer <> Iso zero 
+          with _ -> (print_endline "Iso zero should be added" ; false))
     then Iso zero::answer
     else answer
 
