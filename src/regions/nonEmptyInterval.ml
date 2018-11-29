@@ -325,7 +325,6 @@ let add_zero it =
   | Te (a,x) -> if x = zero then Te (true,x) else raise Undefined
   | Si x -> if x = zero then  it else raise Undefined
 
-
 (* Binary operators *)
 
 (* meet *)

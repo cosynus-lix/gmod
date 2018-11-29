@@ -42,7 +42,8 @@ module type S = sig
   val join: t -> t -> t
   val complement: t -> t
   val difference: t -> t -> t
-  
+  val add_zero: t -> t
+  val remove_zero: t -> t
 (*
   module type DirectedTopology = sig
 
@@ -247,6 +248,7 @@ let mem v at =
     with Exit -> () in
   !answer
 
+(*
 let counter = ref 0
 
 let pir msg it =
@@ -254,6 +256,7 @@ let pir msg it =
 
 let prr msg at = 
   List.iter (pir "") at
+*)
 
 (* Enumerator *)
 
@@ -306,6 +309,14 @@ let remove_zero at =
     try (I.remove_zero it) :: at
     with I.Undefined -> at)
   | [] -> []
+
+let add_zero at =
+  match at with
+  | it :: at -> (
+    try (I.add_zero it) :: at
+    with I.Undefined -> I.(atom zero) :: at)
+  | [] -> []
+
 
 module HalfLine = struct
 
