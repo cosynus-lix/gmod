@@ -44,11 +44,13 @@ module type S = sig
   val difference: t -> t -> t
   val add_zero: t -> t
   val remove_zero: t -> t
-(*
+
   module type DirectedTopology = sig
 
     val string_of: t -> string
     (** Shape dependent string converter.*)
+
+    val is_bounded: t -> bool
 
     val interior: t -> t
     (** [interior x] is the {i interior} of the set [x] with respect to the 
@@ -77,7 +79,6 @@ module type S = sig
   module HalfLine:DirectedTopology
   
   module Circle:DirectedTopology
-*)
 
 end (* S *)
 
@@ -297,6 +298,7 @@ let next next_value re =
 
 module type DirectedTopology = sig
   val string_of: t -> string
+  val is_bounded: t -> bool
   val interior: t -> t
   val closure: t -> t
   val future_extension: t -> t -> t
@@ -528,6 +530,8 @@ let interior at =
   if !HalfLine.interior_is_bounded
   then remove_zero at
   else at
+
+let is_bounded at = raise Undefined
 
 end (* Circle *)
 
