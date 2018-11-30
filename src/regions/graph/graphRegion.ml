@@ -67,18 +67,15 @@ module Raw(G:Graph)(DD:DashDot.S) = struct
   let join r1 r2 = binary_boolean_operator VSet.inter DD.meet
   let complement r = difference (full r.graph) r
   
-  let add_zeroes v_set r =
-    let graph = r.graph in
-    let vertices = r.vertices in
+  let add_zeroes graph v_set a_map =
     let add_zero a arrows = AMap.add a (DD.add_zero (get_dd a arrows)) arrows in
     let add_zeroes v arrows = G.fold_out v add_zero graph arrows in
-    let arrows = VSet.fold add_zeroes v_set r.arrows in
-    { graph ; vertices ; arrows }
+    VSet.fold add_zeroes v_set a_map
   
   let future_extension r1 r2 =
-    let r1 = add_zeroes r1.vertices r1 in
-    let r2 = add_zeroes r2.vertices r2 in
     let graph = r1.graph in
+    let arrows_1 = ref (add_zeroes graph r1.vertices r1.arrows) in
+    let arrows_2 = ref (add_zeroes graph r2.vertices r2.arrows) in
     let vertices = ref VSet.empty in
     let arrows = ref AMap.empty in
     let current = ref (full graph).vertices in
@@ -88,11 +85,15 @@ module Raw(G:Graph)(DD:DashDot.S) = struct
       let dd2 = get_dd a r2.arrows in
       let dd3 = DD.HalfLine.future_extension dd1 dd2 in
       let w = G.tgt a graph in
-      let () = 
-        if (VSet.mem w r1.vertices || VSet.mem w r2.vertices )
-            && (not (VSet.mem w !vertices))
-            && (not (DD.HalfLine.is_bounded dd3))
+      let in_r1 = VSet.mem w r1.vertices in
+      let in_r2 = VSet.mem w r2.vertices in
+      let () =
+        if (not (VSet.mem w !vertices))
+            && (
+              in_r1 || (in_r2 && (not (DD.HalfLine.is_bounded dd3))))
         then (
+          if not in_r1 then (arrows_1 := add_zeroes graph (VSet.singleton w) !arrows_1); (* ajouter les zéros dans les sortantes de w dans r1 *)
+          if not in_r2 then (arrows_2 := add_zeroes graph (VSet.singleton w) !arrows_2); (* idem pour r2 *)
           vertices := VSet.add w !vertices;
           next := VSet.add w !next) in 
       arrows := AMap.add a dd3 !arrows in
@@ -126,10 +127,13 @@ module Raw(G:Graph)(DD:DashDot.S) = struct
 
 *)
   
-  
   let past_extension r1 r2 = failwith "NIY"
   
 end (* Raw *)
 
 module Make(G:Graph)(DD:DashDot.S):S with type arrow = G.arrow and type vertex = G.vertex
   = Raw(G:Graph)(DD:DashDot.S) 
+
+(* Tests ci-dessous *)
+
+
