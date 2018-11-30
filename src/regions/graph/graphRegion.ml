@@ -110,32 +110,9 @@ module Raw(G:Graph)(DD:DashDot.S) = struct
     let arrows = !arrows in
     { graph ; vertices ; arrows}
 
-(*
-
-  G: le graphe sous-jacent
-
-  Les étiquettes sont des éléments de type DashDot.t
-
-  Pour tout sommet v de G:
-    - si v est un sommet de r1, on ajoute zéro à toutes les étiquettes des 
-    flèches issues de v, sinon on enlève zéro à toutes les étiquettes des 
-    flèches issues de v
-    - on fait la même chose pour r2 
-    - pour toute flèche a de G issue de v
-      -- on ajoute a.dd3 = future_extension a.dd1 a.dd2 au résultat
-      -- si a.dd3 n'est pas borné, et si le but de la flèche a est dans r1 ou 
-      r2, on l'ajoute à la liste des sommets qu'il faudra traîter au tour 
-      suivant, sous réserve qu'il n'ait pas déjà été traîté.
-
-*)
-  
   let past_extension r1 r2 = failwith "NIY"
   
 end (* Raw *)
 
 module Make(G:Graph)(DD:DashDot.S):S with type arrow = G.arrow and type vertex = G.vertex
   = Raw(G:Graph)(DD:DashDot.S) 
-
-(* Tests ci-dessous *)
-
-
