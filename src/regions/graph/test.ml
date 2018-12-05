@@ -89,16 +89,31 @@ module G = struct
     let neighbors = from_endpoints endpoints in
     {endpoints;neighbors}
 
+  let of_string s =
+    let s = Str.global_replace (Str.regexp "[\n\t]") "" s in
+    let s = Str.global_replace (Str.regexp "\\([ ]\\)+") " " s in
+    let () = print_endline s in
+    let l = Str.split (Str.regexp ";") s in
+    let l = List.map (fun a -> 
+      let a = Str.split (Str.regexp " ") a in
+      match a with
+      | [src;tgt] -> (int_of_string src,int_of_string tgt)
+      | _ -> assert false)
+      l in
+    of_list l
+
   let print_arrows g =
     let print_arrow a (src,tgt) = Printf.printf "%i >– %i –> %i\n" src a tgt in
     M.iter print_arrow g.endpoints 
 
   let print_neighbors g =
     let print_neighbor v {past;future} =
+      if not( S.is_empty future) then (
        Printf.printf "%i >–\n" v ;
-       S.iter (fun a -> Printf.printf "  %i –> %i\n" a (tgt a g)) future ;
+       S.iter (fun a -> Printf.printf "  %i –> %i\n" a (tgt a g)) future) ;
+       if not( S.is_empty past) then (
        Printf.printf "%i <–\n" v ;
-       S.iter (fun a -> Printf.printf "  %i –< %i\n" a (src a g)) past in
+       S.iter (fun a -> Printf.printf "  %i –< %i\n" a (src a g)) past) in
     M.iter print_neighbor g.neighbors
 
 end
@@ -107,12 +122,18 @@ module I = NonEmptyInterval.Raw(Integer)
 
 module DD = DashDot.Raw(I)
 
-module GR = GraphRegion.Raw(G)
+module GR = GraphRegion.Raw(G)(DD)
 
-let g = G.of_list [(1,2) ; (1,2) ; (1,2) ; (1,2)]
 
-let () = 
+
+(*
+let g = G.of_string "1 2;
+1 2"
+
+let () =
+  print_endline "endpoints";
   G.print_arrows g;
   print_endline "";
-  print_endline "";
+  print_endline "neighbors";
   G.print_neighbors g
+*)
