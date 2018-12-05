@@ -7,7 +7,7 @@ $(COMMON)integer.ml $(LEGACY_COMMON)common.ml  \
 $(GEOREAL)ODA.ml \
 nonEmptyInterval.ml dashDot.ml \
 dashDotOverInteger.ml \
-testDashDot.ml
+test.ml
 RESULT = main
 ANNOTATE = true
 DOC_FILES = bound.ml dashDot.ml
