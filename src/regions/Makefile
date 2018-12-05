@@ -6,6 +6,7 @@ SOURCES = bound.ml \
 $(COMMON)integer.ml $(LEGACY_COMMON)common.ml  \
 $(GEOREAL)ODA.ml \
 nonEmptyInterval.ml dashDot.ml \
+dashDotOverInteger.ml \
 testDashDot.ml
 RESULT = main
 ANNOTATE = true
@@ -14,7 +15,8 @@ PACKS = str ocamlgraph unix
 
 all: dnc
 
-rmd: 
+cleaned:
+	make clean
 	rm -r common legacy
 
 include $(OCAMLMAKEFILE)

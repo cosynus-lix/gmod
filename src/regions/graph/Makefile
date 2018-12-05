@@ -3,16 +3,17 @@ COMMON = ../../common/
 LEGACY_COMMON = ../../legacy/trunk_common/
 GEOREAL = $(LEGACY_COMMON)/geometric_realization/
 SOURCES = ../bound.ml ../nonEmptyInterval.ml ../dashDot.ml graphRegion.ml \
-$(COMMON)integer.ml \
+$(COMMON)integer.ml ../dashDotOverInteger.ml \
 testGraphRegion.ml
 RESULT = main
 ANNOTATE = true
-DOC_FILES = bound.ml dashDot.ml
+DOC_FILES = graphRegion.ml
 PACKS = str ocamlgraph unix
 
 all: dnc
 
-rmd:
+cleaned:
+	make clean
 	rm *.d
 
 include $(OCAMLMAKEFILE)

@@ -45,6 +45,14 @@ module Raw(G:Graph)(DD:DashDot.S) = struct
       G.fold_vertex update graph empty in
     { graph ; vertices ; arrows }  
 
+  let add_vertex v {graph;vertices;arrows} =
+    let vertices = VSet.add v vertices in
+    {graph;vertices;arrows}
+
+  let add_arrow a dd {graph;vertices;arrows} =
+    let arrows = AMap.add a dd arrows in
+    {graph;vertices;arrows}
+
   let get_dd a arrows = 
     try AMap.find a arrows 
     with Not_found -> DD.empty

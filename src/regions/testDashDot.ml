@@ -1,12 +1,14 @@
-module I = NonEmptyInterval.Raw(Integer)
-
 module Legacy = ODA.BooleanAlgebra(Integer)
 
 module HL_legacy = ODA.RawHalfLine(Integer)
 
 module Ci_legacy = ODA.RawCircle(Integer)
 
-module DD = DashDot.Raw(I)
+module DDI = DashDotOverInteger
+
+module I = DDI.I
+
+module DD = DDI.DD
 
 let interval_to_legacy b = 
   match b with 
@@ -290,37 +292,6 @@ let exhaustive_all max =
   exhaustive_closure_on_half_line (2 * max + 1);
   exhaustive_closure_on_circle (2 * max + 1)
   
-let rec of_string tl = Str.(
-  match tl with 
-    | [] | [Delim "["; Delim "]"] | [Delim "{"; Delim "}"] -> (DD.empty)
-    | [Delim l ; Text a ; Text "oo" ; Delim "["] 
-    | [Delim l ; Text a] -> (
-        let a = int_of_string a in
-        let l = (l = "[") in
-        DD.of_interval (I.terminal l a))
-    | Delim l :: Text a :: Text b :: Delim r :: tl -> (
-        let a = int_of_string a in
-        let b = int_of_string b in
-        let () = assert (a < b) in
-        let l = (l = "[") in
-        let r = (r = "]") in
-        DD.(join (of_interval (I.bounded l a b r)) (of_string tl)))
-    | Delim "[" :: Text a :: Delim "]" :: tl 
-    | Delim "{" :: Text a :: Delim "}" :: tl 
-    | Text a :: tl -> (
-        DD.(join (of_interval (I.atom (int_of_string a)))  (of_string tl)) )
-    | _ -> assert false)
-
-let of_string s = 
-  let tokens = Str.(full_split (regexp "[][{} \t]") s) in
-  let tokens = 
-    List.filter 
-      (fun x -> match x with 
-        | Str.Text _ -> true 
-        | Str.Delim s -> s = "[" || s = "]")
-      tokens in
-  of_string tokens
-
 type operator = 
   | Unary of (DD.t -> DD.t)
   | Binary of (DD.t -> DD.t -> DD.t)
@@ -388,8 +359,8 @@ let anon_fun s =
     | Unary operator -> (
         try
           while true do
-            let operand = of_string (iterator ()) in
-            let expected = of_string (iterator ()) in
+            let operand = DDI.of_string (iterator ()) in
+            let expected = DDI.of_string (iterator ()) in
             test_unary !operator_name operator 
               operand
               expected
@@ -398,9 +369,9 @@ let anon_fun s =
     | Binary operator -> (
         try
           while true do
-            let operand1 = of_string (iterator ()) in
-            let operand2 = of_string (iterator ()) in
-            let expected = of_string (iterator ()) in
+            let operand1 = DDI.of_string (iterator ()) in
+            let operand2 = DDI.of_string (iterator ()) in
+            let expected = DDI.of_string (iterator ()) in
             test_binary !operator_name  operator
               operand1 operand2 expected
           done

@@ -1,18 +1,33 @@
+let normalize_string s =
+  let s = Str.global_replace (Str.regexp "[\n\t]") "" s in
+  Str.global_replace (Str.regexp "\\([ ]\\)+") " " s
+
+let semicolon_split s = Str.split (Str.regexp ";") s
+
+let colon_split s = Str.split (Str.regexp ":") s
+
+let words s = Str.split (Str.regexp "[ ]") s
+
 module G = struct
 
   exception Undefined
 
   type vertex = int
   type arrow = int
-  module S = Set.Make(struct type t = int let compare = compare end)
+  module S = Set.Make(struct type t = vertex let compare = compare end)
   type cone = { past:S.t ; future:S.t }
-  module M = Map.Make(struct type t = int let compare = compare end)
+  
+  let empty_cone = { past = S.empty ; future = S.empty }
+  
+  module M = Map.Make(struct type t = arrow let compare = compare end)
   
   type neighbors = cone M.t
   
   type endpoints = (vertex * vertex) M.t
   
   type t = { endpoints:endpoints ; neighbors:neighbors }
+  
+  let empty = { endpoints = M.empty ; neighbors = M.empty }
   
   let get_neighbors v neighbors =
     try M.find v neighbors
@@ -21,11 +36,11 @@ module G = struct
       let future = S.empty in
       { past ; future }
   
-  let get_future_neighbors v neigbors =
-    (get_neighbors v neigbors).future
+  let get_future_neighbors v neighbors =
+    (get_neighbors v neighbors).future
   
-  let get_past_neighbors v neigbors =
-    (get_neighbors v neigbors).past
+  let get_past_neighbors v neighbors =
+    (get_neighbors v neighbors).past
   
   let from_endpoints endpoints =
     let update arrow (src,tgt) accu =
@@ -40,6 +55,24 @@ module G = struct
       accu in 
     M.fold update endpoints M.empty 
 
+  let add_vertex v {endpoints;neighbors} = 
+    let neighbors = M.add v empty_cone in
+    neighbors 
+
+  let add_arrow src arrow tgt {endpoints;neighbors} =
+    let endpoints = M.add arrow (src,tgt) endpoints in
+    let src_future = get_future_neighbors src neighbors in
+    let src_future = S.add arrow src_future in
+    let src_past = get_past_neighbors src neighbors in 
+    let tgt_past = get_past_neighbors tgt neighbors in
+    let tgt_past = S.add arrow tgt_past in
+    let tgt_future = get_future_neighbors tgt neighbors in
+    let src_neighbors = { past = src_past ; future = src_future } in
+    let tgt_neighbors = { past = tgt_past ; future = tgt_future } in
+    let neighbors = M.add src src_neighbors neighbors in
+    let neighbors = M.add tgt tgt_neighbors neighbors in
+    {endpoints;neighbors}
+    
   let compare_vertex = compare
 
   let compare_arrow = compare
@@ -90,10 +123,8 @@ module G = struct
     {endpoints;neighbors}
 
   let of_string s =
-    let s = Str.global_replace (Str.regexp "[\n\t]") "" s in
-    let s = Str.global_replace (Str.regexp "\\([ ]\\)+") " " s in
-    let () = print_endline s in
-    let l = Str.split (Str.regexp ";") s in
+    let s = normalize_string s in
+    let l = semicolon_split s in
     let l = List.map (fun a -> 
       let a = Str.split (Str.regexp " ") a in
       match a with
@@ -116,15 +147,58 @@ module G = struct
        S.iter (fun a -> Printf.printf "  %i –< %i\n" a (src a g)) past) in
     M.iter print_neighbor g.neighbors
 
-end
+end (* G *)
+
 
 module I = NonEmptyInterval.Raw(Integer)
 
 module DD = DashDot.Raw(I)
 
-module GR = GraphRegion.Raw(G)(DD)
+module GR = struct 
+  
+  include GraphRegion.Raw(G)(DD)
+  
+  let empty = {
+    graph = G.empty; 
+    vertices = VSet.empty;
+    arrows = AMap.empty}
+  
+  let add_arrow src arrow tgt dd a =
+    let a = add_arrow arrow dd a in
+    let graph = G.add_arrow src arrow tgt a.graph in
+    let vertices = a.vertices in
+    let arrows = a.arrows in
+    {graph;vertices;arrows}
 
+  
+  let of_string s =
+    let s = normalize_string s in
+    let l = semicolon_split s in
+    let counter = ref 0 in
+    let of_string a s =
+      let l = colon_split s in
+      match l with
+      | [src_tgt ; dd] -> (
+        let arrow = !counter in
+        let () = incr counter in
+        match (words src_tgt) with
+        | [src;tgt] -> 
+          let src = int_of_string src in
+          let tgt = int_of_string tgt in
+          let dd = DashDotOverInteger.of_string dd in
+          add_arrow src arrow tgt dd a
+        | _ -> assert false) 
+      | [s] -> (
+          let l = words s in
+          match l with 
+          | [src;tgt] -> a
+          | [vertex] -> a
+          | _ -> assert false)
+      | _ -> assert false
+    in
+    List.fold_left of_string empty l
 
+end
 
 (*
 let g = G.of_string "1 2;
