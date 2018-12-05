@@ -1,4 +1,5 @@
 module type Graph = sig
+  exception Undefined
   type vertex
   type arrow
   type t
@@ -94,8 +95,8 @@ module Raw(G:Graph)(DD:DashDot.S) = struct
         if (not (VSet.mem w !vertices))
             && (in_r1 || (in_r2 && dd3_is_unbounded))
         then (
-          if not in_r1 then (arrows_1 := add_zeroes_vertex graph w !arrows_1); (* ajouter les zéros dans les flèches qui sortent de w dans r1 *)
-          if not in_r2 then (arrows_2 := add_zeroes_vertex graph w !arrows_2); (* idem pour r2 *)
+          if not in_r1 then arrows_1 := add_zeroes_vertex graph w !arrows_1; (* ajouter les zéros dans les flèches qui sortent de w dans r1 *)
+          if not in_r2 then arrows_2 := add_zeroes_vertex graph w !arrows_2; (* idem pour r2 *)
           vertices := VSet.add w !vertices;
           next := VSet.add w !next) in 
       arrows := AMap.add a dd3 !arrows in

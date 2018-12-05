@@ -1,8 +1,10 @@
 OCAMLMAKEFILE = ../../OCamlMakefile
-COMMON = ../common/
-LEGACY_COMMON = ../legacy/trunk_common/
+COMMON = ../../common/
+LEGACY_COMMON = ../../legacy/trunk_common/
 GEOREAL = $(LEGACY_COMMON)/geometric_realization/
-SOURCES = ../bound.ml ../dashDot.ml graphRegion.ml
+SOURCES = ../bound.ml ../nonEmptyInterval.ml ../dashDot.ml graphRegion.ml \
+$(COMMON)integer.ml \
+test.ml
 RESULT = main
 ANNOTATE = true
 DOC_FILES = bound.ml dashDot.ml
