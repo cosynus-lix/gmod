@@ -14,6 +14,9 @@ PACKS = str ocamlgraph unix
 
 all: dnc
 
+rmd: 
+	rm -r common legacy
+
 include $(OCAMLMAKEFILE)
 
 #$(LEGACY_COMMON)interval.mli $(LEGACY_COMMON)interval.ml \
