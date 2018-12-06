@@ -314,11 +314,10 @@ let remove_zero at =
 
 let add_zero at =
   match at with
-  | it :: at -> (
-    try (I.add_zero it) :: at
+  | it :: at' -> (
+    try (I.add_zero it) :: at'  
     with I.Undefined -> I.(atom zero) :: at)
-  | [] -> []
-
+  | [] -> [I.(atom zero)]
 
 module HalfLine = struct
 
