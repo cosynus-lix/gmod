@@ -14,6 +14,8 @@ module G = struct
 
   type vertex = int
   type arrow = int
+  let string_of_arrow = string_of_int
+  let string_of_vertex = string_of_int
   module S = Set.Make(struct type t = vertex let compare = compare end)
   type cone = { past:S.t ; future:S.t }
   
@@ -238,20 +240,33 @@ let print (g,r) =
     r.arrows;
   print_endline ""
 
-let x1 = GR.of_string "0 0:]0 oo["
+let x1 = GR.of_string "
+0 1:[1 2];
+1 0:[1 2];
+0:;
+1:"
 
-let x2 = GR.of_string "0:*"
-
-let x3 = 
-  let g = fst x1 in
-  let r = GR.join g (snd x1) (snd x2) in 
-  (g,r)
+let x2 = GR.of_string "
+0 1:]0 1[ ]2 oo[;
+1 0:]0 1[ ]2 oo[;
+0:;
+1:"
 
 let () =
   print_endline "x1";
   print x1;
   print_endline "x2";
   print x2;
+  print_endline "calcul de x3"
+
+
+
+let x3 = 
+  let g = fst x1 in
+  let r = GR.future_extension g (snd x1) (snd x2) in 
+  (g,r)
+
+let () =
   print_endline "x3";
   print x3
 

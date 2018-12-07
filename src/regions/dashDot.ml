@@ -312,7 +312,17 @@ let remove_zero at =
     with I.Undefined -> at)
   | [] -> []
 
-let add_zero at =
+(* copy of string_of to be removed after debugging *)
+(*
+let string_of a = 
+  if is_empty a then "Ø"
+  else
+    let string_of = I.string_of "[" "]" "{" "}" "+oo" in
+    List.fold_right (fun x accu -> (string_of x)^" "^accu) a "" 
+*)
+
+
+let add_zero at = 
   match at with
   | it :: at' -> (
     try (I.add_zero it) :: at'  
@@ -427,7 +437,7 @@ let rec last_connected_component at =
   | _::at -> last_connected_component at
   | [] -> raise Undefined
 
-let is_bounded at = 
+let is_bounded at =
   try I.is_bounded (last_connected_component at)
   with Undefined -> true
 
