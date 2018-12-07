@@ -452,9 +452,8 @@ let first_connected_component at =
   | _ -> raise Undefined
 
 let contains_zero at = 
-  try I.contains_zero (HalfLine.first_connected_component at)
+  try I.contains_zero (first_connected_component at)
   with Undefined -> false
-
 
 end (* Raw *)
 

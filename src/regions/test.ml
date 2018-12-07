@@ -49,9 +49,9 @@ let test_unary op_name operator operand expected_result =
   if result <> expected_result
   then Printf.printf "%s\n %s\n= %s\nbut\n %s\nwas expected.\n%!"
     op_name
-    (DD.HalfLine.string_of operand)
-    (DD.HalfLine.string_of result)
-    (DD.HalfLine.string_of expected_result)
+    (DD.string_of operand)
+    (DD.string_of result)
+    (DD.string_of expected_result)
 
 let test_binary op_name operator operand1 operand2 expected_result =
   let result = operator operand1 operand2 in
@@ -59,10 +59,10 @@ let test_binary op_name operator operand1 operand2 expected_result =
   if result <> expected_result
   then Printf.printf "%s\n %s\n %s\n= %s\nbut\n %s\nwas expected.\n%!"
     op_name
-    (DD.HalfLine.string_of operand1)
-    (DD.HalfLine.string_of operand2)
-    (DD.HalfLine.string_of result)
-    (DD.HalfLine.string_of expected_result)
+    (DD.string_of operand1)
+    (DD.string_of operand2)
+    (DD.string_of result)
+    (DD.string_of expected_result)
 
 let exhaustive_test_binary oracle bin_op max dummy string_of_operand string_of_result =
   let next n = if n < max then n + 1 else raise Exit in
@@ -112,49 +112,53 @@ let exhaustive_join max =
   let oracle = wrapper Legacy.union in
   let bin_op = DD.join in
   print_endline "Testing DashDot2.join";
-  exhaustive_test_binary oracle bin_op max DD.empty DD.HalfLine.string_of DD.HalfLine.string_of
+  exhaustive_test_binary oracle bin_op max DD.empty DD.string_of DD.string_of
 
 let exhaustive_meet max = 
   let oracle = wrapper Legacy.intersection in
   let bin_op = DD.meet in
   print_endline "Testing DashDot2.meet";
-  exhaustive_test_binary oracle bin_op max DD.empty DD.HalfLine.string_of DD.HalfLine.string_of
+  exhaustive_test_binary oracle bin_op max DD.empty DD.string_of DD.string_of
 
 let exhaustive_difference max = 
   let oracle = wrapper Legacy.difference in
   let bin_op = DD.difference in
   print_endline "Testing DashDot2.difference";
-  exhaustive_test_binary oracle bin_op max DD.empty DD.HalfLine.string_of DD.HalfLine.string_of
+  exhaustive_test_binary oracle bin_op max DD.empty DD.string_of DD.string_of
 
 let exhaustive_future_extension_on_half_line max = 
   let oracle = wrapper (fun x y -> Legacy.union x (HL_legacy.future_extension x y)) in
-  let bin_op = DD.HalfLine.future_extension in
+  let bin_op = DD.future_extension in
   print_endline "Testing DashDot2.HalfLine.future_extension";
-  exhaustive_test_binary oracle bin_op max DD.empty DD.HalfLine.string_of DD.HalfLine.string_of
+  exhaustive_test_binary oracle bin_op max DD.empty DD.string_of DD.string_of
 
 let exhaustive_past_extension_on_half_line max = 
   let oracle = wrapper (fun x y -> Legacy.union x (HL_legacy.past_extension x y)) in
-  let bin_op = DD.HalfLine.past_extension in
+  let bin_op = DD.past_extension in
   print_endline "Testing DashDot2.HalfLine.past_extension";
-  exhaustive_test_binary oracle bin_op max DD.empty DD.HalfLine.string_of DD.HalfLine.string_of
+  exhaustive_test_binary oracle bin_op max DD.empty DD.string_of DD.string_of
 
+(*
 let exhaustive_future_extension_on_circle max =   
   let oracle = wrapper (fun x y -> Legacy.union x (Ci_legacy.future_extension x y)) in
   let bin_op = DD.Circle.future_extension in
   print_endline "Testing DashDot2.Circle.future_extension";
-  exhaustive_test_binary oracle bin_op max DD.empty DD.HalfLine.string_of DD.HalfLine.string_of
+  exhaustive_test_binary oracle bin_op max DD.empty DD.string_of DD.string_of
+*)
 
+(*
 let exhaustive_past_extension_on_circle max = 
   let oracle = wrapper (fun x y -> Legacy.union x (Ci_legacy.past_extension x y)) in
   let bin_op = DD.Circle.past_extension in
   print_endline "Testing DashDot2.Circle.past_extension";
-  exhaustive_test_binary oracle bin_op max DD.empty DD.HalfLine.string_of DD.HalfLine.string_of
+  exhaustive_test_binary oracle bin_op max DD.empty DD.string_of DD.string_of
+*)
 
 let exhaustive_is_included max = 
   let oracle at1 at2 = Legacy.is_included (dd2_to_legacy at1) (dd2_to_legacy at2) in
   let bin_op = DD.is_included in
   print_endline "Testing DashDot2.is_included";
-  exhaustive_test_binary oracle bin_op max false DD.HalfLine.string_of string_of_bool 
+  exhaustive_test_binary oracle bin_op max false DD.string_of string_of_bool 
 
 let exhaustive_test_unary oracle un_op max dummy string_of_operand string_of_result =
   let next n = if n < max then n + 1 else raise Exit in
@@ -195,37 +199,41 @@ let exhaustive_complement max =
   let oracle = wrapper Legacy.complement in
   let un_op = DD.complement in
   print_endline "Testing DashDot2.complement";
-  exhaustive_test_unary oracle un_op max DD.empty DD.HalfLine.string_of DD.HalfLine.string_of
+  exhaustive_test_unary oracle un_op max DD.empty DD.string_of DD.string_of
 
 let exhaustive_closure_on_half_line max = 
   let oracle = wrapper HL_legacy.closure in
-  let un_op = DD.HalfLine.closure in
+  let un_op = DD.closure in
   print_endline "Testing DashDot2.closure on half-line";
-  exhaustive_test_unary oracle un_op max DD.empty DD.HalfLine.string_of DD.HalfLine.string_of
+  exhaustive_test_unary oracle un_op max DD.empty DD.string_of DD.string_of
 
+(*
 let exhaustive_closure_on_circle max = 
   let oracle = wrapper Ci_legacy.closure in
   let un_op = DD.Circle.closure in
   print_endline "Testing DashDot2.closure on circle";
-  exhaustive_test_unary oracle un_op max DD.empty DD.HalfLine.string_of DD.HalfLine.string_of
+  exhaustive_test_unary oracle un_op max DD.empty DD.string_of DD.string_of
+*)
 
 let exhaustive_interior_on_half_line max = 
   let oracle = wrapper HL_legacy.interior in
-  let un_op = DD.HalfLine.interior in
+  let un_op = DD.interior in
   print_endline "Testing DashDot2.interior on half-line";
-  exhaustive_test_unary oracle un_op max DD.empty DD.HalfLine.string_of DD.HalfLine.string_of
+  exhaustive_test_unary oracle un_op max DD.empty DD.string_of DD.string_of
 
+(*
 let exhaustive_interior_on_circle max = 
   let oracle = wrapper Ci_legacy.interior in
   let un_op = DD.Circle.interior in
   print_endline "Testing DashDot2.interior on circle";
-  exhaustive_test_unary oracle un_op max DD.empty DD.HalfLine.string_of DD.HalfLine.string_of
+  exhaustive_test_unary oracle un_op max DD.empty DD.string_of DD.string_of
+*)
 
 let exhaustive_interior_on_half_line max = 
   let oracle = wrapper HL_legacy.interior in
-  let un_op = DD.HalfLine.interior in
+  let un_op = DD.interior in
   print_endline "Testing DashDot2.interior on half-line";
-  exhaustive_test_unary oracle un_op max DD.empty DD.HalfLine.string_of DD.HalfLine.string_of
+  exhaustive_test_unary oracle un_op max DD.empty DD.string_of DD.string_of
 
 let exhaustive_mem max =
   let next_value n = if n < max then n + 1 else raise Exit in
@@ -250,7 +258,7 @@ let exhaustive_mem max =
     if not !ok then (
       print_endline "Mismatch:";
       Printf.printf "operand_1 = %s\n" (string_of_int !p);
-      Printf.printf "operand_2 = %s\n" (DD.HalfLine.string_of !at);
+      Printf.printf "operand_2 = %s\n" (DD.string_of !at);
       Printf.printf "oracle    = %s\n" (string_of_bool !fe1);
       Printf.printf "candidate = %s\n" (string_of_bool !fe2));
     begin
@@ -269,8 +277,10 @@ let exhaustive_regions max =
   let x = ref DD.empty in
   try
     while true do 
-      print_endline (DD.HalfLine.string_of !x);
+      print_endline (DD.string_of !x);
+(*
       print_endline (DD.Circle.string_of !x);
+*)
       print_endline "";
       x := next !x
     done
@@ -284,13 +294,21 @@ let exhaustive_all max =
   exhaustive_join max;
   exhaustive_difference max;
   exhaustive_future_extension_on_half_line max;
+(*
   exhaustive_future_extension_on_circle max;
+*)
   exhaustive_past_extension_on_half_line max;
+(*
   exhaustive_past_extension_on_circle max;
+*)
   exhaustive_interior_on_half_line (2 * max + 1);
+(*
   exhaustive_interior_on_circle (2 * max + 1);
+*)
   exhaustive_closure_on_half_line (2 * max + 1);
+(*
   exhaustive_closure_on_circle (2 * max + 1)
+*)
   
 type operator = 
   | Unary of (DD.t -> DD.t)
@@ -299,15 +317,21 @@ type operator =
 let operator_of_string s = match s with
   | "meet" -> Binary DD.meet
   | "join" -> Binary DD.join
-  | "hl_future" -> Binary DD.HalfLine.future_extension
-  | "hl_past" -> Binary DD.HalfLine.past_extension
+  | "hl_future" -> Binary DD.future_extension
+  | "hl_past" -> Binary DD.past_extension
+(*
   | "ci_future" -> Binary DD.Circle.future_extension
   | "ci_past" -> Binary DD.Circle.past_extension
+*)
   | "complement" -> Unary DD.complement
-  | "hl_interior" -> Unary DD.HalfLine.interior
+  | "hl_interior" -> Unary DD.interior
+(*
   | "ci_interior" -> Unary DD.Circle.interior
-  | "hl_closure" -> Unary DD.HalfLine.closure
+*)
+  | "hl_closure" -> Unary DD.closure
+(*
   | "ci_closure" -> Unary DD.Circle.closure
+*)
   | _ -> failwith ("Unknown operator " ^ s)
 
 let test_unary op_name operator operand expected_result =
@@ -316,9 +340,9 @@ let test_unary op_name operator operand expected_result =
   if result <> expected_result
   then Printf.printf "%s\n %s\n= %s\nbut\n %s\nwas expected.\n%!"
     op_name
-    (DD.HalfLine.string_of operand)
-    (DD.HalfLine.string_of result)
-    (DD.HalfLine.string_of expected_result)
+    (DD.string_of operand)
+    (DD.string_of result)
+    (DD.string_of expected_result)
 
 let test_binary op_name operator operand1 operand2 expected_result =
   let result = operator operand1 operand2 in
@@ -326,10 +350,10 @@ let test_binary op_name operator operand1 operand2 expected_result =
   if result <> expected_result
   then Printf.printf "%s\n %s\n %s\n= %s\nbut\n %s\nwas expected.\n%!"
     op_name
-    (DD.HalfLine.string_of operand1)
-    (DD.HalfLine.string_of operand2)
-    (DD.HalfLine.string_of result)
-    (DD.HalfLine.string_of expected_result)
+    (DD.string_of operand1)
+    (DD.string_of operand2)
+    (DD.string_of result)
+    (DD.string_of expected_result)
 
 let operator_name = ref ""
 
@@ -418,17 +442,25 @@ let command_line_options = [
   "--exhaustively-testing-all",Arg.Int (exhaustive_all),"Compare the new implementation of all operators on half-line and circle with the current one";
   "--exhaustively-testing-all-in-parallel",Arg.Int (exhaustive_all_in_parallel),"Compare the new implementation of all operators on half-line and circle with the current one";
   "--exhaustively-testing-future-extension-on-half-line",Arg.Int (exhaustive_future_extension_on_half_line),"Compare the new implementation of future_extension on half-line (~ 60 LoC) with the current one (~ 500 LoC)";
+(*
   "--exhaustively-testing-future-extension-on-circle",Arg.Int (exhaustive_future_extension_on_circle),"Compare the new implementation of future_extension on circle (~ 60 LoC) with the current one (~ 1000 LoC)";
+*)
   "--exhaustively-testing-past-extension-on-half-line",Arg.Int (exhaustive_past_extension_on_half_line),"Compare the new implementation of past_extension on half-line (~ 60 LoC) with the current one (~ 500 LoC)";
+(*
   "--exhaustively-testing-past-extension-on-circle",Arg.Int (exhaustive_past_extension_on_circle),"Compare the new implementation of past_extension on circle (~ 60 LoC) with the current one (~ 1000 LoC)";
+*)
   "--exhaustively-testing-join",Arg.Int (exhaustive_join),"Compare the new implementation of join with the current one)";
   "--exhaustively-testing-meet",Arg.Int (exhaustive_meet),"Compare the new implementation of meet with the current one";
   "--exhaustively-testing-difference",Arg.Int (exhaustive_difference),"Compare the new implementation of difference with the current one";
   "--exhaustively-testing-complement",Arg.Int (exhaustive_complement),"Compare the new implementation of complement with the current one";
   "--exhaustively-testing-interior-on-half-line",Arg.Int (exhaustive_interior_on_half_line),"Compare the new implementation of interior on half-line with the current one";
+(*
   "--exhaustively-testing-interior-on-circle",Arg.Int (exhaustive_interior_on_circle),"Compare the new implementation of interior on circle with the current one";
+*)
   "--exhaustively-testing-closure-on-half-line",Arg.Int (exhaustive_closure_on_half_line),"Compare the new implementation of closure on half-line with the current one";
+(*
   "--exhaustively-testing-closure-on-circle",Arg.Int (exhaustive_closure_on_circle),"Compare the new implementation of closure on circle with the current one";
+*)
   "--exhaustively-testing-is_included",Arg.Int (exhaustive_is_included),"Compare the new implementation of is_included with the current one";
   "--exhaustively-testing-mem",Arg.Int (exhaustive_mem),"Compare the new implementation of mem with the current one";
 ]
