@@ -1,21 +1,22 @@
 module type S = sig
   
-  (** {2 Exceptions}*)
+  (** {2 Exception} *)
 
   exception Undefined
 
-  (** {2 Types}*)
+  (** {2 Types} *)
   
   type value
-  
   type interval
-  
   type t
-  
+
+  (** {2 Display} *)
+
+  val string_of: t -> string
+
   (** {2 Constants} *)
 
   val empty: t
-  
   val full: t
 
   (** {2 Constructor} *)
@@ -25,7 +26,7 @@ module type S = sig
   (** {2 Destructor} *)
 
   val connected_components: t -> interval list
-
+  val last_connected_component: t -> interval
   
   (** {2 Tests} *)
   
@@ -33,6 +34,7 @@ module type S = sig
   val mem: value -> t -> bool
   val is_included: t -> t -> bool
   val contains_zero: t -> bool
+  val is_bounded: t -> bool
 
   (** {2 Enumerator} *)
 
@@ -47,13 +49,7 @@ module type S = sig
   val add_zero: t -> t
   val remove_zero: t -> t
 
-
-  val string_of: t -> string
-  (** Shape dependent string converter.*)
-
-  val is_bounded: t -> bool
-  
-  val last_connected_component: t -> interval
+  (** {2 Directed topology} *)
 
   val interior: t -> t
   (** [interior x] is the {i interior} of the set [x] with respect to the 
@@ -84,12 +80,14 @@ module Raw(I:NonEmptyInterval.S) = struct
 exception Undefined
 
 type value = I.value
-
 type interval = I.t
-
 type t = interval list
 
 (* Internals *)
+
+let (<<) it1 it2 = I.compare it1 it2 <= 0
+
+let (<|<) it1 it2 = I.ordered_disjoint it1 it2
 
 let head_and_tail a = 
   match a with 
@@ -99,19 +97,69 @@ let head_and_tail a =
 (* Constants *)
 
 let empty = []
-
 let full = [I.terminal true I.zero]
-
-(* Constructor *)
-
-let of_interval it = [it]
-
-let connected_components x = x
-
-(* Tests *)
-
 let is_empty a = (a = [])
 let is_full a = (a = full)
+
+(* Constructor / Destructor *)
+
+let of_interval it = [it]
+let connected_components a = a
+
+let first_connected_component at = 
+  match at with 
+  | it :: _ -> it
+  | _ -> raise Undefined
+
+(* Display *)
+
+let string_of a = 
+  if is_empty a then "Ø"
+  else
+    let string_of = I.string_of "[" "]" "{" "}" "+oo" in
+    List.fold_right (fun x accu -> (string_of x)^" "^accu) a "" 
+
+(* Membership and inclusion *)
+
+let contains_zero at = 
+  try I.contains_zero (first_connected_component at)
+  with Undefined -> false
+
+let is_included at1 at2 =
+  let answer = ref false in
+  let () = 
+    try
+      let at1 = ref at1 in
+      let at2 = ref at2 in
+      while true do
+        match !at1,!at2 with
+        | (it1::at3),(it2::at4) -> (
+          if it1 <|< it2 then raise Exit 
+          else if it2 <|< it1 then at2 := at4
+            else if I.is_included it1 it2 then at1 := at3
+              else raise Exit)
+        | (_::_),[] -> raise Exit
+        | _ -> (answer := true; raise Exit)
+      done
+    with Exit -> () in
+  !answer
+
+let mem v at =
+  let at = ref at in
+  let answer = ref false in
+  let () =
+    try
+      while true do
+        match !at with
+        | (it::at') -> (
+          if (try I.mem v (I.strict_lower_bounds it) with I.Undefined -> false)
+          then (answer := false; raise Exit)
+          else if I.mem v it then (answer := true; raise Exit)
+            else at := at')
+        | _ -> raise Exit
+      done 
+    with Exit -> () in
+  !answer
 
 (* Binary operators *)
   
@@ -164,7 +212,7 @@ let complement at =
     assert false
   with Exit -> List.rev !answer
 
-let (<<) it1 it2 = I.compare it1 it2 <= 0
+let difference at1 at2 = meet at1 (complement at2)
 
 let rec finish answer accu at = 
   match at with 
@@ -172,8 +220,6 @@ let rec finish answer accu at =
       try finish answer (I.ordered_join accu it) at
       with I.Undefined -> (List.rev (it :: accu :: answer)) @ at)
   | [] -> List.rev (accu :: answer) 
-
-let difference at1 at2 = meet at1 (complement at2)
 
 let join at1 at2 =
   let answer = ref [] in
@@ -208,90 +254,7 @@ let join at1 at2 =
     assert false
   with Exit -> !answer
 
-let (<|<) it1 it2 = I.ordered_disjoint it1 it2
 
-let is_included at1 at2 =
-  let answer = ref false in
-  let () = 
-    try
-      let at1 = ref at1 in
-      let at2 = ref at2 in
-      while true do
-        match !at1,!at2 with
-        | (it1::at3),(it2::at4) -> (
-          if it1 <|< it2 then raise Exit 
-          else if it2 <|< it1 then at2 := at4
-            else if I.is_included it1 it2 then at1 := at3
-              else raise Exit)
-        | (_::_),[] -> raise Exit
-        | _ -> (answer := true; raise Exit)
-      done
-    with Exit -> () in
-  !answer
-
-let mem v at =
-  let at = ref at in
-  let answer = ref false in
-  let () =
-    try
-      while true do
-        match !at with
-        | (it::at') -> (
-          if (try I.mem v (I.strict_lower_bounds it) with I.Undefined -> false)
-          then (answer := false; raise Exit)
-          else if I.mem v it then (answer := true; raise Exit)
-            else at := at')
-        | _ -> raise Exit
-      done 
-    with Exit -> () in
-  !answer
-
-(*
-let counter = ref 0
-
-let pir msg it =
-  Printf.printf "%s = %s\n" msg (I.string_of "[" "]" "{" "}" "+oo" it)
-
-let prr msg at = 
-  List.iter (pir "") at
-*)
-
-(* Enumerator *)
-
-let next next_value re = 
-  let next it = I.next next_value it in
-  let next_with_lesser_lub it =
-    let x = ref it in
-    let y = ref (next it) in
-    while (
-      (I.is_bounded !x) && (not (I.is_bounded !y)) || 
-      (I.is_bounded !x && I.is_bounded !y && I.lub !x <= I.lub !y))
-    do x := !y ; y := next !y
-    done;
-    !y in
-  let rec init k re =
-    if (Pervasives.(>)) k 0 
-    then 
-      init (pred k) (
-        match re with 
-          | it :: _ -> I.nonempty_disconnected_next next_value it :: re
-          | []      -> [I.atom I.zero])
-    else re in
-  let init k re = List.rev (init k re) in
-  let rec next_region len re =
-      match re with
-        (*| [it] -> assert (len = 1); [next it]*) (* petite optimisation *)
-        | it :: re' -> (
-            try it :: next_region (pred len) re'
-            with Exit -> (
-             try init (pred len) [next it]
-             with Exit -> init (pred len) [next_with_lesser_lub it] ))
-        | [] -> raise Exit (* assert false *) in
-  try
-    match re with 
-      | [] -> [I.atom I.zero]
-      | _ -> next_region (List.length re) re 
-  with Exit -> init (succ (List.length re)) []
 
 let remove_zero at = 
   match at with
@@ -308,13 +271,6 @@ let add_zero at =
     with I.Undefined -> I.(atom zero) :: at)
   | [] -> [I.(atom zero)]
 
-(* Display *)
-
-let string_of a = 
-  if is_empty a then "Ø"
-  else
-    let string_of = I.string_of "[" "]" "{" "}" "+oo" in
-    List.fold_right (fun x accu -> (string_of x)^" "^accu) a "" 
 
 (* Direction *)
 
@@ -406,8 +362,6 @@ let past_extension at1 at2 =
     with Exit -> () in
   !answer
 
-(* Internals *)
-
 let rec last_connected_component at = 
   match at with
   | [it] -> it
@@ -446,14 +400,42 @@ let rec closure at =
     of_interval it
   | [] -> closure_is_bounded := true; empty
 
-let first_connected_component at = 
-  match at with 
-  | it :: _ -> it
-  | _ -> raise Undefined
+(* Enumerator *)
 
-let contains_zero at = 
-  try I.contains_zero (first_connected_component at)
-  with Undefined -> false
+let next next_value re = 
+  let next it = I.next next_value it in
+  let next_with_lesser_lub it =
+    let x = ref it in
+    let y = ref (next it) in
+    while (
+      (I.is_bounded !x) && (not (I.is_bounded !y)) || 
+      (I.is_bounded !x && I.is_bounded !y && I.lub !x <= I.lub !y))
+    do x := !y ; y := next !y
+    done;
+    !y in
+  let rec init k re =
+    if (Pervasives.(>)) k 0 
+    then 
+      init (pred k) (
+        match re with 
+          | it :: _ -> I.nonempty_disconnected_next next_value it :: re
+          | []      -> [I.atom I.zero])
+    else re in
+  let init k re = List.rev (init k re) in
+  let rec next_region len re =
+      match re with
+        (*| [it] -> assert (len = 1); [next it]*) (* petite optimisation *)
+        | it :: re' -> (
+            try it :: next_region (pred len) re'
+            with Exit -> (
+             try init (pred len) [next it]
+             with Exit -> init (pred len) [next_with_lesser_lub it] ))
+        | [] -> raise Exit (* assert false *) in
+  try
+    match re with 
+      | [] -> [I.atom I.zero]
+      | _ -> next_region (List.length re) re 
+  with Exit -> init (succ (List.length re)) []
 
 end (* Raw *)
 
