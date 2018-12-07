@@ -47,42 +47,35 @@ module type S = sig
   val add_zero: t -> t
   val remove_zero: t -> t
 
-  module type DirectedTopology = sig
 
-    val string_of: t -> string
-    (** Shape dependent string converter.*)
+  val string_of: t -> string
+  (** Shape dependent string converter.*)
 
-    val is_bounded: t -> bool
-    
-    val last_connected_component: t -> interval
+  val is_bounded: t -> bool
   
-    val interior: t -> t
-    (** [interior x] is the {i interior} of the set [x] with respect to the 
-    topology of the half-line/circle depending on the module from which it is 
-    called.*)
-    
-    val closure: t -> t
-    (** [closure x] is the {i closure} of the set [x] with respect to the 
-    topology of the half-line/circle depending on the module from which it is 
-    called.*)
+  val last_connected_component: t -> interval
 
-    val future_extension: t -> t -> t
-    (** [future_extension x y] is the set of points {i q} of the union of [x] 
-    and [y] such that there exists a point {i p} of [x] such the 
-    interval/anticlockwise arc from {i p} to {i q} is contained in the union of 
-    [x] and [y].*)
-
-    val past_extension: t -> t -> t
-    (** [past_extension x y] is the set of points {i q} of the union of [x] and 
-    [y] such that there exists a point {i p} of [x] such the 
-    interval/anticlockwise arc from {i q} to {i p} is contained in the union of 
-    [x] and [y].*)
-
-  end
+  val interior: t -> t
+  (** [interior x] is the {i interior} of the set [x] with respect to the 
+  topology of the half-line/circle depending on the module from which it is 
+  called.*)
   
-  module HalfLine:DirectedTopology
-  
-  module Circle:DirectedTopology
+  val closure: t -> t
+  (** [closure x] is the {i closure} of the set [x] with respect to the 
+  topology of the half-line/circle depending on the module from which it is 
+  called.*)
+
+  val future_extension: t -> t -> t
+  (** [future_extension x y] is the set of points {i q} of the union of [x] 
+  and [y] such that there exists a point {i p} of [x] such the 
+  interval/anticlockwise arc from {i p} to {i q} is contained in the union of 
+  [x] and [y].*)
+
+  val past_extension: t -> t -> t
+  (** [past_extension x y] is the set of points {i q} of the union of [x] and 
+  [y] such that there exists a point {i p} of [x] such the 
+  interval/anticlockwise arc from {i q} to {i p} is contained in the union of 
+  [x] and [y].*)
 
 end (* S *)
 
@@ -300,31 +293,12 @@ let next next_value re =
       | _ -> next_region (List.length re) re 
   with Exit -> init (succ (List.length re)) []
 
-module type DirectedTopology = sig
-  val string_of: t -> string
-  val is_bounded: t -> bool
-  val last_connected_component: t -> interval
-  val interior: t -> t
-  val closure: t -> t
-  val future_extension: t -> t -> t
-  val past_extension: t -> t -> t
-end
-
 let remove_zero at = 
   match at with
   | it :: at -> (
     try (I.remove_zero it) :: at
     with I.Undefined -> at)
   | [] -> []
-
-(* copy of string_of to be removed after debugging *)
-(*
-let string_of a = 
-  if is_empty a then "Ø"
-  else
-    let string_of = I.string_of "[" "]" "{" "}" "+oo" in
-    List.fold_right (fun x accu -> (string_of x)^" "^accu) a "" 
-*)
 
 
 let add_zero at = 
@@ -333,8 +307,6 @@ let add_zero at =
     try (I.add_zero it) :: at'  
     with I.Undefined -> I.(atom zero) :: at)
   | [] -> [I.(atom zero)]
-
-module HalfLine = struct
 
 (* Display *)
 
@@ -479,77 +451,10 @@ let first_connected_component at =
   | it :: _ -> it
   | _ -> raise Undefined
 
-end (* HalfLine *)
-
 let contains_zero at = 
   try I.contains_zero (HalfLine.first_connected_component at)
   with Undefined -> false
 
-module Circle = struct
-
-let last_connected_component a = raise Undefined
-
-(* Display *)
-
-let string_of a = 
-  if is_empty a then "Ø"
-  else if is_full a then "S¹"
-    else 
-      let string_of = I.string_of "(" ")" "{" "}" "0" in
-      let first = List.hd a in
-      let a = ref (List.tl a) in
-      let answer = ref "" in
-      let () = 
-        try
-          while true do
-            match !a with
-              | [last] -> 
-                let () = 
-                  try 
-                    let it = I.co_bounded first last in
-                    let x = I.glb it in
-                    let it = 
-                      if x <> I.lub it then string_of it 
-                      else "S¹\\"^(string_of (I.atom x)) in
-                  answer := it ^ " " ^ !answer 
-                  with I.Undefined -> answer := (string_of first) ^ " " ^ !answer ^ (if !answer <> "" then " " else "") ^ (string_of last) in
-                raise Exit
-              | it :: a' -> a := a'; answer := !answer ^ (if !answer <> "" then " " else "") ^ (string_of it)
-              | [] -> 
-                if first <> I.terminal false I.zero
-                then answer := string_of first
-                else answer := "S¹\\"^(string_of (I.atom I.zero)); raise Exit
-          done
-        with Exit -> () in
-      !answer
-
-let future_extension at1 at2 =
-  let at3 = HalfLine.future_extension at1 at2 in
-  if HalfLine.is_bounded at3 || not (contains_zero at2)
-  then at3
-  else join (of_interval(HalfLine.first_connected_component at2)) at3
-
-let past_extension at1 at2 =
-  let at3 = HalfLine.past_extension at1 at2 in
-  if contains_zero at3 && not (HalfLine.is_bounded at2)
-  then join at3 (of_interval (HalfLine.last_connected_component at2))
-  else at3
-
-let closure at =
-  let at = HalfLine.closure at in
-  if !HalfLine.closure_is_bounded || contains_zero at
-  then at
-  else I.(atom zero) :: at
-
-let interior at =
-  let at = HalfLine.interior at in
-  if !HalfLine.interior_is_bounded
-  then remove_zero at
-  else at
-
-let is_bounded at = raise Undefined
-
-end (* Circle *)
 
 end (* Raw *)
 
