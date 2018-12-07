@@ -136,17 +136,17 @@ module G = struct
     of_list l
 
   let print_arrows g =
-    let print_arrow a (src,tgt) = Printf.printf "%i >– %i –> %i\n" src a tgt in
+    let print_arrow a (src,tgt) = Printf.printf "%i: %i –> %i\n" a src tgt in
     M.iter print_arrow g.endpoints 
 
   let print_neighbors g =
     let print_neighbor v {past;future} =
       if not( S.is_empty future) then (
-       Printf.printf "%i >–\n" v ;
-       S.iter (fun a -> Printf.printf "  %i –> %i\n" a (tgt a g)) future) ;
+       Printf.printf "future of %i:\n" v ;
+       S.iter (fun a -> Printf.printf "  %i: %i –> %i\n" a v (tgt a g)) future) ;
        if not( S.is_empty past) then (
-       Printf.printf "%i <–\n" v ;
-       S.iter (fun a -> Printf.printf "  %i –< %i\n" a (src a g)) past) in
+       Printf.printf "past of %i:\n" v ;
+       S.iter (fun a -> Printf.printf "  %i: %i –> %i\n" a (src a g) v) past) in
     M.iter print_neighbor g.neighbors
 
 end (* G *)
@@ -234,12 +234,13 @@ let print (g,r) =
   print_endline "";
   print_endline "";
   print_endline "arrows";
-  GR.AMap.iter (fun a dd -> Printf.printf "%i >– %i –> %i: %s\n" 
-    (G.src a g) a (G.tgt a g) 
+  GR.AMap.iter (fun a dd -> Printf.printf "%i: %i –> %i: %s\n" 
+    a (G.src a g) (G.tgt a g) 
     (DD.HalfLine.string_of dd)) 
     r.arrows;
   print_endline ""
 
+(*
 let x1 = GR.of_string "
 0 1:[1 2];
 1 0:[1 2];
@@ -251,6 +252,21 @@ let x2 = GR.of_string "
 1 0:]0 1[ ]2 oo[;
 0:;
 1:"
+*)
+
+let x1 = GR.of_string "
+0 1:]0 1[;
+1 2;
+2 0;
+0:*"
+
+let x2 = GR.of_string "
+0 1:]0 oo[;
+1 2:]0 oo[;
+2 0:]0 oo[;
+1:*;
+2:*
+"
 
 let () =
   print_endline "x1";
