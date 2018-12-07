@@ -236,7 +236,7 @@ let print (g,r) =
   print_endline "arrows";
   GR.AMap.iter (fun a dd -> Printf.printf "%i: %i –> %i: %s\n" 
     a (G.src a g) (G.tgt a g) 
-    (DD.HalfLine.string_of dd)) 
+    (DD.string_of dd)) 
     r.arrows;
   print_endline ""
 

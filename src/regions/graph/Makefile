@@ -2,7 +2,7 @@ OCAMLMAKEFILE = ../../OCamlMakefile
 COMMON = ../../common/
 LEGACY_COMMON = ../../legacy/trunk_common/
 GEOREAL = $(LEGACY_COMMON)/geometric_realization/
-SOURCES = ../bound.ml ../nonEmptyInterval.ml ../dashDot.ml graphRegion.ml \
+SOURCES = ../bound.ml ../nonEmptyInterval.ml ../halfLineRegion.ml graphRegion.ml \
 $(COMMON)integer.ml ../dashDotOverInteger.ml \
 test.ml
 RESULT = main

@@ -24,7 +24,7 @@ module type S = sig
   type t
 end (* S *)
 
-module Raw(G:Graph)(DD:DashDot.S) = struct
+module Raw(G:Graph)(DD:HalfLineRegion.S) = struct
 
   type arrow = G.arrow
   type vertex = G.vertex
@@ -115,7 +115,7 @@ module Raw(G:Graph)(DD:DashDot.S) = struct
     AMap.iter (fun a dd -> 
       Printf.printf "%s : %s\n"
         (G.string_of_arrow a)
-        (DD.HalfLine.string_of dd)
+        (DD.string_of dd)
     ) arrows)
 
   let print_vertices msg vertices =
@@ -135,11 +135,11 @@ module Raw(G:Graph)(DD:DashDot.S) = struct
     let future_extension a =
       let dd1 = get_dd a !arrows_1 in
       let dd2 = get_dd a !arrows_2 in
-      let dd3 = DD.HalfLine.future_extension dd1 dd2 in
+      let dd3 = DD.future_extension dd1 dd2 in
       let tgt_a = G.tgt a graph in
       let in_r1 = VSet.mem tgt_a r1.vertices in
       let in_r2 = VSet.mem tgt_a r2.vertices in
-      let dd3_is_unbounded = not (DD.HalfLine.is_bounded dd3) in
+      let dd3_is_unbounded = not (DD.is_bounded dd3) in
       let tgt_to_be_added = (not (VSet.mem tgt_a !vertices))
         && (in_r1 || (in_r2 && dd3_is_unbounded)) in 
       let () =
@@ -179,13 +179,13 @@ module Raw(G:Graph)(DD:DashDot.S) = struct
         if add_unbounded_component
         then (
           let lcc_dd2 = 
-            try DD.(of_interval (HalfLine.last_connected_component dd2)) 
+            try DD.(of_interval (last_connected_component dd2)) 
             with DD.Undefined -> DD.empty in
-          if not (DD.HalfLine.is_bounded lcc_dd2) 
+          if not (DD.is_bounded lcc_dd2) 
           then DD.join dd1 lcc_dd2
           else dd1)
         else dd1 in
-      let dd3 = DD.HalfLine.past_extension dd1 dd2 in
+      let dd3 = DD.past_extension dd1 dd2 in
       let src_a = G.src a graph in
       let in_r1 = VSet.mem src_a r1.vertices in
       let in_r2 = VSet.mem src_a r2.vertices in
@@ -220,5 +220,5 @@ module Raw(G:Graph)(DD:DashDot.S) = struct
   
 end (* Raw *)
 
-module Make(G:Graph)(DD:DashDot.S):S with type arrow = G.arrow and type vertex = G.vertex
-  = Raw(G:Graph)(DD:DashDot.S) 
+module Make(G:Graph)(DD:HalfLineRegion.S):S with type arrow = G.arrow and type vertex = G.vertex
+  = Raw(G:Graph)(DD:HalfLineRegion.S) 
