@@ -80,16 +80,36 @@ module Raw(G:Graph)(DD:DashDot.S) = struct
   let meet graph = binary_boolean_operator graph VSet.inter DD.meet
   let join graph = binary_boolean_operator graph VSet.union DD.join
   let complement graph = difference graph (full graph)
-
-  let add_zeroes_vertex graph v arrows = 
-    let add_zero a arrows = AMap.add a (DD.add_zero (get_dd a arrows)) arrows in
-    G.fold_out v add_zero graph arrows  
   
+  let add_zeroes_vertex graph v arrows = 
+    let add_zero a arrows =
+      AMap.add a (DD.add_zero (get_dd a arrows)) arrows in
+    G.fold_out v add_zero graph arrows  
+
   let add_zeroes graph v_set a_map =
     VSet.fold (add_zeroes_vertex graph) v_set a_map
-  
+
+  let remove_zeroes_vertex graph v arrows = 
+    let remove_zero a arrows =
+      AMap.add a (DD.remove_zero (get_dd a arrows)) arrows in
+    G.fold_out v remove_zero graph arrows  
+
+  let remove_zeroes graph v_set a_map =
+    VSet.fold (remove_zeroes_vertex graph) v_set a_map
+
+  let zero_normalize_vertex graph v {vertices;arrows} =
+    let arrows = 
+      if VSet.mem v vertices
+      then add_zeroes_vertex graph v arrows
+      else remove_zeroes_vertex graph v arrows in
+    {vertices;arrows}
+
+  let zero_normalize graph ({vertices;arrows} as x) = 
+    G.fold_vertex (fun v a -> zero_normalize_vertex graph v a) 
+    graph x
+
   let debug = false
-  
+
   let print_arrows msg arrows = if debug then (
     print_endline msg;
     AMap.iter (fun a dd -> 
@@ -97,73 +117,108 @@ module Raw(G:Graph)(DD:DashDot.S) = struct
         (G.string_of_arrow a)
         (DD.HalfLine.string_of dd)
     ) arrows)
-  
+
   let print_vertices msg vertices =
     if debug then (
       print_endline msg;
       print_string "{ ";
       VSet.iter (fun v -> print_string ((G.string_of_vertex v)^" ")) vertices;
       print_endline "}")
-  
+
   let future_extension graph r1 r2 =
-    let () = if debug then print_arrows "r1.arrows" r1.arrows in
-    let arrows_1 = ref (add_zeroes graph r1.vertices r1.arrows) in
-    let () = if debug then print_arrows "arrows_1" !arrows_1 in
-    let () = if debug then print_arrows "r2.arrows" r2.arrows in
-    let arrows_2 = ref (add_zeroes graph r2.vertices r2.arrows) in
-    let () = if debug then print_arrows "arrows_2" !arrows_2 in
+    let arrows_1 = ref r1.arrows in
+    let arrows_2 = ref r2.arrows in
     let vertices = ref VSet.empty in
-    let () = if debug then (print_vertices "vertices" !vertices) in
     let arrows = ref AMap.empty in
-    let () = if debug then print_arrows "arrows" !arrows in
     let current = ref (full graph).vertices in
-    let () = if debug then (print_vertices "current" !current) in
     let next = ref VSet.empty in
-    let () = if debug then (print_vertices "next" !next) in
     let future_extension a =
-      let () = if debug then Printf.printf "FUTURE EXTENSION %s\n" (G.string_of_arrow a) in
       let dd1 = get_dd a !arrows_1 in
-      let () = if debug then Printf.printf "dd1 = %s\n" (DD.HalfLine.string_of dd1) in
       let dd2 = get_dd a !arrows_2 in
-      let () = if debug then Printf.printf "dd2 = %s\n" (DD.HalfLine.string_of dd2) in
       let dd3 = DD.HalfLine.future_extension dd1 dd2 in
-      let () = if debug then Printf.printf "dd3 = %s\n" (DD.HalfLine.string_of dd3) in
-      let w = G.tgt a graph in
-      let in_r1 = VSet.mem w r1.vertices in (*false*) 
-      let () = if debug then Printf.printf "  in_r1 = %b\n" in_r1 in
-      let in_r2 = VSet.mem w r2.vertices in (*true*) 
-      let () = if debug then Printf.printf "  in_r2 = %b\n" in_r2 in
-      let dd3_is_unbounded = not (DD.HalfLine.is_bounded dd3) in (*true*) 
-      let () = if debug then  Printf.printf "  dd3_is_unbounded = %b\n" dd3_is_unbounded in
-      let condition = (not (VSet.mem w !vertices))
-            && (in_r1 || (in_r2 && dd3_is_unbounded)) in 
-      let () = if debug then Printf.printf "  condition = %b\n" condition in
+      let tgt_a = G.tgt a graph in
+      let in_r1 = VSet.mem tgt_a r1.vertices in
+      let in_r2 = VSet.mem tgt_a r2.vertices in
+      let dd3_is_unbounded = not (DD.HalfLine.is_bounded dd3) in
+      let tgt_to_be_added = (not (VSet.mem tgt_a !vertices))
+        && (in_r1 || (in_r2 && dd3_is_unbounded)) in 
       let () =
-        if condition
+        if tgt_to_be_added
         then (
-          (if not in_r1 then arrows_1 := add_zeroes_vertex graph w !arrows_1); (* ajouter les zéros dans les flèches qui sortent de w dans r1 *)
-          let () = if debug then print_arrows "arrows_1" !arrows_1 in
-          (if not in_r2 then arrows_2 := add_zeroes_vertex graph w !arrows_2); (* idem pour r2 *)
-          let () = if debug then print_arrows "arrows_2" !arrows_2 in
-          vertices := VSet.add w !vertices;
-          let () = if debug then (print_vertices "  vertices" !vertices) in
-          next := VSet.add w !next;
-          if debug then (print_vertices "  next" !next)) in 
-      arrows := AMap.add a dd3 !arrows; 
-      if debug then (print_arrows "  arrows" !arrows; print_endline "––") in
+          (if not in_r1 then arrows_1 := add_zeroes_vertex graph tgt_a !arrows_1);
+          (if not in_r2 then arrows_2 := add_zeroes_vertex graph tgt_a !arrows_2);
+          vertices := VSet.add tgt_a !vertices;
+          next := VSet.add tgt_a !next) in 
+      arrows := AMap.add a dd3 !arrows in
     let future_cone v = G.iter_out v future_extension graph in
     let () = 
       while not (VSet.is_empty !current) do
         VSet.iter future_cone !current;
         current := !next;
         next := VSet.empty;
-        if debug then print_vertices "vertices" !vertices;
       done in
     let vertices = !vertices in
     let arrows = !arrows in
     { vertices ; arrows }
 
+  (* To be tested *)
+  (* BUG: the case where the target belongs to the model and the arrow carries 
+  an unbounded region is not taken into account. *)
+
+  let past_extension graph r1 r2 =
+    let arrows_1 = ref r1.arrows in
+    let arrows_2 = ref r2.arrows in
+    let vertices = ref VSet.empty in
+    let arrows = ref AMap.empty in
+    let current = ref (full graph).vertices in
+    let next = ref VSet.empty in
+    let past_extension add_unbounded_component a =
+      let () = Printf.printf "add_unbounded_component = %b\n" add_unbounded_component in
+      let dd1 = get_dd a !arrows_1 in
+      let dd2 = get_dd a !arrows_2 in
+      let dd1 = 
+        if add_unbounded_component
+        then (
+          let lcc_dd2 = 
+            try DD.(of_interval (HalfLine.last_connected_component dd2)) 
+            with DD.Undefined -> DD.empty in
+          let () = Printf.printf "lcc_dd2 = %s\n" (DD.HalfLine.string_of lcc_dd2) in
+          if not (DD.HalfLine.is_bounded lcc_dd2) 
+          then (print_endline "activated"; DD.join dd1 lcc_dd2)
+          else (print_endline "not activated"; dd1))
+        else dd1 in
+      let dd3 = DD.HalfLine.past_extension dd1 dd2 in
+      let src_a = G.src a graph in
+      let in_r1 = VSet.mem src_a r1.vertices in
+      let in_r2 = VSet.mem src_a r2.vertices in
+      let dd3_contains_zero = not (DD.contains_zero dd3) in
+      let src_to_be_added = (not (VSet.mem src_a !vertices))
+            && (in_r1 || (in_r2 && dd3_contains_zero)) in 
+      let () =
+        if src_to_be_added
+        then (
+          (if not in_r1 then arrows_1 := add_zeroes_vertex graph src_a !arrows_1);
+          (if not in_r2 then arrows_2 := add_zeroes_vertex graph src_a !arrows_2);
+          vertices := VSet.add src_a !vertices;
+          next := VSet.add src_a !next) in 
+      arrows := AMap.add a dd3 !arrows in (* end of past_extension *)
+    let past_cone v = 
+      G.iter_in v 
+        (Printf.printf "v = %s\n" (G.string_of_vertex v);past_extension (VSet.(mem v !vertices || mem v r1.vertices))) 
+        graph in
+    let () = 
+      while not (VSet.is_empty !current) do
+        VSet.iter past_cone !current;
+        current := !next;
+        next := VSet.empty;
+      done in
+    let vertices = !vertices in
+    let arrows = !arrows in
+    { vertices ; arrows }
+
+(*
   let past_extension graph r1 r2 = failwith "NIY"
+*)
   
 end (* Raw *)
 

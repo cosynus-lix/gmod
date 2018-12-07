@@ -25,12 +25,14 @@ module type S = sig
   (** {2 Destructor} *)
 
   val connected_components: t -> interval list
+
   
   (** {2 Tests} *)
   
   val is_empty: t -> bool
   val mem: value -> t -> bool
   val is_included: t -> t -> bool
+  val contains_zero: t -> bool
 
   (** {2 Enumerator} *)
 
@@ -51,7 +53,9 @@ module type S = sig
     (** Shape dependent string converter.*)
 
     val is_bounded: t -> bool
-
+    
+    val last_connected_component: t -> interval
+  
     val interior: t -> t
     (** [interior x] is the {i interior} of the set [x] with respect to the 
     topology of the half-line/circle depending on the module from which it is 
@@ -299,6 +303,7 @@ let next next_value re =
 module type DirectedTopology = sig
   val string_of: t -> string
   val is_bounded: t -> bool
+  val last_connected_component: t -> interval
   val interior: t -> t
   val closure: t -> t
   val future_extension: t -> t -> t
@@ -481,6 +486,8 @@ let contains_zero at =
   with Undefined -> false
 
 module Circle = struct
+
+let last_connected_component a = raise Undefined
 
 (* Display *)
 

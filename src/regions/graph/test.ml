@@ -240,56 +240,43 @@ let print (g,r) =
     r.arrows;
   print_endline ""
 
-(*
-let x1 = GR.of_string "
-0 1:[1 2];
-1 0:[1 2];
-0:;
-1:"
+let zero_normalize (g,r) = g , GR.zero_normalize g r
 
-let x2 = GR.of_string "
-0 1:]0 1[ ]2 oo[;
-1 0:]0 1[ ]2 oo[;
-0:;
-1:"
-*)
+(* Tests *)
 
-let x1 = GR.of_string "
-0 1:]0 1[;
-1 2;
-2 0;
-0:*"
-
-let x2 = GR.of_string "
-0 1:]0 oo[;
-1 2:]0 oo[;
-2 0:]0 oo[;
-1:*;
-2:*
+let x1 = 
+"
+0 1:;
+1 2:;
+1:*
 "
 
-let () =
-  print_endline "x1";
-  print x1;
-  print_endline "x2";
-  print x2;
-  print_endline "calcul de x3"
+let x1 = GR.of_string x1
 
+let x1 = zero_normalize x1
 
+let () = print_endline "x1"; print x1
+
+let x2 = 
+"
+0 1:[0 oo[;
+1 2:;
+1:
+"
+
+let x2 = GR.of_string x2
+
+let x2 = zero_normalize x2
+
+let () = print_endline "x2"; print x2
+
+let () = print_endline "calcul de x3"
 
 let x3 = 
   let g = fst x1 in
-  let r = GR.future_extension g (snd x1) (snd x2) in 
+  let r = GR.past_extension g (snd x1) (snd x2) in 
   (g,r)
 
 let () =
   print_endline "x3";
   print x3
-
-(*
-let g = G.of_string "1 2"
-
-let () = 
-  G.print_arrows g;
-  G.print_neighbors g;
-*)
