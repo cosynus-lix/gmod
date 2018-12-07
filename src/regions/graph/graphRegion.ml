@@ -214,10 +214,8 @@ module Raw(G:Graph)(DD:HalfLineRegion.S) = struct
     let arrows = !arrows in
     { vertices ; arrows }
 
-(*
-  let past_extension graph r1 r2 = failwith "NIY"
-*)
-  
+(* TODO: closure and interior *)
+
 end (* Raw *)
 
 module Make(G:Graph)(DD:HalfLineRegion.S):S with type arrow = G.arrow and type vertex = G.vertex

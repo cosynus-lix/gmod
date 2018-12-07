@@ -254,8 +254,6 @@ let join at1 at2 =
     assert false
   with Exit -> !answer
 
-
-
 let remove_zero at = 
   match at with
   | it :: at -> (
@@ -263,14 +261,12 @@ let remove_zero at =
     with I.Undefined -> at)
   | [] -> []
 
-
 let add_zero at = 
   match at with
   | it :: at' -> (
     try (I.add_zero it) :: at'  
     with I.Undefined -> I.(atom zero) :: at)
   | [] -> [I.(atom zero)]
-
 
 (* Direction *)
 
@@ -439,5 +435,7 @@ let next next_value re =
 
 end (* Raw *)
 
-module Make(I:NonEmptyInterval.S): S with type value = I.value and type interval = I.t 
-  = Raw(I)
+module Make(I:NonEmptyInterval.S): S 
+  with type value = I.value
+  and type interval = I.t 
+= Raw(I)
