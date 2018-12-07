@@ -173,7 +173,6 @@ module Raw(G:Graph)(DD:DashDot.S) = struct
     let current = ref (full graph).vertices in
     let next = ref VSet.empty in
     let past_extension add_unbounded_component a =
-      let () = Printf.printf "add_unbounded_component = %b\n" add_unbounded_component in
       let dd1 = get_dd a !arrows_1 in
       let dd2 = get_dd a !arrows_2 in
       let dd1 = 
@@ -182,10 +181,9 @@ module Raw(G:Graph)(DD:DashDot.S) = struct
           let lcc_dd2 = 
             try DD.(of_interval (HalfLine.last_connected_component dd2)) 
             with DD.Undefined -> DD.empty in
-          let () = Printf.printf "lcc_dd2 = %s\n" (DD.HalfLine.string_of lcc_dd2) in
           if not (DD.HalfLine.is_bounded lcc_dd2) 
-          then (print_endline "activated"; DD.join dd1 lcc_dd2)
-          else (print_endline "not activated"; dd1))
+          then DD.join dd1 lcc_dd2
+          else dd1)
         else dd1 in
       let dd3 = DD.HalfLine.past_extension dd1 dd2 in
       let src_a = G.src a graph in
@@ -201,10 +199,10 @@ module Raw(G:Graph)(DD:DashDot.S) = struct
           (if not in_r2 then arrows_2 := add_zeroes_vertex graph src_a !arrows_2);
           vertices := VSet.add src_a !vertices;
           next := VSet.add src_a !next) in 
-      arrows := AMap.add a dd3 !arrows in (* end of past_extension *)
+      arrows := AMap.add a dd3 !arrows in
     let past_cone v = 
-      G.iter_in v 
-        (Printf.printf "v = %s\n" (G.string_of_vertex v);past_extension (VSet.(mem v !vertices || mem v r1.vertices))) 
+      G.iter_in v
+        (past_extension (VSet.(mem v !vertices || mem v r1.vertices))) 
         graph in
     let () = 
       while not (VSet.is_empty !current) do

@@ -106,7 +106,7 @@ module G = struct
   S.iter f outgoing_arrows
 
   let iter_in v f g = 
-    let ingoing_arrows = get_future_neighbors v g.neighbors in
+    let ingoing_arrows = get_past_neighbors v g.neighbors in
   S.iter f ingoing_arrows
 
 (*
