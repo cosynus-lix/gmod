@@ -10,46 +10,37 @@ module type S = sig
   type interval
   type t
 
-  (** {2 Display} *)
-
-  val string_of: t -> string
-
-  (** {2 Constants} *)
-
-  val empty: t
-  val full: t
-
   (** {2 Constructor} *)
 
   val of_interval: interval -> t
-
-  (** {2 Destructor} *)
-
-  val connected_components: t -> interval list
-  val last_connected_component: t -> interval
+  
+  (** {2 Boolean structure} *)
+  
+  val empty: t
+  val full: t
+  val complement: t -> t
+  val meet: t -> t -> t
+  val difference: t -> t -> t
+  val join: t -> t -> t
   
   (** {2 Tests} *)
   
   val is_empty: t -> bool
   val mem: value -> t -> bool
   val is_included: t -> t -> bool
-  val contains_zero: t -> bool
   val is_bounded: t -> bool
-
-  (** {2 Enumerator} *)
-
-  val next: (value -> value) -> t -> t
   
-  (** {2 Boolean operators} *)
+  (** {2 Dealing with zero} *)
   
-  val meet: t -> t -> t
-  val join: t -> t -> t
-  val complement: t -> t
-  val difference: t -> t -> t
+  val contains_zero: t -> bool
   val add_zero: t -> t
   val remove_zero: t -> t
 
-  (** {2 Directed topology} *)
+  (** {2 Topology} *)
+
+  val connected_components: t -> interval list
+  val first_connected_component: t -> interval
+  val last_connected_component: t -> interval
 
   val interior: t -> t
   (** [interior x] is the {i interior} of the set [x] with respect to the 
@@ -60,6 +51,8 @@ module type S = sig
   (** [closure x] is the {i closure} of the set [x] with respect to the 
   topology of the half-line/circle depending on the module from which it is 
   called.*)
+
+  (** {2 Direction} *)
 
   val future_extension: t -> t -> t
   (** [future_extension x y] is the set of points {i q} of the union of [x] 
@@ -72,6 +65,14 @@ module type S = sig
   [y] such that there exists a point {i p} of [x] such the 
   interval/anticlockwise arc from {i q} to {i p} is contained in the union of 
   [x] and [y].*)
+
+  (** {2 Display} *)
+
+  val string_of: t -> string
+
+  (** {2 Enumerator} *)
+
+  val next: (value -> value) -> t -> t
 
 end (* S *)
 
@@ -94,36 +95,36 @@ let head_and_tail a =
   | it::a -> it,a
   | [] -> raise Undefined
 
+(* Constructor *)
+
+let of_interval it = [it]
+
 (* Constants *)
 
 let empty = []
 let full = [I.terminal true I.zero]
+
+(* Tests *)
+
 let is_empty a = (a = [])
 let is_full a = (a = full)
 
-(* Constructor / Destructor *)
-
-let of_interval it = [it]
-let connected_components a = a
-
-let first_connected_component at = 
-  match at with 
-  | it :: _ -> it
-  | _ -> raise Undefined
-
-(* Display *)
-
-let string_of a = 
-  if is_empty a then "Ø"
-  else
-    let string_of = I.string_of "[" "]" "{" "}" "+oo" in
-    List.fold_right (fun x accu -> (string_of x)^" "^accu) a "" 
-
-(* Membership and inclusion *)
-
-let contains_zero at = 
-  try I.contains_zero (first_connected_component at)
-  with Undefined -> false
+let mem v at =
+  let at = ref at in
+  let answer = ref false in
+  let () =
+    try
+      while true do
+        match !at with
+        | (it::at') -> (
+          if (try I.mem v (I.strict_lower_bounds it) with I.Undefined -> false)
+          then (answer := false; raise Exit)
+          else if I.mem v it then (answer := true; raise Exit)
+            else at := at')
+        | _ -> raise Exit
+      done 
+    with Exit -> () in
+  !answer
 
 let is_included at1 at2 =
   let answer = ref false in
@@ -144,46 +145,7 @@ let is_included at1 at2 =
     with Exit -> () in
   !answer
 
-let mem v at =
-  let at = ref at in
-  let answer = ref false in
-  let () =
-    try
-      while true do
-        match !at with
-        | (it::at') -> (
-          if (try I.mem v (I.strict_lower_bounds it) with I.Undefined -> false)
-          then (answer := false; raise Exit)
-          else if I.mem v it then (answer := true; raise Exit)
-            else at := at')
-        | _ -> raise Exit
-      done 
-    with Exit -> () in
-  !answer
-
-(* Binary operators *)
-  
-let meet at1 at2 =
-  let answer = ref [] in
-  let at1 = ref at1 in
-  let at2 = ref at2 in  
-  let () =
-    try
-      while true do
-        let it1,at3 = head_and_tail !at1 in
-        let it2,at4 = head_and_tail !at2 in
-        let () = try answer := (I.meet it1 it2) :: !answer
-          with I.Undefined -> () in
-        if I.is_in_the_initial_hull_of it1 it2
-        then at1 := at3
-        else at2 := at4
-      done 
-    with Undefined -> () in
-  List.rev !answer
-
-let meet at1 at2 =
-  if is_empty at1 || is_empty at2 then empty 
-  else meet at1 at2
+(* Boolean structure *)
 
 let complement at =
   let answer = ref empty in
@@ -211,6 +173,28 @@ let complement at =
     done;
     assert false
   with Exit -> List.rev !answer
+  
+let meet at1 at2 =
+  let answer = ref [] in
+  let at1 = ref at1 in
+  let at2 = ref at2 in  
+  let () =
+    try
+      while true do
+        let it1,at3 = head_and_tail !at1 in
+        let it2,at4 = head_and_tail !at2 in
+        let () = try answer := (I.meet it1 it2) :: !answer
+          with I.Undefined -> () in
+        if I.is_in_the_initial_hull_of it1 it2
+        then at1 := at3
+        else at2 := at4
+      done 
+    with Undefined -> () in
+  List.rev !answer
+
+let meet at1 at2 =
+  if is_empty at1 || is_empty at2 then empty 
+  else meet at1 at2
 
 let difference at1 at2 = meet at1 (complement at2)
 
@@ -254,12 +238,16 @@ let join at1 at2 =
     assert false
   with Exit -> !answer
 
-let remove_zero at = 
-  match at with
-  | it :: at -> (
-    try (I.remove_zero it) :: at
-    with I.Undefined -> at)
-  | [] -> []
+(* Dealing with zero *)
+
+let first_connected_component at = 
+  match at with 
+  | it :: _ -> it
+  | _ -> raise Undefined
+
+let contains_zero at = 
+  try I.contains_zero (first_connected_component at)
+  with Undefined -> false
 
 let add_zero at = 
   match at with
@@ -267,6 +255,55 @@ let add_zero at =
     try (I.add_zero it) :: at'  
     with I.Undefined -> I.(atom zero) :: at)
   | [] -> [I.(atom zero)]
+
+let remove_zero at = 
+  match at with
+  | it :: at -> (
+    try (I.remove_zero it) :: at
+    with I.Undefined -> at)
+  | [] -> []
+
+(* Topology *)
+
+let connected_components a = a
+
+let rec last_connected_component at = 
+  match at with
+  | [it] -> it
+  | _::at -> last_connected_component at
+  | [] -> raise Undefined
+
+let is_bounded at =
+  try I.is_bounded (last_connected_component at)
+  with Undefined -> true
+
+let interior_is_bounded = ref false
+
+let rec interior at =
+  match at with 
+  | it :: at -> (
+    let () = 
+      if at = [] 
+      then interior_is_bounded := I.is_bounded it in
+    try (I.interior it) :: interior at 
+    with I.Undefined -> interior at)
+  | _ -> empty
+
+let closure_is_bounded = ref true
+
+let rec closure at =
+  match at with
+  | it1 :: ((it2 :: at'') as at') -> (
+    let it1 = I.closure it1 in
+    try 
+      let it1 = I.ordered_join it1 (I.closure it2) in 
+      closure (it1 :: at'')
+    with I.Undefined -> it1 :: closure at')
+  | [it] -> 
+    let it = I.closure it in
+    let () = closure_is_bounded := I.is_bounded it in
+    of_interval it
+  | [] -> closure_is_bounded := true; empty
 
 (* Direction *)
 
@@ -358,43 +395,14 @@ let past_extension at1 at2 =
     with Exit -> () in
   !answer
 
-let rec last_connected_component at = 
-  match at with
-  | [it] -> it
-  | _::at -> last_connected_component at
-  | [] -> raise Undefined
 
-let is_bounded at =
-  try I.is_bounded (last_connected_component at)
-  with Undefined -> true
+(* Display *)
 
-let interior_is_bounded = ref false
-
-let rec interior at =
-  match at with 
-  | it :: at -> (
-    let () = 
-      if at = [] 
-      then interior_is_bounded := I.is_bounded it in
-    try (I.interior it) :: interior at 
-    with I.Undefined -> interior at)
-  | _ -> empty
-
-let closure_is_bounded = ref true
-
-let rec closure at =
-  match at with
-  | it1 :: ((it2 :: at'') as at') -> (
-    let it1 = I.closure it1 in
-    try 
-      let it1 = I.ordered_join it1 (I.closure it2) in 
-      closure (it1 :: at'')
-    with I.Undefined -> it1 :: closure at')
-  | [it] -> 
-    let it = I.closure it in
-    let () = closure_is_bounded := I.is_bounded it in
-    of_interval it
-  | [] -> closure_is_bounded := true; empty
+let string_of a = 
+  if is_empty a then "Ø"
+  else
+    let string_of = I.string_of "[" "]" "{" "}" "+oo" in
+    List.fold_right (fun x accu -> (string_of x)^" "^accu) a "" 
 
 (* Enumerator *)
 
