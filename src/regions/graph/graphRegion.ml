@@ -229,15 +229,15 @@ module Raw(G:Graph)(DD:HalfLineRegion.S) = struct
 
 let vertex_belongs_to_interior g v arrows =
   let ingoing = 
-      try 
-      G.iter_in v 
-        (fun a -> 
+    try 
+      G.iter_in v
+        (fun a ->
           if DD.is_bounded (get_dd a arrows) 
           then raise Exit) g;
       true
     with Exit -> false in
   let outgoing = 
-    try 
+    try
       G.iter_out v 
         (fun a -> 
           if not (DD.is_neighbourhood_of_zero (get_dd a arrows))
