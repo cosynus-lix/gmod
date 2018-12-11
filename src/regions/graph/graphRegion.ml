@@ -216,6 +216,47 @@ module Raw(G:Graph)(DD:HalfLineRegion.S) = struct
 
 (* TODO: closure and interior *)
 
+(* Définir une fontion arrow map *)
+
+(*
+  algorithme pour la fonction «interior r» :
+  1) pour chaque sommet v du graphe appartenant à r, tester si
+    1.1) chaque flèche partant de v porte une région dont la première composante connexe est de la forme [0,_[
+    1.2) chaque flèche allant vers v porte une région non bornée
+    1.3) lorsque les conditions 2.1 et 2.2 sont satisfaites, v appartient à l'intérieur
+  2) appliquer HalfLineRegion.interior à toutes les flèches.
+*)
+
+let vertex_belongs_to_interior g v arrows =
+  let ingoing = 
+      try 
+      G.iter_in v 
+        (fun a -> 
+          if DD.is_bounded (get_dd a arrows) 
+          then raise Exit) g;
+      true
+    with Exit -> false in
+  let outgoing = 
+    try 
+      G.iter_out v 
+        (fun a -> 
+          if not (DD.is_neighbourhood_of_zero (get_dd a arrows))
+          then raise Exit) g;
+      true
+    with Exit -> false in
+  ingoing && outgoing
+  
+let interior g r =
+  let vertices = VSet.fold 
+    (fun v accu ->
+      if vertex_belongs_to_interior g v r.arrows 
+      then VSet.add v accu 
+      else accu) r.vertices VSet.empty in
+  let arrows = AMap.map DD.interior r.arrows in
+  { vertices ; arrows }
+
+let closure g r = failwith "GraphRegion.closure NIY"
+
 end (* Raw *)
 
 module Make(G:Graph)(DD:HalfLineRegion.S):S with type arrow = G.arrow and type vertex = G.vertex

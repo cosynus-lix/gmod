@@ -35,6 +35,7 @@ module type S = sig
   val contains_zero: t -> bool
   val add_zero: t -> t
   val remove_zero: t -> t
+  val is_neighbourhood_of_zero: t -> bool
 
   (** {2 Topology} *)
 
@@ -104,6 +105,35 @@ let of_interval it = [it]
 let empty = []
 let full = [I.terminal true I.zero]
 
+(* Dealing with zero *)
+
+let first_connected_component at = 
+  match at with 
+  | it :: _ -> it
+  | _ -> raise Undefined
+
+let contains_zero at = 
+  try I.contains_zero (first_connected_component at)
+  with Undefined -> false
+
+let add_zero at = 
+  match at with
+  | it :: at' -> (
+    try (I.add_zero it) :: at'  
+    with I.Undefined -> I.(atom zero) :: at)
+  | [] -> [I.(atom zero)]
+
+let remove_zero at = 
+  match at with
+  | it :: at -> (
+    try (I.remove_zero it) :: at
+    with I.Undefined -> at)
+  | [] -> []
+
+let is_neighbourhood_of_zero at =
+  try I.is_neighbourhood_of_zero (first_connected_component at)
+  with Undefined -> false
+
 (* Tests *)
 
 let is_empty a = (a = [])
@@ -144,7 +174,7 @@ let is_included at1 at2 =
       done
     with Exit -> () in
   !answer
-
+  
 (* Boolean structure *)
 
 let complement at =
@@ -237,31 +267,6 @@ let join at1 at2 =
     done;
     assert false
   with Exit -> !answer
-
-(* Dealing with zero *)
-
-let first_connected_component at = 
-  match at with 
-  | it :: _ -> it
-  | _ -> raise Undefined
-
-let contains_zero at = 
-  try I.contains_zero (first_connected_component at)
-  with Undefined -> false
-
-let add_zero at = 
-  match at with
-  | it :: at' -> (
-    try (I.add_zero it) :: at'  
-    with I.Undefined -> I.(atom zero) :: at)
-  | [] -> [I.(atom zero)]
-
-let remove_zero at = 
-  match at with
-  | it :: at -> (
-    try (I.remove_zero it) :: at
-    with I.Undefined -> at)
-  | [] -> []
 
 (* Topology *)
 

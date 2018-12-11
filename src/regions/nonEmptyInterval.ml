@@ -95,6 +95,9 @@ module type S = sig
   val mem: value -> t -> bool
   val contains_zero: t -> bool
   val is_included: t -> t -> bool
+  val is_initial: t -> bool
+  val is_neighbourhood_of_zero: t -> bool
+  val is_terminal: t -> bool
   
 end (* S *)
 
@@ -264,6 +267,18 @@ let is_included it1 it2 =
   is_in_the_initial_hull_of it1 it2
   && is_in_the_terminal_hull_of it1 it2
     
+let is_terminal it = match it with
+  | Te(_,_) -> true
+  | _ -> false
+  
+let is_initial it = match it with
+  | Te (a,x) | Bn (a,x,_,_) -> a && (x = zero)
+  | Si x -> x = zero
+
+let is_neighbourhood_of_zero it = match it with
+  | Te (a,x) | Bn (a,x,_,_) -> a && (x = zero)
+  | Si _ -> false
+
 (* Compare *)
 
 let compare it1 it2 = 
