@@ -3,7 +3,7 @@ COMMON = ../../common/
 LEGACY_COMMON = ../../legacy/trunk_common/
 GEOREAL = $(LEGACY_COMMON)/geometric_realization/
 SOURCES = ../bound.ml ../nonEmptyInterval.ml ../halfLineRegion.ml graphRegion.ml \
-$(COMMON)integer.ml ../dashDotOverInteger.ml \
+$(COMMON)integer.ml ../halfLineRegionOverInteger.ml \
 test.ml
 RESULT = main
 ANNOTATE = true
