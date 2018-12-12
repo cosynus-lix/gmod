@@ -7,7 +7,6 @@ $(COMMON)integer.ml $(LEGACY_COMMON)common.ml  \
 $(GEOREAL)ODA.ml \
 nonEmptyInterval.ml halfLineRegion.ml \
 dashDotOverInteger.ml \
-parser.mly \
 test.ml
 RESULT = main
 ANNOTATE = true
