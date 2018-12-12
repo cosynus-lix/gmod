@@ -170,6 +170,7 @@ module Raw(G:Graph)(DD:HalfLineRegion.S) = struct
   (* To be tested *)
   (* BUG: the case where the target belongs to the model and the arrow carries 
   an unbounded region is not taken into account. *)
+  (* TODO: check that it has been done *)
 
   let past_extension graph r1 r2 =
     let arrows_1 = ref r1.arrows in

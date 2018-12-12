@@ -172,11 +172,29 @@ module GR = struct
     (g,r)
 
 (*
-  A vertex is added by 
+  A half-line is described as a sequence on intervals
+  
+  Intervals are 
+  
+  [a b] [a b[ ]a b[ ]a b] (bounded with a < b)
+
+  [a oo[ ]a oo[ (unbounded)
+
+  {a} (singleton)
+
+  A vertex is added to the underlying graph by 
     <vertex> ;
-  An arrow is added by
-    <source> <target> : <description of a region on half-line> ;
+  
+  or 
+  
+    <vertex>: ;
     
+  A vertex is added to the underlying graph and to the region by 
+    <vertex>:* ;
+    
+  An arrow is added to the underlying graph and to the region by
+    <source> <target> : <description of a region on half-line> ;
+  
   Different arrows may have the same source and the same target.
 *)
 
@@ -244,7 +262,6 @@ let zero_normalize (g,r) = g , GR.zero_normalize g r
 
 (* Tests *)
 
-(*
 let x1 = 
 "
 0 1:;
@@ -281,10 +298,11 @@ let x3 =
 let () =
   print_endline "x3";
   print x3
-*)
 
+(*
 let x = "
-0 0:[0 1[;0:*
+0 1:; 
+0:*;1:*;2:*
 "
 
 let x = GR.of_string x
@@ -296,3 +314,4 @@ let () = print_endline "x"; print (g,r)
 let x =  g, GR.interior g r
 
 let () = print_endline "interior x"; print x
+*)
