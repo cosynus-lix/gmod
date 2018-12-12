@@ -31,7 +31,7 @@ module type S = sig
   val is_bounded: t -> bool
   
   (** {2 Dealing with zero} *)
-  
+
   val contains_zero: t -> bool
   val add_zero: t -> t
   val remove_zero: t -> t
@@ -111,6 +111,12 @@ let first_connected_component at =
   match at with 
   | it :: _ -> it
   | _ -> raise Undefined
+
+let rec last_connected_component at = 
+  match at with
+  | [it] -> it
+  | _::at -> last_connected_component at
+  | [] -> raise Undefined
 
 let contains_zero at = 
   try I.contains_zero (first_connected_component at)
@@ -271,12 +277,6 @@ let join at1 at2 =
 (* Topology *)
 
 let connected_components a = a
-
-let rec last_connected_component at = 
-  match at with
-  | [it] -> it
-  | _::at -> last_connected_component at
-  | [] -> raise Undefined
 
 let is_bounded at =
   try I.is_bounded (last_connected_component at)

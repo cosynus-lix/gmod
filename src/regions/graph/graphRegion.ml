@@ -35,12 +35,18 @@ module Raw(G:Graph)(DD:HalfLineRegion.S) = struct
 
   type t = { vertices:VSet.t ; arrows: DD.t AMap.t }
   
+  (* Invariant: if v belongs to vertices then zero belongs to every half-line 
+  region carried by an arrow outgoing from v; if v does not belong to vertices 
+  then none of the half-line regions carried by the arrows outgoing from v 
+  contains zero*)
+  
   let empty = { vertices = VSet.empty ; arrows = AMap.empty }
 
   let full graph = 
     let update v (vertices,arrows) = 
       let vertices = VSet.add v vertices in
-      let arrows = G.fold_out v (fun a arrows -> AMap.add a DD.full arrows) graph arrows in
+      let f = fun a arrows -> AMap.add a DD.full arrows in
+      let arrows = G.fold_out v f graph arrows in
       (vertices,arrows) in
     let empty = (VSet.empty,AMap.empty) in
     let (vertices,arrows) = 
@@ -214,50 +220,63 @@ module Raw(G:Graph)(DD:HalfLineRegion.S) = struct
     let arrows = !arrows in
     { vertices ; arrows }
 
-(* TODO: closure and interior *)
-
-(* Définir une fontion arrow map *)
-
-(*
-  algorithme pour la fonction «interior r» :
-  1) pour chaque sommet v du graphe appartenant à r, tester si
-    1.1) chaque flèche partant de v porte une région dont la première composante connexe est de la forme [0,_[
-    1.2) chaque flèche allant vers v porte une région non bornée
-    1.3) lorsque les conditions 2.1 et 2.2 sont satisfaites, v appartient à l'intérieur
-  2) appliquer HalfLineRegion.interior à toutes les flèches.
-*)
+(* TODO: test closure and interior *)
 
 let vertex_belongs_to_interior g v arrows =
-  let ingoing = 
-    try 
-      G.iter_in v
-        (fun a ->
-          if DD.is_bounded (get_dd a arrows) 
-          then raise Exit) g;
-      true
-    with Exit -> false in
-  let outgoing = 
-    try
-      G.iter_out v 
-        (fun a -> 
-          if not (DD.is_neighbourhood_of_zero (get_dd a arrows))
-          then raise Exit) g;
-      true
-    with Exit -> false in
-  ingoing && outgoing
-  
+  (try 
+    G.iter_in v
+      (fun a ->
+        if DD.is_bounded (get_dd a arrows) 
+        then raise Exit) g;
+    true
+  with Exit -> false)
+  &&
+  (try
+    G.iter_out v 
+      (fun a -> 
+        if not (DD.contains_zero (get_dd a arrows))
+        then raise Exit) g;
+    true
+  with Exit -> false)
+
 let interior g r =
-  let vertices = VSet.fold 
-    (fun v accu ->
-      if vertex_belongs_to_interior g v r.arrows 
-      then VSet.add v accu 
-      else accu) r.vertices VSet.empty in
-  let arrows = AMap.map DD.interior r.arrows in
+  let arrows = ref (AMap.map DD.interior r.arrows) in
+  let f = fun v accu ->
+    if vertex_belongs_to_interior g v !arrows 
+    then VSet.add v accu 
+    else (arrows := remove_zeroes_vertex g v !arrows; accu) in 
+  let vertices = VSet.fold f r.vertices VSet.empty in
+  let arrows = !arrows in
   { vertices ; arrows }
 
-let closure g r = failwith "GraphRegion.closure NIY"
+let vertex_belongs_to_closure g v arrows =
+  (try 
+    G.iter_in v
+      (fun a ->
+        if not (DD.is_bounded (get_dd a arrows)) 
+        then raise Exit) g;
+    false
+  with Exit -> true)
+  || 
+  (try
+    G.iter_out v 
+      (fun a ->
+        if DD.(contains_zero (get_dd a arrows))
+        then raise Exit) g;
+    true
+  with Exit -> true)
+
+let closure g r =
+  let arrows = ref (AMap.map DD.closure r.arrows) in
+  let f = fun v accu ->
+    if vertex_belongs_to_closure g v !arrows
+    then (arrows := add_zeroes_vertex g v !arrows; VSet.add v accu) 
+    else accu in
+  let vertices = G.fold_vertex f g VSet.empty in
+  let arrows = !arrows in
+  { vertices ; arrows }
 
 end (* Raw *)
 
 module Make(G:Graph)(DD:HalfLineRegion.S):S with type arrow = G.arrow and type vertex = G.vertex
-  = Raw(G:Graph)(DD:HalfLineRegion.S) 
+  = Raw(G:Graph)(DD:HalfLineRegion.S)

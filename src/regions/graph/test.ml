@@ -244,6 +244,7 @@ let zero_normalize (g,r) = g , GR.zero_normalize g r
 
 (* Tests *)
 
+(*
 let x1 = 
 "
 0 1:;
@@ -280,3 +281,18 @@ let x3 =
 let () =
   print_endline "x3";
   print x3
+*)
+
+let x = "
+0 0:[0 1[;0:*
+"
+
+let x = GR.of_string x
+
+let (g,r) = zero_normalize x
+
+let () = print_endline "x"; print (g,r)
+
+let x =  g, GR.interior g r
+
+let () = print_endline "interior x"; print x
