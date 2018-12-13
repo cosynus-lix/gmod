@@ -42,6 +42,8 @@ module Raw(G:Graph)(DD:HalfLineRegion.S) = struct
   
   let empty = { vertices = VSet.empty ; arrows = AMap.empty }
 
+  let is_empty {vertices;arrows} = VSet.is_empty vertices && AMap.is_empty arrows 
+
   let full graph = 
     let update v (vertices,arrows) = 
       let vertices = VSet.add v vertices in
@@ -58,7 +60,10 @@ module Raw(G:Graph)(DD:HalfLineRegion.S) = struct
     { vertices ; arrows }
 
   let add_arrow a dd {vertices;arrows} =
-    let arrows = AMap.add a dd arrows in
+    let arrows = 
+      if DD.is_empty dd 
+      then AMap.remove a arrows
+      else AMap.add a dd arrows in
     { vertices ; arrows }
 
   let get_dd a arrows = 
@@ -77,7 +82,9 @@ module Raw(G:Graph)(DD:HalfLineRegion.S) = struct
             if VSet.mem v vertices 
             then DD.add_zero result
             else DD.remove_zero result in
-          AMap.add a result arrows in 
+          if DD.is_empty result 
+          then AMap.remove a arrows
+          else AMap.add a result arrows in 
         G.fold_out v add graph arrows in
       let arrows = G.fold_vertex add graph AMap.empty in
       { vertices ; arrows }
@@ -97,7 +104,10 @@ module Raw(G:Graph)(DD:HalfLineRegion.S) = struct
 
   let remove_zeroes_vertex graph v arrows = 
     let remove_zero a arrows =
-      AMap.add a (DD.remove_zero (get_dd a arrows)) arrows in
+      let dd = DD.remove_zero (get_dd a arrows) in
+      if DD.is_empty dd
+      then AMap.remove a arrows
+      else AMap.add a dd arrows in
     G.fold_out v remove_zero graph arrows  
 
   let remove_zeroes graph v_set a_map =
@@ -155,7 +165,10 @@ module Raw(G:Graph)(DD:HalfLineRegion.S) = struct
           (if not in_r2 then arrows_2 := add_zeroes_vertex graph tgt_a !arrows_2);
           vertices := VSet.add tgt_a !vertices;
           next := VSet.add tgt_a !next) in 
-      arrows := AMap.add a dd3 !arrows in
+      arrows := 
+        if DD.is_empty dd3 
+        then AMap.remove a !arrows 
+        else AMap.add a dd3 !arrows in
     let future_cone v = G.iter_out v future_extension graph in
     let () = 
       while not (VSet.is_empty !current) do
@@ -206,7 +219,10 @@ module Raw(G:Graph)(DD:HalfLineRegion.S) = struct
           (if not in_r2 then arrows_2 := add_zeroes_vertex graph src_a !arrows_2);
           vertices := VSet.add src_a !vertices;
           next := VSet.add src_a !next) in 
-      arrows := AMap.add a dd3 !arrows in
+      arrows := 
+        if DD.is_empty dd3 
+        then AMap.remove a !arrows 
+        else AMap.add a dd3 !arrows in
     let past_cone v = 
       G.iter_in v
         (past_extension (VSet.(mem v !vertices || mem v r1.vertices))) 

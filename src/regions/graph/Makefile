@@ -2,8 +2,11 @@ OCAMLMAKEFILE = ../../OCamlMakefile
 COMMON = ../../common/
 LEGACY_COMMON = ../../legacy/trunk_common/
 GEOREAL = $(LEGACY_COMMON)/geometric_realization/
-SOURCES = ../bound.ml ../nonEmptyInterval.ml ../halfLineRegion.ml graphRegion.ml \
+SOURCES = ../bound.ml ../nonEmptyInterval.ml ../halfLineRegion.ml \
+graphRegion.ml \
 $(COMMON)integer.ml ../halfLineRegionOverInteger.ml \
+graphRegionOverInteger.ml \
+parser.mly lexer.mll \
 test.ml
 RESULT = main
 ANNOTATE = true

@@ -4,11 +4,11 @@ module HL_legacy = ODA.RawHalfLine(Integer)
 
 module Ci_legacy = ODA.RawCircle(Integer)
 
-module DDI = DashDotOverInteger
+module HLOI = HalfLineRegionOverInteger
 
-module I = DDI.I
+module I = HLOI.I
 
-module DD = DDI.DD
+module HL = HLOI.HL
 
 let interval_to_legacy b = 
   match b with 
@@ -49,9 +49,9 @@ let test_unary op_name operator operand expected_result =
   if result <> expected_result
   then Printf.printf "%s\n %s\n= %s\nbut\n %s\nwas expected.\n%!"
     op_name
-    (DD.string_of operand)
-    (DD.string_of result)
-    (DD.string_of expected_result)
+    (HL.string_of operand)
+    (HL.string_of result)
+    (HL.string_of expected_result)
 
 let test_binary op_name operator operand1 operand2 expected_result =
   let result = operator operand1 operand2 in
@@ -59,16 +59,16 @@ let test_binary op_name operator operand1 operand2 expected_result =
   if result <> expected_result
   then Printf.printf "%s\n %s\n %s\n= %s\nbut\n %s\nwas expected.\n%!"
     op_name
-    (DD.string_of operand1)
-    (DD.string_of operand2)
-    (DD.string_of result)
-    (DD.string_of expected_result)
+    (HL.string_of operand1)
+    (HL.string_of operand2)
+    (HL.string_of result)
+    (HL.string_of expected_result)
 
 let exhaustive_test_binary oracle bin_op max dummy string_of_operand string_of_result =
   let next n = if n < max then n + 1 else raise Exit in
-  let next = DD.next next in
-  let at1 = ref DD.empty in
-  let at2 = ref DD.empty in
+  let next = HL.next next in
+  let at1 = ref HL.empty in
+  let at2 = ref HL.empty in
   let fe1 = ref dummy in
   let fe2 = ref dummy in
   let ok = ref true in
@@ -93,7 +93,7 @@ let exhaustive_test_binary oracle bin_op max dummy string_of_operand string_of_r
     begin
       try at2 := next !at2
       with Exit -> (
-        try at1 := next !at1; at2 := DD.empty 
+        try at1 := next !at1; at2 := HL.empty 
         with Exit -> ok := false);
     end;
     if !counter = one_percent 
@@ -110,60 +110,60 @@ let wrapper legacy_bin_op =
 
 let exhaustive_join max = 
   let oracle = wrapper Legacy.union in
-  let bin_op = DD.join in
+  let bin_op = HL.join in
   print_endline "Testing DashDot2.join";
-  exhaustive_test_binary oracle bin_op max DD.empty DD.string_of DD.string_of
+  exhaustive_test_binary oracle bin_op max HL.empty HL.string_of HL.string_of
 
 let exhaustive_meet max = 
   let oracle = wrapper Legacy.intersection in
-  let bin_op = DD.meet in
+  let bin_op = HL.meet in
   print_endline "Testing DashDot2.meet";
-  exhaustive_test_binary oracle bin_op max DD.empty DD.string_of DD.string_of
+  exhaustive_test_binary oracle bin_op max HL.empty HL.string_of HL.string_of
 
 let exhaustive_difference max = 
   let oracle = wrapper Legacy.difference in
-  let bin_op = DD.difference in
+  let bin_op = HL.difference in
   print_endline "Testing DashDot2.difference";
-  exhaustive_test_binary oracle bin_op max DD.empty DD.string_of DD.string_of
+  exhaustive_test_binary oracle bin_op max HL.empty HL.string_of HL.string_of
 
 let exhaustive_future_extension_on_half_line max = 
   let oracle = wrapper (fun x y -> Legacy.union x (HL_legacy.future_extension x y)) in
-  let bin_op = DD.future_extension in
+  let bin_op = HL.future_extension in
   print_endline "Testing DashDot2.HalfLine.future_extension";
-  exhaustive_test_binary oracle bin_op max DD.empty DD.string_of DD.string_of
+  exhaustive_test_binary oracle bin_op max HL.empty HL.string_of HL.string_of
 
 let exhaustive_past_extension_on_half_line max = 
   let oracle = wrapper (fun x y -> Legacy.union x (HL_legacy.past_extension x y)) in
-  let bin_op = DD.past_extension in
+  let bin_op = HL.past_extension in
   print_endline "Testing DashDot2.HalfLine.past_extension";
-  exhaustive_test_binary oracle bin_op max DD.empty DD.string_of DD.string_of
+  exhaustive_test_binary oracle bin_op max HL.empty HL.string_of HL.string_of
 
 (*
 let exhaustive_future_extension_on_circle max =   
   let oracle = wrapper (fun x y -> Legacy.union x (Ci_legacy.future_extension x y)) in
-  let bin_op = DD.Circle.future_extension in
+  let bin_op = HL.Circle.future_extension in
   print_endline "Testing DashDot2.Circle.future_extension";
-  exhaustive_test_binary oracle bin_op max DD.empty DD.string_of DD.string_of
+  exhaustive_test_binary oracle bin_op max HL.empty HL.string_of HL.string_of
 *)
 
 (*
 let exhaustive_past_extension_on_circle max = 
   let oracle = wrapper (fun x y -> Legacy.union x (Ci_legacy.past_extension x y)) in
-  let bin_op = DD.Circle.past_extension in
+  let bin_op = HL.Circle.past_extension in
   print_endline "Testing DashDot2.Circle.past_extension";
-  exhaustive_test_binary oracle bin_op max DD.empty DD.string_of DD.string_of
+  exhaustive_test_binary oracle bin_op max HL.empty HL.string_of HL.string_of
 *)
 
 let exhaustive_is_included max = 
   let oracle at1 at2 = Legacy.is_included (dd2_to_legacy at1) (dd2_to_legacy at2) in
-  let bin_op = DD.is_included in
+  let bin_op = HL.is_included in
   print_endline "Testing DashDot2.is_included";
-  exhaustive_test_binary oracle bin_op max false DD.string_of string_of_bool 
+  exhaustive_test_binary oracle bin_op max false HL.string_of string_of_bool 
 
 let exhaustive_test_unary oracle un_op max dummy string_of_operand string_of_result =
   let next n = if n < max then n + 1 else raise Exit in
-  let next = DD.next next in
-  let at = ref DD.empty in
+  let next = HL.next next in
+  let at = ref HL.empty in
   let fe1 = ref dummy in
   let fe2 = ref dummy in
   let ok = ref true in
@@ -197,49 +197,49 @@ let wrapper legacy_un_op =
 
 let exhaustive_complement max = 
   let oracle = wrapper Legacy.complement in
-  let un_op = DD.complement in
+  let un_op = HL.complement in
   print_endline "Testing DashDot2.complement";
-  exhaustive_test_unary oracle un_op max DD.empty DD.string_of DD.string_of
+  exhaustive_test_unary oracle un_op max HL.empty HL.string_of HL.string_of
 
 let exhaustive_closure_on_half_line max = 
   let oracle = wrapper HL_legacy.closure in
-  let un_op = DD.closure in
+  let un_op = HL.closure in
   print_endline "Testing DashDot2.closure on half-line";
-  exhaustive_test_unary oracle un_op max DD.empty DD.string_of DD.string_of
+  exhaustive_test_unary oracle un_op max HL.empty HL.string_of HL.string_of
 
 (*
 let exhaustive_closure_on_circle max = 
   let oracle = wrapper Ci_legacy.closure in
-  let un_op = DD.Circle.closure in
+  let un_op = HL.Circle.closure in
   print_endline "Testing DashDot2.closure on circle";
-  exhaustive_test_unary oracle un_op max DD.empty DD.string_of DD.string_of
+  exhaustive_test_unary oracle un_op max HL.empty HL.string_of HL.string_of
 *)
 
 let exhaustive_interior_on_half_line max = 
   let oracle = wrapper HL_legacy.interior in
-  let un_op = DD.interior in
+  let un_op = HL.interior in
   print_endline "Testing DashDot2.interior on half-line";
-  exhaustive_test_unary oracle un_op max DD.empty DD.string_of DD.string_of
+  exhaustive_test_unary oracle un_op max HL.empty HL.string_of HL.string_of
 
 (*
 let exhaustive_interior_on_circle max = 
   let oracle = wrapper Ci_legacy.interior in
-  let un_op = DD.Circle.interior in
+  let un_op = HL.Circle.interior in
   print_endline "Testing DashDot2.interior on circle";
-  exhaustive_test_unary oracle un_op max DD.empty DD.string_of DD.string_of
+  exhaustive_test_unary oracle un_op max HL.empty HL.string_of HL.string_of
 *)
 
 let exhaustive_interior_on_half_line max = 
   let oracle = wrapper HL_legacy.interior in
-  let un_op = DD.interior in
+  let un_op = HL.interior in
   print_endline "Testing DashDot2.interior on half-line";
-  exhaustive_test_unary oracle un_op max DD.empty DD.string_of DD.string_of
+  exhaustive_test_unary oracle un_op max HL.empty HL.string_of HL.string_of
 
 let exhaustive_mem max =
   let next_value n = if n < max then n + 1 else raise Exit in
-  let next = DD.next next_value in
+  let next = HL.next next_value in
   let p = ref I.zero in
-  let at = ref DD.empty in
+  let at = ref HL.empty in
   let fe1 = ref false in
   let fe2 = ref false in
   let ok = ref true in
@@ -252,13 +252,13 @@ let exhaustive_mem max =
   let counter = ref 0 in
   while !ok do
     fe1 := Legacy.belongs_to !p (dd2_to_legacy !at);
-    fe2 := DD.mem !p !at;
+    fe2 := HL.mem !p !at;
     ok  := !fe1 = !fe2;
     incr counter; 
     if not !ok then (
       print_endline "Mismatch:";
       Printf.printf "operand_1 = %s\n" (string_of_int !p);
-      Printf.printf "operand_2 = %s\n" (DD.string_of !at);
+      Printf.printf "operand_2 = %s\n" (HL.string_of !at);
       Printf.printf "oracle    = %s\n" (string_of_bool !fe1);
       Printf.printf "candidate = %s\n" (string_of_bool !fe2));
     begin
@@ -273,13 +273,13 @@ let exhaustive_mem max =
 
 let exhaustive_regions max = 
   let next n = if n < max then n + 1 else raise Exit in
-  let next = DD.next next in
-  let x = ref DD.empty in
+  let next = HL.next next in
+  let x = ref HL.empty in
   try
     while true do 
-      print_endline (DD.string_of !x);
+      print_endline (HL.string_of !x);
 (*
-      print_endline (DD.Circle.string_of !x);
+      print_endline (HL.Circle.string_of !x);
 *)
       print_endline "";
       x := next !x
@@ -311,26 +311,26 @@ let exhaustive_all max =
 *)
   
 type operator = 
-  | Unary of (DD.t -> DD.t)
-  | Binary of (DD.t -> DD.t -> DD.t)
+  | Unary of (HL.t -> HL.t)
+  | Binary of (HL.t -> HL.t -> HL.t)
   
 let operator_of_string s = match s with
-  | "meet" -> Binary DD.meet
-  | "join" -> Binary DD.join
-  | "hl_future" -> Binary DD.future_extension
-  | "hl_past" -> Binary DD.past_extension
+  | "meet" -> Binary HL.meet
+  | "join" -> Binary HL.join
+  | "hl_future" -> Binary HL.future_extension
+  | "hl_past" -> Binary HL.past_extension
 (*
-  | "ci_future" -> Binary DD.Circle.future_extension
-  | "ci_past" -> Binary DD.Circle.past_extension
+  | "ci_future" -> Binary HL.Circle.future_extension
+  | "ci_past" -> Binary HL.Circle.past_extension
 *)
-  | "complement" -> Unary DD.complement
-  | "hl_interior" -> Unary DD.interior
+  | "complement" -> Unary HL.complement
+  | "hl_interior" -> Unary HL.interior
 (*
-  | "ci_interior" -> Unary DD.Circle.interior
+  | "ci_interior" -> Unary HL.Circle.interior
 *)
-  | "hl_closure" -> Unary DD.closure
+  | "hl_closure" -> Unary HL.closure
 (*
-  | "ci_closure" -> Unary DD.Circle.closure
+  | "ci_closure" -> Unary HL.Circle.closure
 *)
   | _ -> failwith ("Unknown operator " ^ s)
 
@@ -340,9 +340,9 @@ let test_unary op_name operator operand expected_result =
   if result <> expected_result
   then Printf.printf "%s\n %s\n= %s\nbut\n %s\nwas expected.\n%!"
     op_name
-    (DD.string_of operand)
-    (DD.string_of result)
-    (DD.string_of expected_result)
+    (HL.string_of operand)
+    (HL.string_of result)
+    (HL.string_of expected_result)
 
 let test_binary op_name operator operand1 operand2 expected_result =
   let result = operator operand1 operand2 in
@@ -350,10 +350,10 @@ let test_binary op_name operator operand1 operand2 expected_result =
   if result <> expected_result
   then Printf.printf "%s\n %s\n %s\n= %s\nbut\n %s\nwas expected.\n%!"
     op_name
-    (DD.string_of operand1)
-    (DD.string_of operand2)
-    (DD.string_of result)
-    (DD.string_of expected_result)
+    (HL.string_of operand1)
+    (HL.string_of operand2)
+    (HL.string_of result)
+    (HL.string_of expected_result)
 
 let operator_name = ref ""
 
@@ -383,8 +383,8 @@ let anon_fun s =
     | Unary operator -> (
         try
           while true do
-            let operand = DDI.of_string (iterator ()) in
-            let expected = DDI.of_string (iterator ()) in
+            let operand = HLOI.of_string (iterator ()) in
+            let expected = HLOI.of_string (iterator ()) in
             test_unary !operator_name operator 
               operand
               expected
@@ -393,9 +393,9 @@ let anon_fun s =
     | Binary operator -> (
         try
           while true do
-            let operand1 = DDI.of_string (iterator ()) in
-            let operand2 = DDI.of_string (iterator ()) in
-            let expected = DDI.of_string (iterator ()) in
+            let operand1 = HLOI.of_string (iterator ()) in
+            let operand2 = HLOI.of_string (iterator ()) in
+            let expected = HLOI.of_string (iterator ()) in
             test_binary !operator_name  operator
               operand1 operand2 expected
           done

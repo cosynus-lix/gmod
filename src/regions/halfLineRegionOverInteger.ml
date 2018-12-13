@@ -1,26 +1,26 @@
 module I = NonEmptyInterval.Raw(Integer)
 
-module DD = HalfLineRegion.Raw(I)
+module HL = HalfLineRegion.Raw(I)
 
 let rec of_string tl = Str.(
   match tl with 
-    | [] | [Delim "["; Delim "]"] | [Delim "{"; Delim "}"] -> (DD.empty)
+    | [] | [Delim "["; Delim "]"] | [Delim "{"; Delim "}"] -> (HL.empty)
     | [Delim l ; Text a ; Text "oo" ; Delim "["] 
     | [Delim l ; Text a] -> (
         let a = int_of_string a in
         let l = (l = "[") in
-        DD.of_interval (I.terminal l a))
+        HL.of_interval (I.terminal l a))
     | Delim l :: Text a :: Text b :: Delim r :: tl -> (
         let a = int_of_string a in
         let b = int_of_string b in
         let () = assert (a < b) in
         let l = (l = "[") in
         let r = (r = "]") in
-        DD.(join (of_interval (I.bounded l a b r)) (of_string tl)))
+        HL.(join (of_interval (I.bounded l a b r)) (of_string tl)))
     | Delim "[" :: Text a :: Delim "]" :: tl 
     | Delim "{" :: Text a :: Delim "}" :: tl 
     | Text a :: tl -> (
-        DD.(join (of_interval (I.atom (int_of_string a)))  (of_string tl)) )
+        HL.(join (of_interval (I.atom (int_of_string a)))  (of_string tl)) )
     | _ -> assert false)
 
 let of_string s = 

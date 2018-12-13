@@ -6,7 +6,7 @@ SOURCES = bound.ml \
 $(COMMON)integer.ml $(LEGACY_COMMON)common.ml  \
 $(GEOREAL)ODA.ml \
 nonEmptyInterval.ml halfLineRegion.ml \
-dashDotOverInteger.ml \
+halfLineRegionOverInteger.ml \
 test.ml
 RESULT = main
 ANNOTATE = true
