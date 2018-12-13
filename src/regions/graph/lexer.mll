@@ -16,6 +16,10 @@
       | "comp" -> COMPLEMENT
       | "full" -> FULL
       | "void" -> EMPTY
+      | "interior" -> INTERIOR
+      | "closure" -> CLOSURE
+      | "future_ext" -> FUTURE_EXTENSION
+      | "past_ext" -> PAST_EXTENSION
       | _     -> ID id
 
 }

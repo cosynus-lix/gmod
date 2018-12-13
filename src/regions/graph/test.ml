@@ -21,27 +21,75 @@ let of_file f =
   let () = close_in c in
   output
 
-let (g,r) = of_file "data"
-
 module M = Map.Make(String)
 
-let print key r =
-  Printf.printf "%s =%s\n" key (if R.is_empty r then " Ø\n" else "");
-  if not (R.VSet.is_empty r.R.vertices) then print_string "  ";
-  R.VSet.iter (fun v -> Printf.printf "%i " v) r.R.vertices;
-  if not (R.VSet.is_empty r.R.vertices) then print_endline "";
-  R.AMap.iter (fun a dd -> Printf.printf "  %i: %i –> %i: %s\n" 
-    a (G.src a g) (G.tgt a g) 
-    (HL.string_of dd)) 
-    r.arrows;
-  if not (R.AMap.is_empty r.arrows) then print_endline ""
+let show_endpoints = ref false
 
-let () =
-  G.print_vertices g;
+let print_arrow arrow src tgt dd =
+  if !show_endpoints
+  then Printf.printf "  %i: %i –> %i: %s\n" 
+        arrow src tgt (HL.string_of dd)
+  else Printf.printf "  %i: %s\n" arrow (HL.string_of dd)
+  
+let print g key r =
+  let vertices = not (R.VSet.is_empty r.R.vertices) in
+  let arrows = not (R.AMap.is_empty r.arrows) in
+  Printf.printf "%s = %s" key (if R.is_empty r then "Ø\n\n" else "");
+  if vertices then print_string "{ ";
+  R.VSet.iter (fun v -> Printf.printf "%i " v) r.R.vertices;
+  if vertices then print_endline "}" else if arrows then print_endline "";
+  R.AMap.iter 
+    (fun a dd -> 
+      if HL.contains_more_than_zero dd 
+      then print_arrow a (G.src a g) (G.tgt a g) dd)
+    r.arrows;
+  if arrows then print_endline ""
+
+let usage_msg =
+"Usage: main <file name>
+
+<file name> being the name of the text file containing the computations to 
+perform.
+
+The first part of the file is a list of entries of the following form:
+  – <vertex>
+  – <arrow> : <src> <tgt>
+where <vertex>, <arrow>, <src> and <tgt> should be decimal representations of 
+non-negative integers.
+  
+An entry of the first kind add a <vertex> to the underlying graph.
+ 
+An entry of the second kind add an <arrow> from <src> to <tgt> to the 
+underlying graph.
+
+The second part of the file is a sequence of entries of the form
+  <var> = <addenda> list
+where <var> is any C-like identifier and <addenda> has the following form
+  – <vertex>
+  – <arrow> : <interval> list
+  
+An interval is either
+  – [a b], [a b[, ]a b], ]a b[
+  – [a oo[, ]a oo[ 
+  – {a}
+where a and b are decimal representations of non-negative integers. 
+The intervals have to be disconnected and the list has to be sorted.
+
+Options are:"
+
+let anon_fun filename =
+  let (g,r) = of_file filename in
+  G.print_isolated_vertices g;
   G.print_arrows g;
   print_endline "";
-  M.iter print r
-  
+  M.iter (print g) r
+
+let opt_list = 
+  [
+    "--endpoints", Arg.Set show_endpoints, "show endpoints (hidden by default)";
+  ]
+
+let () = Arg.parse opt_list anon_fun usage_msg
 
 (* Tests *)
 

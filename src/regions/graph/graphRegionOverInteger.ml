@@ -21,7 +21,10 @@ module G = struct
   
   let empty_cone = { past = S.empty ; future = S.empty }
   
-  module M = Map.Make(struct type t = arrow let compare = compare end)
+  let is_empty_cone {past;future} = 
+    S.is_empty past && S.is_empty future
+  
+  module M = Map.Make(struct type t = vertex let compare = compare end)
   
   type neighbors = cone M.t
   
@@ -152,6 +155,19 @@ module G = struct
   let print_vertices g =
     M.iter (fun v _ -> Printf.printf "%i " v) g.neighbors;
     print_endline ""
+
+  let is_isolated v g = 
+    try is_empty_cone (M.find v g.neighbors)
+    with Not_found -> false
+
+  let print_isolated_vertices g =
+    let something_was_printed = ref false in
+    M.iter (fun v _ -> 
+      if is_isolated v g
+      then (something_was_printed := true; Printf.printf "%i " v)) g.neighbors;
+    if !something_was_printed then print_endline ""
+
+  
 
 end (* G *)
 
