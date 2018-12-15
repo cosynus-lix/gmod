@@ -122,10 +122,12 @@ let contains_zero at =
   try I.contains_zero (first_connected_component at)
   with Undefined -> false
 
-let contains_more_than_zero at = 
-  try first_connected_component at <> I.(atom zero)
-  with Undefined -> false
-
+let contains_more_than_zero at =
+  match at with 
+  | [it] -> it <> I.(atom zero)
+  | [] -> false
+  | _ -> true
+  
 let add_zero at = 
   match at with
   | it :: at' -> (

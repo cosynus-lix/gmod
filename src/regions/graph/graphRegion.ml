@@ -39,6 +39,23 @@ module Raw(G:Graph)(DD:HalfLineRegion.S) = struct
   region carried by an arrow outgoing from v; if v does not belong to vertices 
   then none of the half-line regions carried by the arrows outgoing from v 
   contains zero*)
+
+  let debug = true
+
+  let print_arrows msg arrows = if debug then (
+    print_endline msg;
+    AMap.iter (fun a dd -> 
+      Printf.printf "%s : %s\n"
+        (G.string_of_arrow a)
+        (DD.string_of dd)
+    ) arrows)
+
+  let print_vertices msg vertices =
+    if debug then (
+      print_endline msg;
+      print_string "{ ";
+      VSet.iter (fun v -> print_string ((G.string_of_vertex v)^" ")) vertices;
+      print_endline "}")
   
   let empty = { vertices = VSet.empty ; arrows = AMap.empty }
 
@@ -124,23 +141,6 @@ module Raw(G:Graph)(DD:HalfLineRegion.S) = struct
     G.fold_vertex (fun v a -> zero_normalize_vertex graph v a) 
     graph x
 
-  let debug = false
-
-  let print_arrows msg arrows = if debug then (
-    print_endline msg;
-    AMap.iter (fun a dd -> 
-      Printf.printf "%s : %s\n"
-        (G.string_of_arrow a)
-        (DD.string_of dd)
-    ) arrows)
-
-  let print_vertices msg vertices =
-    if debug then (
-      print_endline msg;
-      print_string "{ ";
-      VSet.iter (fun v -> print_string ((G.string_of_vertex v)^" ")) vertices;
-      print_endline "}")
-
   let future_extension graph r1 r2 =
     let arrows_1 = ref r1.arrows in
     let arrows_2 = ref r2.arrows in
@@ -209,7 +209,7 @@ module Raw(G:Graph)(DD:HalfLineRegion.S) = struct
       let src_a = G.src a graph in
       let in_r1 = VSet.mem src_a r1.vertices in
       let in_r2 = VSet.mem src_a r2.vertices in
-      let dd3_contains_zero = not (DD.contains_zero dd3) in
+      let dd3_contains_zero = DD.contains_zero dd3 in
       let src_to_be_added = (not (VSet.mem src_a !vertices))
             && (in_r1 || (in_r2 && dd3_contains_zero)) in 
       let () =
@@ -225,9 +225,9 @@ module Raw(G:Graph)(DD:HalfLineRegion.S) = struct
         else AMap.add a dd3 !arrows in
     let past_cone v = 
       G.iter_in v
-        (past_extension (VSet.(mem v !vertices || mem v r1.vertices))) 
+        (past_extension VSet.(mem v !vertices || mem v r1.vertices))
         graph in
-    let () = 
+    let () =
       while not (VSet.is_empty !current) do
         VSet.iter past_cone !current;
         current := !next;
@@ -292,6 +292,9 @@ let closure g r =
   let vertices = G.fold_vertex f g VSet.empty in
   let arrows = !arrows in
   { vertices ; arrows }
+
+let future_closure g r = future_extension g r (closure g r)
+let past_closure g r   = past_extension   g r (closure g r)
 
 end (* Raw *)
 

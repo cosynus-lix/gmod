@@ -167,8 +167,6 @@ module G = struct
       then (something_was_printed := true; Printf.printf "%i " v)) g.neighbors;
     if !something_was_printed then print_endline ""
 
-  
-
 end (* G *)
 
 module I = HalfLineRegionOverInteger.I

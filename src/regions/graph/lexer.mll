@@ -10,6 +10,7 @@
 
   let identifier id = 
     match id with
+      | "oo" -> INFTY
       | "join" -> JOIN 
       | "meet" -> MEET
       | "diff" -> DIFFERENCE
@@ -20,6 +21,8 @@
       | "closure" -> CLOSURE
       | "future_ext" -> FUTURE_EXTENSION
       | "past_ext" -> PAST_EXTENSION
+      | "future_clo" -> FUTURE_CLOSURE
+      | "past_clo" -> PAST_CLOSURE
       | _     -> ID id
 
 }

@@ -17,6 +17,7 @@
 %token MEET JOIN DIFFERENCE COMPLEMENT FULL EMPTY 
 %token FUTURE_EXTENSION PAST_EXTENSION 
 %token INTERIOR CLOSURE
+%token FUTURE_CLOSURE PAST_CLOSURE
 %token END
 %token <string> ERROR
 %start output
@@ -69,6 +70,8 @@
 | COMPLEMENT expression {R.complement !graph $2}
 | INTERIOR expression {R.interior !graph $2}
 | CLOSURE expression {R.closure !graph $2}
+| FUTURE_CLOSURE expression {R.future_closure !graph $2}
+| PAST_CLOSURE expression {R.past_closure !graph $2}
 
   declaration:
 | ID EQUAL region

@@ -37,7 +37,7 @@ let print g key r =
   Printf.printf "%s = %s" key (if R.is_empty r then "Ø\n\n" else "");
   if vertices then print_string "{ ";
   R.VSet.iter (fun v -> Printf.printf "%i " v) r.R.vertices;
-  if vertices then print_endline "}" else if arrows then print_endline "";
+  (if vertices then print_endline "}" else (if arrows then print_endline ""));
   R.AMap.iter 
     (fun a dd -> 
       if HL.contains_more_than_zero dd 
