@@ -223,10 +223,8 @@ module Raw(G:Graph)(DD:HalfLineRegion.S) = struct
         if DD.is_empty dd3 
         then AMap.remove a !arrows 
         else AMap.add a dd3 !arrows in
-    let past_cone v = 
-      G.iter_in v
-        (past_extension VSet.(mem v !vertices || mem v r1.vertices))
-        graph in
+    let past_cone v = G.iter_in v 
+      (past_extension VSet.(mem v !vertices || mem v r1.vertices)) graph in
     let () =
       while not (VSet.is_empty !current) do
         VSet.iter past_cone !current;
