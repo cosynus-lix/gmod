@@ -35,10 +35,11 @@ module Raw(G:Graph)(DD:HalfLineRegion.S) = struct
 
   type t = { vertices:VSet.t ; arrows: DD.t AMap.t }
   
-  (* Invariant: if v belongs to vertices then zero belongs to every half-line 
-  region carried by an arrow outgoing from v; if v does not belong to vertices 
-  then none of the half-line regions carried by the arrows outgoing from v 
-  contains zero*)
+  (* Invariant: if v belongs to «vertices» then zero belongs to every half-line 
+  region carried by an arrow outgoing from v; if v does not belong to  
+  «vertices» then none of the half-line regions carried by the arrows outgoing 
+  from v contains zero. An arrow is an entry of the dictionnary «arrows» if and 
+  only if the half-line region it carries is not empty. *)
 
   let debug = true
 
@@ -59,7 +60,8 @@ module Raw(G:Graph)(DD:HalfLineRegion.S) = struct
   
   let empty = { vertices = VSet.empty ; arrows = AMap.empty }
 
-  let is_empty {vertices;arrows} = VSet.is_empty vertices && AMap.is_empty arrows 
+  let is_empty {vertices;arrows} =
+    VSet.is_empty vertices && AMap.is_empty arrows 
 
   let full graph = 
     let update v (vertices,arrows) = 
