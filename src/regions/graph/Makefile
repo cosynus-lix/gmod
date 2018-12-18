@@ -1,10 +1,13 @@
-OCAMLMAKEFILE = ../../OCamlMakefile
-COMMON = ../../common/
-LEGACY_COMMON = ../../legacy/trunk_common/
+SRC = ../../
+REGIONS = $(SRC)regions/
+HALFLINE = $(REGIONS)/halfline/
+OCAMLMAKEFILE = $(SRC)OCamlMakefile
+COMMON = $(SRC)common/
+LEGACY_COMMON = $(SRC)legacy/trunk_common/
 GEOREAL = $(LEGACY_COMMON)/geometric_realization/
-SOURCES = ../bound.ml ../nonEmptyInterval.ml ../halfLineRegion.ml \
+SOURCES = $(REGIONS)bound.ml $(HALFLINE)nonEmptyInterval.ml $(HALFLINE)halfLineRegion.ml \
 graphRegion.ml \
-$(COMMON)integer.ml ../halfLineRegionOverInteger.ml \
+$(COMMON)integer.ml $(HALFLINE)halfLineRegionOverInteger.ml \
 graphRegionOverInteger.ml \
 parser.mly lexer.mll \
 test.ml
@@ -17,7 +20,7 @@ all: dnc
 
 cleaned:
 	make clean
-	rm *.d
+	rm -rf ../common/ ../regions
 
 include $(OCAMLMAKEFILE)
 
