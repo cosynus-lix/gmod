@@ -1,8 +1,9 @@
-OCAMLMAKEFILE = ../OCamlMakefile
-COMMON = ../common/
-LEGACY_COMMON = ../legacy/trunk_common/
+SRC = ../../
+OCAMLMAKEFILE = $(SRC)OCamlMakefile
+COMMON = $(SRC)common/
+LEGACY_COMMON = $(SRC)legacy/trunk_common/
 GEOREAL = $(LEGACY_COMMON)/geometric_realization/
-SOURCES = bound.ml \
+SOURCES = $(SRC)/regions/bound.ml \
 $(COMMON)integer.ml $(LEGACY_COMMON)common.ml  \
 $(GEOREAL)ODA.ml \
 nonEmptyInterval.ml halfLineRegion.ml \
@@ -17,7 +18,7 @@ all: dnc
 
 cleaned:
 	make clean
-	rm -r common legacy
+	rm -r ../common ../legacy ../regions
 
 include $(OCAMLMAKEFILE)
 

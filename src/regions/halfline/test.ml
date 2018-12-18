@@ -126,13 +126,13 @@ let exhaustive_difference max =
   print_endline "Testing DashDot2.difference";
   exhaustive_test_binary oracle bin_op max HL.empty HL.string_of HL.string_of
 
-let exhaustive_future_extension_on_half_line max = 
+let exhaustive_future_extension max = 
   let oracle = wrapper (fun x y -> Legacy.union x (HL_legacy.future_extension x y)) in
   let bin_op = HL.future_extension in
   print_endline "Testing DashDot2.HalfLine.future_extension";
   exhaustive_test_binary oracle bin_op max HL.empty HL.string_of HL.string_of
 
-let exhaustive_past_extension_on_half_line max = 
+let exhaustive_past_extension max = 
   let oracle = wrapper (fun x y -> Legacy.union x (HL_legacy.past_extension x y)) in
   let bin_op = HL.past_extension in
   print_endline "Testing DashDot2.HalfLine.past_extension";
@@ -293,11 +293,11 @@ let exhaustive_all max =
   exhaustive_meet max;
   exhaustive_join max;
   exhaustive_difference max;
-  exhaustive_future_extension_on_half_line max;
+  exhaustive_future_extension max;
 (*
   exhaustive_future_extension_on_circle max;
 *)
-  exhaustive_past_extension_on_half_line max;
+  exhaustive_past_extension max;
 (*
   exhaustive_past_extension_on_circle max;
 *)
@@ -319,19 +319,9 @@ let operator_of_string s = match s with
   | "join" -> Binary HL.join
   | "hl_future" -> Binary HL.future_extension
   | "hl_past" -> Binary HL.past_extension
-(*
-  | "ci_future" -> Binary HL.Circle.future_extension
-  | "ci_past" -> Binary HL.Circle.past_extension
-*)
   | "complement" -> Unary HL.complement
   | "hl_interior" -> Unary HL.interior
-(*
-  | "ci_interior" -> Unary HL.Circle.interior
-*)
   | "hl_closure" -> Unary HL.closure
-(*
-  | "ci_closure" -> Unary HL.Circle.closure
-*)
   | _ -> failwith ("Unknown operator " ^ s)
 
 let test_unary op_name operator operand expected_result =
@@ -426,48 +416,31 @@ let exhaustive_all_in_parallel max =
 
 
 let command_line_options = [
-  "--future-extension-on-half-line", Arg.Unit (preparing "hl_future"), "Test future_extension on the half-line" ;
-  "--past-extension-on-half-line", Arg.Unit (preparing "hl_past"), "Test past_extension on the half-line" ;
-  "--future-extension-on-circle", Arg.Unit (preparing "ci_future"), "Test ci_future_extension" ;
-  "--past-extension-on-circle", Arg.Unit (preparing "ci_past"), "Test ci_past_extension" ;
+  "--future-extension", Arg.Unit (preparing "hl_future"), "Test future_extension" ;
+  "--past-extension", Arg.Unit (preparing "hl_past"), "Test past_extension" ;
   "--meet", Arg.Unit (preparing "meet"), "Test meet" ;
   "--join", Arg.Unit (preparing "join"), "Test join" ;
   "--complement", Arg.Unit (preparing "complement"), "Test complement" ;
-  "--interior-on-half-line", Arg.Unit (preparing "hl_interior"), "Test interior on half-line" ;
-  "--closure-on-half-line", Arg.Unit (preparing "hl_closure"), "Test closure on half-line" ;
-  "--interior-on-circle", Arg.Unit (preparing "hl_interior"), "Test interior on circle" ;
-  "--closure-on-circle", Arg.Unit (preparing "hl_closure"), "Test closure on circle" ;
+  "--interior", Arg.Unit (preparing "hl_interior"), "Test interior" ;
+  "--closure", Arg.Unit (preparing "hl_closure"), "Test closure" ;
   "--enumerate-intervals",Arg.Int (exhaustive_intervals), "Compare the results of the current implementation with a previous one, on all possible intervals up to some extent.";
   "--enumerate-regions",Arg.Int (exhaustive_regions), "Compare the results of the current implementation with a previous one, on all possible regions up to some extent.";
-  "--exhaustively-testing-all",Arg.Int (exhaustive_all),"Compare the new implementation of all operators on half-line and circle with the current one";
-  "--exhaustively-testing-all-in-parallel",Arg.Int (exhaustive_all_in_parallel),"Compare the new implementation of all operators on half-line and circle with the current one";
-  "--exhaustively-testing-future-extension-on-half-line",Arg.Int (exhaustive_future_extension_on_half_line),"Compare the new implementation of future_extension on half-line (~ 60 LoC) with the current one (~ 500 LoC)";
-(*
-  "--exhaustively-testing-future-extension-on-circle",Arg.Int (exhaustive_future_extension_on_circle),"Compare the new implementation of future_extension on circle (~ 60 LoC) with the current one (~ 1000 LoC)";
-*)
-  "--exhaustively-testing-past-extension-on-half-line",Arg.Int (exhaustive_past_extension_on_half_line),"Compare the new implementation of past_extension on half-line (~ 60 LoC) with the current one (~ 500 LoC)";
-(*
-  "--exhaustively-testing-past-extension-on-circle",Arg.Int (exhaustive_past_extension_on_circle),"Compare the new implementation of past_extension on circle (~ 60 LoC) with the current one (~ 1000 LoC)";
-*)
-  "--exhaustively-testing-join",Arg.Int (exhaustive_join),"Compare the new implementation of join with the current one)";
+  "--exhaustively-testing-all",Arg.Int (exhaustive_all),"Compare the new implementation of all operators with the current one";
+  "--exhaustively-testing-all-in-parallel",Arg.Int (exhaustive_all_in_parallel),"Compare the new implementation of all operators with the current one";
+  "--exhaustively-testing-future-extension",Arg.Int (exhaustive_future_extension),"Compare the new implementation of future_extension (~ 60 LoC) with the current one (~ 500 LoC)";
+  "--exhaustively-testing-past-extension",Arg.Int (exhaustive_past_extension),"Compare the new implementation of past_extension (~ 60 LoC) with the current one (~ 500 LoC)";
+  "--exhaustively-testing-join",Arg.Int (exhaustive_join),"Compare the new implementation of join with the current one";
   "--exhaustively-testing-meet",Arg.Int (exhaustive_meet),"Compare the new implementation of meet with the current one";
   "--exhaustively-testing-difference",Arg.Int (exhaustive_difference),"Compare the new implementation of difference with the current one";
   "--exhaustively-testing-complement",Arg.Int (exhaustive_complement),"Compare the new implementation of complement with the current one";
-  "--exhaustively-testing-interior-on-half-line",Arg.Int (exhaustive_interior_on_half_line),"Compare the new implementation of interior on half-line with the current one";
-(*
-  "--exhaustively-testing-interior-on-circle",Arg.Int (exhaustive_interior_on_circle),"Compare the new implementation of interior on circle with the current one";
-*)
-  "--exhaustively-testing-closure-on-half-line",Arg.Int (exhaustive_closure_on_half_line),"Compare the new implementation of closure on half-line with the current one";
-(*
-  "--exhaustively-testing-closure-on-circle",Arg.Int (exhaustive_closure_on_circle),"Compare the new implementation of closure on circle with the current one";
-*)
+  "--exhaustively-testing-interior",Arg.Int (exhaustive_interior_on_half_line),"Compare the new implementation of interior with the current one";
+  "--exhaustively-testing-closure",Arg.Int (exhaustive_closure_on_half_line),"Compare the new implementation of closure with the current one";
   "--exhaustively-testing-is_included",Arg.Int (exhaustive_is_included),"Compare the new implementation of is_included with the current one";
   "--exhaustively-testing-mem",Arg.Int (exhaustive_mem),"Compare the new implementation of mem with the current one";
 ]
 
 let msg = "This tool tests the DashDot library, which implements boolean, topological, \n\
-    and order theoretic operations on the finite union of intervals 
-    (respectively on finite unions of arcs).\n
+    and order theoretic operations on the finite union of intervals.\n
 \
     The tests to perform are stored in a file given as an argument.\n
 \
