@@ -12,7 +12,7 @@ test.ml
 RESULT = main
 ANNOTATE = true
 DOC_FILES = bound.ml halfLineRegion.ml
-PACKS = str ocamlgraph unix
+PACKS = str unix
 
 all: dnc
 

@@ -22,6 +22,12 @@ module type S = sig
   type arrow
   type graph
   type t
+  val is_empty: t -> bool
+  val meet: graph -> t -> t -> t
+  val interior: graph -> t -> t 
+  val closure: graph -> t -> t 
+  val future_closure: graph -> t -> t 
+  val past_closure: graph -> t -> t 
 end (* S *)
 
 module Raw(G:Graph)(DD:HalfLineRegion.S) = struct
