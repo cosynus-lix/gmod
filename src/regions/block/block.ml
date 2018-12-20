@@ -5,7 +5,7 @@ module type S = sig
   type t
 end (* S *)
 
-module Raw (G:GraphRegion.Graph)(R:GraphRegion.S) = struct
+module Raw (G:Graph.Graph)(R:Graph.Region) = struct
 
   exception Undefined
 
@@ -29,6 +29,6 @@ module Raw (G:GraphRegion.Graph)(R:GraphRegion.S) = struct
   
 end (* Raw *)
 
-module Make (G:GraphRegion.Graph)(R:GraphRegion.S): S with 
+module Make (G:Graph.Graph)(R:Graph.Region): S with 
   type graph = G.t and type region = R.t 
-  = Raw(G:GraphRegion.Graph)(R:GraphRegion.S)
+  = Raw(G:Graph.Graph)(R:Graph.Region)

@@ -17,7 +17,7 @@ module type Graph = sig
   val iter_in: vertex -> (arrow -> unit) -> t -> unit
 end (* Graph *)
 
-module type S = sig
+module type Region = sig
   type vertex
   type arrow
   type graph
@@ -28,7 +28,7 @@ module type S = sig
   val closure: graph -> t -> t 
   val future_closure: graph -> t -> t 
   val past_closure: graph -> t -> t 
-end (* S *)
+end (* Region *)
 
 module Raw(G:Graph)(DD:HalfLineRegion.S) = struct
 
@@ -304,5 +304,5 @@ let past_closure g r   = past_extension   g r (closure g r)
 
 end (* Raw *)
 
-module Make(G:Graph)(DD:HalfLineRegion.S):S with type arrow = G.arrow and type vertex = G.vertex
+module Make(G:Graph)(DD:HalfLineRegion.S):Region with type arrow = G.arrow and type vertex = G.vertex
   = Raw(G:Graph)(DD:HalfLineRegion.S)

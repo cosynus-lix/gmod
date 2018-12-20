@@ -173,7 +173,7 @@ module I = HalfLineRegionOverInteger.I
 
 module HL = HalfLineRegionOverInteger.HL
 
-module R = GraphRegion.Raw(G)(HL) 
+module R = Graph.Raw(G)(HL) 
 
 module GnGR = struct 
   

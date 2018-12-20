@@ -4,7 +4,7 @@ HALFLINE = $(REGIONS)/halfline/
 GRAPH_REGIONS = $(REGIONS)graph/
 OCAMLMAKEFILE = $(SRC)OCamlMakefile
 SOURCES = $(REGIONS)bound.ml $(HALFLINE)halfLineRegion.ml \
-$(GRAPH_REGIONS)graphRegion.ml \
+$(GRAPH_REGIONS)graph.ml \
 block.ml
 RESULT = main
 ANNOTATE = true

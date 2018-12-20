@@ -1,6 +1,6 @@
 %{
 
-  open GraphRegionOverInteger
+  open GraphOverInteger
   
   module M = Map.Make(String)
   
@@ -21,7 +21,7 @@
 %token END
 %token <string> ERROR
 %start output
-%type < GraphRegionOverInteger.G.t * (GraphRegionOverInteger.R.t Map.Make(String).t) > output
+%type < GraphOverInteger.G.t * (GraphOverInteger.R.t Map.Make(String).t) > output
 %%
 
   arrow_or_vertex:

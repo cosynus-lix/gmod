@@ -6,14 +6,14 @@ COMMON = $(SRC)common/
 LEGACY_COMMON = $(SRC)legacy/trunk_common/
 GEOREAL = $(LEGACY_COMMON)/geometric_realization/
 SOURCES = $(REGIONS)bound.ml $(HALFLINE)nonEmptyInterval.ml $(HALFLINE)halfLineRegion.ml \
-graphRegion.ml \
+graph.ml \
 $(COMMON)integer.ml $(HALFLINE)halfLineRegionOverInteger.ml \
-graphRegionOverInteger.ml \
+graphOverInteger.ml \
 parser.mly lexer.mll \
 test.ml
 RESULT = main
 ANNOTATE = true
-DOC_FILES = graphRegion.ml
+DOC_FILES = graph.ml
 PACKS = str unix
 
 all: dnc
