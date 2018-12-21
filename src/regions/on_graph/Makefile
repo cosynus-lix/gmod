@@ -1,19 +1,20 @@
 SRC = ../../
 REGIONS = $(SRC)regions/
 HALFLINE = $(REGIONS)/halfline/
+GRAPH = $(REGIONS)graph/
 OCAMLMAKEFILE = $(SRC)OCamlMakefile
 COMMON = $(SRC)common/
 LEGACY_COMMON = $(SRC)legacy/trunk_common/
 GEOREAL = $(LEGACY_COMMON)/geometric_realization/
 SOURCES = $(REGIONS)bound.ml $(HALFLINE)nonEmptyInterval.ml $(HALFLINE)onHalfLine.ml \
-onGraph.ml \
+$(GRAPH)graph.ml onGraph.ml \
 $(COMMON)integer.ml $(HALFLINE)halfLineOverInteger.ml \
 graphOverInteger.ml \
 parser.mly lexer.mll \
 test.ml
 RESULT = main
 ANNOTATE = true
-DOC_FILES = graph.ml
+DOC_FILES = onGraph.ml
 PACKS = str unix
 
 all: dnc

@@ -1,22 +1,3 @@
-module type Graph = sig
-  exception Undefined
-  type vertex
-  type arrow
-  type t
-  val string_of_arrow: arrow -> string
-  val string_of_vertex: vertex -> string
-  val compare_vertex: vertex -> vertex -> int
-  val compare_arrow: arrow -> arrow -> int
-  val src: arrow -> t -> vertex
-  val tgt: arrow -> t -> vertex
-  val fold_vertex: (vertex -> 'a -> 'a) -> t -> 'a -> 'a
-  val fold_out: vertex -> (arrow -> 'a -> 'a) -> t -> 'a -> 'a
-  val fold_in: vertex -> (arrow -> 'a -> 'a) -> t -> 'a -> 'a
-  val iter_vertex: (vertex -> unit) -> t -> unit
-  val iter_out: vertex -> (arrow -> unit) -> t -> unit
-  val iter_in: vertex -> (arrow -> unit) -> t -> unit
-end (* Graph *)
-
 module type Region = sig
   type vertex
   type arrow
@@ -30,7 +11,7 @@ module type Region = sig
   val past_closure: graph -> t -> t 
 end (* Region *)
 
-module Raw(G:Graph)(HL:OnHalfLine.Region) = struct
+module Raw(G:Graph.S)(HL:OnHalfLine.Region) = struct
 
   type arrow = G.arrow
   type vertex = G.vertex
@@ -304,5 +285,5 @@ let past_closure g r   = past_extension   g r (closure g r)
 
 end (* Raw *)
 
-module Make(G:Graph)(HL:OnHalfLine.Region):Region with type arrow = G.arrow and type vertex = G.vertex
-  = Raw(G:Graph)(HL:OnHalfLine.Region)
+module Make(G:Graph.S)(HL:OnHalfLine.Region):Region with type arrow = G.arrow and type vertex = G.vertex
+  = Raw(G:Graph.S)(HL:OnHalfLine.Region)

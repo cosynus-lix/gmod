@@ -8,7 +8,7 @@ let colon_split s = Str.split (Str.regexp ":") s
 
 let words s = Str.split (Str.regexp "[ ]") s
 
-module G = struct
+module Gold = struct
 
   exception Undefined
 
@@ -168,6 +168,18 @@ module G = struct
     if !something_was_printed then print_endline ""
 
 end (* G *)
+
+module A = struct
+
+  type t = int
+  let compare = compare
+  let string_of = string_of_int
+
+end (* A *)
+
+module V = A
+
+module G = Graph.Raw(A)(V)
 
 module I = HalfLineOverInteger.I
 
