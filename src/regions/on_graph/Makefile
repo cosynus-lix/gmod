@@ -9,7 +9,8 @@ GEOREAL = $(LEGACY_COMMON)/geometric_realization/
 SOURCES = $(REGIONS)bound.ml $(HALFLINE)nonEmptyInterval.ml $(HALFLINE)onHalfLine.ml \
 $(GRAPH)graph.ml onGraph.ml \
 $(COMMON)integer.ml $(HALFLINE)halfLineOverInteger.ml \
-graphOverInteger.ml \
+$(GRAPH)graphOverInteger.ml \
+onGraphOverInteger.ml \
 parser.mly lexer.mll \
 test.ml
 RESULT = main

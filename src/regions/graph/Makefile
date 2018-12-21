@@ -2,10 +2,11 @@ OCAMLMAKEFILE = $(SRC)OCamlMakefile
 SRC = ../../
 COMMON = $(SRC)common/
 LEGACY_COMMON = $(SRC)legacy/trunk_common/
-SOURCES = graph.ml
+SOURCES = graph.ml graphOverInteger.ml
 RESULT = main
 ANNOTATE = true
 DOC_FILES = graph.ml
+PACKS = str
 
 all: dnc
 

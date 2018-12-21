@@ -1,8 +1,8 @@
-module HL = GraphOverInteger.HL
+module HL = OnGraphOverInteger.HL
 
-module G = GraphOverInteger.G
+module G = OnGraphOverInteger.G
 
-module R = GraphOverInteger.R
+module R = OnGraphOverInteger.R
 
 let of_string s =
   try Parser.output Lexer.output (Lexing.from_string s)
