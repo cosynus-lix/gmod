@@ -4,7 +4,7 @@ module HL_legacy = ODA.RawHalfLine(Integer)
 
 module Ci_legacy = ODA.RawCircle(Integer)
 
-module HLOI = HalfLineRegionOverInteger
+module HLOI = HalfLineOverInteger
 
 module I = HLOI.I
 

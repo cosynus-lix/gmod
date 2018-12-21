@@ -30,7 +30,7 @@ module type Region = sig
   val past_closure: graph -> t -> t 
 end (* Region *)
 
-module Raw(G:Graph)(DD:HalfLineRegion.S) = struct
+module Raw(G:Graph)(HL:OnHalfLine.Region) = struct
 
   type arrow = G.arrow
   type vertex = G.vertex
@@ -39,7 +39,7 @@ module Raw(G:Graph)(DD:HalfLineRegion.S) = struct
   module VSet = Set.Make(struct type t = vertex let compare = G.compare_vertex end)
   module AMap = Map.Make(struct type t = arrow let compare = G.compare_arrow end)
 
-  type t = { vertices:VSet.t ; arrows: DD.t AMap.t }
+  type t = { vertices:VSet.t ; arrows: HL.t AMap.t }
   
   (* Invariant: if v belongs to «vertices» then zero belongs to every half-line 
   region carried by an arrow outgoing from v; if v does not belong to  
@@ -54,7 +54,7 @@ module Raw(G:Graph)(DD:HalfLineRegion.S) = struct
     AMap.iter (fun a dd -> 
       Printf.printf "%s : %s\n"
         (G.string_of_arrow a)
-        (DD.string_of dd)
+        (HL.string_of dd)
     ) arrows)
 
   let print_vertices msg vertices =
@@ -72,7 +72,7 @@ module Raw(G:Graph)(DD:HalfLineRegion.S) = struct
   let full graph = 
     let update v (vertices,arrows) = 
       let vertices = VSet.add v vertices in
-      let f = fun a arrows -> AMap.add a DD.full arrows in
+      let f = fun a arrows -> AMap.add a HL.full arrows in
       let arrows = G.fold_out v f graph arrows in
       (vertices,arrows) in
     let empty = (VSet.empty,AMap.empty) in
@@ -86,14 +86,14 @@ module Raw(G:Graph)(DD:HalfLineRegion.S) = struct
 
   let add_arrow a dd {vertices;arrows} =
     let arrows = 
-      if DD.is_empty dd 
+      if HL.is_empty dd 
       then AMap.remove a arrows
       else AMap.add a dd arrows in
     { vertices ; arrows }
 
   let get_dd a arrows = 
     try AMap.find a arrows 
-    with Not_found -> DD.empty
+    with Not_found -> HL.empty
   
   let binary_boolean_operator graph v_op dd_op =
     fun r1 r2 -> 
@@ -105,23 +105,23 @@ module Raw(G:Graph)(DD:HalfLineRegion.S) = struct
           let result = dd_op dd1 dd2 in
           let result = 
             if VSet.mem v vertices 
-            then DD.add_zero result
-            else DD.remove_zero result in
-          if DD.is_empty result 
+            then HL.add_zero result
+            else HL.remove_zero result in
+          if HL.is_empty result 
           then AMap.remove a arrows
           else AMap.add a result arrows in 
         G.fold_out v add graph arrows in
       let arrows = G.fold_vertex add graph AMap.empty in
       { vertices ; arrows }
 
-  let difference graph = binary_boolean_operator graph VSet.diff DD.difference
-  let meet graph = binary_boolean_operator graph VSet.inter DD.meet
-  let join graph = binary_boolean_operator graph VSet.union DD.join
+  let difference graph = binary_boolean_operator graph VSet.diff HL.difference
+  let meet graph = binary_boolean_operator graph VSet.inter HL.meet
+  let join graph = binary_boolean_operator graph VSet.union HL.join
   let complement graph = difference graph (full graph)
   
   let add_zeroes_vertex graph v arrows = 
     let add_zero a arrows =
-      AMap.add a (DD.add_zero (get_dd a arrows)) arrows in
+      AMap.add a (HL.add_zero (get_dd a arrows)) arrows in
     G.fold_out v add_zero graph arrows  
 
   let add_zeroes graph v_set a_map =
@@ -129,8 +129,8 @@ module Raw(G:Graph)(DD:HalfLineRegion.S) = struct
 
   let remove_zeroes_vertex graph v arrows = 
     let remove_zero a arrows =
-      let dd = DD.remove_zero (get_dd a arrows) in
-      if DD.is_empty dd
+      let dd = HL.remove_zero (get_dd a arrows) in
+      if HL.is_empty dd
       then AMap.remove a arrows
       else AMap.add a dd arrows in
     G.fold_out v remove_zero graph arrows  
@@ -159,11 +159,11 @@ module Raw(G:Graph)(DD:HalfLineRegion.S) = struct
     let future_extension a =
       let dd1 = get_dd a !arrows_1 in
       let dd2 = get_dd a !arrows_2 in
-      let dd3 = DD.future_extension dd1 dd2 in
+      let dd3 = HL.future_extension dd1 dd2 in
       let tgt_a = G.tgt a graph in
       let in_r1 = VSet.mem tgt_a r1.vertices in
       let in_r2 = VSet.mem tgt_a r2.vertices in
-      let dd3_is_unbounded = not (DD.is_bounded dd3) in
+      let dd3_is_unbounded = not (HL.is_bounded dd3) in
       let tgt_to_be_added = (not (VSet.mem tgt_a !vertices))
         && (in_r1 || (in_r2 && dd3_is_unbounded)) in 
       let () =
@@ -174,7 +174,7 @@ module Raw(G:Graph)(DD:HalfLineRegion.S) = struct
           vertices := VSet.add tgt_a !vertices;
           next := VSet.add tgt_a !next) in 
       arrows := 
-        if DD.is_empty dd3 
+        if HL.is_empty dd3 
         then AMap.remove a !arrows 
         else AMap.add a dd3 !arrows in
     let future_cone v = G.iter_out v future_extension graph in
@@ -207,17 +207,17 @@ module Raw(G:Graph)(DD:HalfLineRegion.S) = struct
         if add_unbounded_component
         then (
           let lcc_dd2 = 
-            try DD.(of_interval (last_connected_component dd2)) 
-            with DD.Undefined -> DD.empty in
-          if not (DD.is_bounded lcc_dd2) 
-          then DD.join dd1 lcc_dd2
+            try HL.(of_interval (last_connected_component dd2)) 
+            with HL.Undefined -> HL.empty in
+          if not (HL.is_bounded lcc_dd2) 
+          then HL.join dd1 lcc_dd2
           else dd1)
         else dd1 in
-      let dd3 = DD.past_extension dd1 dd2 in
+      let dd3 = HL.past_extension dd1 dd2 in
       let src_a = G.src a graph in
       let in_r1 = VSet.mem src_a r1.vertices in
       let in_r2 = VSet.mem src_a r2.vertices in
-      let dd3_contains_zero = DD.contains_zero dd3 in
+      let dd3_contains_zero = HL.contains_zero dd3 in
       let src_to_be_added = (not (VSet.mem src_a !vertices))
             && (in_r1 || (in_r2 && dd3_contains_zero)) in 
       let () =
@@ -228,7 +228,7 @@ module Raw(G:Graph)(DD:HalfLineRegion.S) = struct
           vertices := VSet.add src_a !vertices;
           next := VSet.add src_a !next) in 
       arrows := 
-        if DD.is_empty dd3 
+        if HL.is_empty dd3 
         then AMap.remove a !arrows 
         else AMap.add a dd3 !arrows in
     let past_cone v = G.iter_in v 
@@ -249,7 +249,7 @@ let vertex_belongs_to_interior g v arrows =
   (try 
     G.iter_in v
       (fun a ->
-        if DD.is_bounded (get_dd a arrows) 
+        if HL.is_bounded (get_dd a arrows) 
         then raise Exit) g;
     true
   with Exit -> false)
@@ -257,13 +257,13 @@ let vertex_belongs_to_interior g v arrows =
   (try
     G.iter_out v 
       (fun a -> 
-        if not (DD.contains_zero (get_dd a arrows))
+        if not (HL.contains_zero (get_dd a arrows))
         then raise Exit) g;
     true
   with Exit -> false)
 
 let interior g r =
-  let arrows = ref (AMap.map DD.interior r.arrows) in
+  let arrows = ref (AMap.map HL.interior r.arrows) in
   let f = fun v accu ->
     if vertex_belongs_to_interior g v !arrows 
     then VSet.add v accu 
@@ -276,7 +276,7 @@ let vertex_belongs_to_closure g v arrows =
   (try 
     G.iter_in v
       (fun a ->
-        if not (DD.is_bounded (get_dd a arrows)) 
+        if not (HL.is_bounded (get_dd a arrows)) 
         then raise Exit) g;
     false
   with Exit -> true)
@@ -284,13 +284,13 @@ let vertex_belongs_to_closure g v arrows =
   (try
     G.iter_out v 
       (fun a ->
-        if DD.(contains_zero (get_dd a arrows))
+        if HL.(contains_zero (get_dd a arrows))
         then raise Exit) g;
     true
   with Exit -> true)
 
 let closure g r =
-  let arrows = ref (AMap.map DD.closure r.arrows) in
+  let arrows = ref (AMap.map HL.closure r.arrows) in
   let f = fun v accu ->
     if vertex_belongs_to_closure g v !arrows
     then (arrows := add_zeroes_vertex g v !arrows; VSet.add v accu) 
@@ -304,5 +304,5 @@ let past_closure g r   = past_extension   g r (closure g r)
 
 end (* Raw *)
 
-module Make(G:Graph)(DD:HalfLineRegion.S):Region with type arrow = G.arrow and type vertex = G.vertex
-  = Raw(G:Graph)(DD:HalfLineRegion.S)
+module Make(G:Graph)(HL:OnHalfLine.Region):Region with type arrow = G.arrow and type vertex = G.vertex
+  = Raw(G:Graph)(HL:OnHalfLine.Region)

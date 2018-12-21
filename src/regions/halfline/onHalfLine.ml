@@ -1,4 +1,4 @@
-module type S = sig
+module type Region = sig
   
   (** {2 Exception} *)
 
@@ -75,7 +75,7 @@ module type S = sig
 
   val next: (value -> value) -> t -> t
 
-end (* S *)
+end (* Region *)
 
 module Raw(I:NonEmptyInterval.S) = struct
 
@@ -453,7 +453,7 @@ let next next_value re =
 
 end (* Raw *)
 
-module Make(I:NonEmptyInterval.S): S 
+module Make(I:NonEmptyInterval.S): Region 
   with type value = I.value
   and type interval = I.t 
 = Raw(I)

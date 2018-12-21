@@ -6,12 +6,12 @@ GEOREAL = $(LEGACY_COMMON)/geometric_realization/
 SOURCES = $(SRC)/regions/bound.ml \
 $(COMMON)integer.ml $(LEGACY_COMMON)common.ml  \
 $(GEOREAL)ODA.ml \
-nonEmptyInterval.ml halfLineRegion.ml \
-halfLineRegionOverInteger.ml \
+nonEmptyInterval.ml onHalfLine.ml \
+halfLineOverInteger.ml \
 test.ml
 RESULT = main
 ANNOTATE = true
-DOC_FILES = bound.ml halfLineRegion.ml
+DOC_FILES = bound.ml onHalfLine.ml
 PACKS = str unix
 
 all: dnc

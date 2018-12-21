@@ -169,9 +169,9 @@ module G = struct
 
 end (* G *)
 
-module I = HalfLineRegionOverInteger.I
+module I = HalfLineOverInteger.I
 
-module HL = HalfLineRegionOverInteger.HL
+module HL = HalfLineOverInteger.HL
 
 module R = Graph.Raw(G)(HL) 
 
@@ -228,7 +228,7 @@ module GnGR = struct
         | [src;tgt] ->
           let src = int_of_string src in
           let tgt = int_of_string tgt in
-          let dd = HalfLineRegionOverInteger.of_string dd in
+          let dd = HalfLineOverInteger.of_string dd in
           add_arrow src arrow tgt dd (g,r)
         | [v] -> (
             let v = int_of_string v in
@@ -253,7 +253,6 @@ module GnGR = struct
       | _ -> assert false
     in
     List.fold_left of_string (G.empty,R.empty) l
-
 
 let print (g,r) =
   print_endline "endpoints";

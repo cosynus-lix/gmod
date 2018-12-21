@@ -1,6 +1,6 @@
 module I = NonEmptyInterval.Raw(Integer)
 
-module HL = HalfLineRegion.Raw(I)
+module HL = OnHalfLine.Raw(I)
 
 let rec of_string tl = Str.(
   match tl with 

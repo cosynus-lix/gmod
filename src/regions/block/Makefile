@@ -3,7 +3,7 @@ REGIONS = $(SRC)regions/
 HALFLINE = $(REGIONS)/halfline/
 GRAPH_REGIONS = $(REGIONS)graph/
 OCAMLMAKEFILE = $(SRC)OCamlMakefile
-SOURCES = $(REGIONS)bound.ml $(HALFLINE)halfLineRegion.ml \
+SOURCES = $(REGIONS)bound.ml $(HALFLINE)onHalfLine.ml \
 $(GRAPH_REGIONS)graph.ml \
 block.ml
 RESULT = main
