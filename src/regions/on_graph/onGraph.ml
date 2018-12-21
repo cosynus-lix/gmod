@@ -4,7 +4,10 @@ module type Region = sig
   type graph
   type t
   val is_empty: t -> bool
+  val empty: t
+  val full: graph -> t
   val meet: graph -> t -> t -> t
+  val complement: graph -> t -> t
   val interior: graph -> t -> t 
   val closure: graph -> t -> t 
   val future_closure: graph -> t -> t 

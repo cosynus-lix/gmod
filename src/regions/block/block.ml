@@ -32,10 +32,8 @@ module Raw(G:Graph.S)(R:OnGraph.Region) = struct
     let complement j = 
       if i = j
       then R.full ga.(i) 
-      else R.complement ga.(i) g.(i) in 
+      else R.complement ga.(i) b.(i) in 
     Array.init d complement
-  
-  
   
 end (* Raw *)
 
