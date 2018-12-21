@@ -1,6 +1,6 @@
 SRC = ../../
 REGIONS = $(SRC)regions/
-HALFLINE = $(REGIONS)/halfline/
+HALFLINE = $(REGIONS)/on_halfline/
 GRAPH = $(REGIONS)graph/
 OCAMLMAKEFILE = $(SRC)OCamlMakefile
 COMMON = $(SRC)common/

@@ -137,10 +137,12 @@ module Raw(V:Data)(A:Data) = struct
     let print_neighbor v {past;future} =
       if not(S.is_empty future) then (
        Printf.printf "future of %s:\n" (V.string_of v) ;
-       S.iter (fun a -> Printf.printf "  %s: %s –> %s\n" (A.string_of a) (V.string_of v) (V.string_of (tgt a g))) future) ;
+       S.iter (fun a -> Printf.printf "  %s: %s –> %s\n" 
+        (A.string_of a) (V.string_of v) (V.string_of (tgt a g))) future) ;
        if not(S.is_empty past) then (
        Printf.printf "past of %s:\n" (V.string_of v) ;
-       S.iter (fun a -> Printf.printf "  %s: %s –> %s\n" (A.string_of a) (V.string_of (src a g)) (V.string_of v)) past) in
+       S.iter (fun a -> Printf.printf "  %s: %s –> %s\n" 
+        (A.string_of a) (V.string_of (src a g)) (V.string_of v)) past) in
     VM.iter print_neighbor g.neighbors
 
   let print_vertices g =

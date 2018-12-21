@@ -167,7 +167,7 @@ module Gold = struct
       then (something_was_printed := true; Printf.printf "%i " v)) g.neighbors;
     if !something_was_printed then print_endline ""
 
-end (* G *)
+end (* Gold *)
 
 module A = struct
 
