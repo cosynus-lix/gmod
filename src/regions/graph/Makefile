@@ -6,7 +6,7 @@ COMMON = $(SRC)common/
 LEGACY_COMMON = $(SRC)legacy/trunk_common/
 GEOREAL = $(LEGACY_COMMON)/geometric_realization/
 SOURCES = $(REGIONS)bound.ml $(HALFLINE)nonEmptyInterval.ml $(HALFLINE)onHalfLine.ml \
-graph.ml \
+onGraph.ml \
 $(COMMON)integer.ml $(HALFLINE)halfLineOverInteger.ml \
 graphOverInteger.ml \
 parser.mly lexer.mll \
