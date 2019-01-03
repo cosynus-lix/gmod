@@ -1,4 +1,4 @@
-module Make(G:Graph.S)(R:OnGraph.Region) = struct
+module Make(R:OnGraph.Region) = struct
 
   exception Undefined
 

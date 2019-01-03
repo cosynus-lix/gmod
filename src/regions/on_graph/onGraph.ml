@@ -20,8 +20,10 @@ module Raw(G:Graph.S)(HL:OnHalfLine.Region) = struct
   type vertex = G.vertex
   type graph = G.t
   
-  module VSet = Set.Make(struct type t = vertex let compare = G.compare_vertex end)
-  module AMap = Map.Make(struct type t = arrow let compare = G.compare_arrow end)
+  module V = struct type t = vertex let compare = G.compare_vertex end
+  module VSet = Set.Make(V)
+  module A = struct type t = arrow let compare = G.compare_arrow end
+  module AMap = Map.Make(A)
 
   type t = { vertices:VSet.t ; arrows: HL.t AMap.t }
   
@@ -176,6 +178,7 @@ module Raw(G:Graph.S)(HL:OnHalfLine.Region) = struct
   (* BUG: the case where the target belongs to the model and the arrow carries 
   an unbounded region is not taken into account. *)
   (* TODO: check that it has been done *)
+  (* Seems to work now *)
 
   let past_extension graph r1 r2 =
     let arrows_1 = ref r1.arrows in
@@ -284,9 +287,10 @@ let closure g r =
   { vertices ; arrows }
 
 let future_closure g r = future_extension g r (closure g r)
-let past_closure g r   = past_extension   g r (closure g r)
+let past_closure g r = past_extension g r (closure g r)
 
 end (* Raw *)
 
-module Make(G:Graph.S)(HL:OnHalfLine.Region):Region with type arrow = G.arrow and type vertex = G.vertex
+module Make(G:Graph.S)(HL:OnHalfLine.Region):Region 
+  with type graph = G.t and type arrow = G.arrow and type vertex = G.vertex
   = Raw(G:Graph.S)(HL:OnHalfLine.Region)

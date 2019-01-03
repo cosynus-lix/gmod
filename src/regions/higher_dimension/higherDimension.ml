@@ -1,21 +1,35 @@
 module type S = sig
   type graph
+  type region_on_graph
   type t
+  val empty: t
+  val full: graph array -> t
+  val of_array: region_on_graph array -> t 
   val join: t -> t -> t
+  val meet: graph array -> t -> t -> t
+  val complement: graph array -> t -> t
+  val interior: graph array -> t -> t
+  val closure: graph array -> t -> t
+  val future_extension: graph array -> t -> t -> t
+  val past_extension: graph array -> t -> t -> t
 end (* S *)
 
-module Raw(G:Graph.S)(R:OnGraph.Region) = struct
+module Raw(R:OnGraph.Region) = struct
 
-  module B = Block.Make(G:Graph.S)(R:OnGraph.Region)
+  module B = Block.Make(R:OnGraph.Region)
   module C = Set.Make(B)
 
-  type graph = G.t
+  type graph = R.graph
+
+  type region_on_graph = R.t
 
   type t = C.t
   
   let empty = C.empty
   
   let full ga = C.singleton (B.full ga) 
+  
+  let of_array ar = C.singleton ar
   
   let join c1 c2 = C.union c1 c2
   
@@ -51,7 +65,11 @@ module Raw(G:Graph.S)(R:OnGraph.Region) = struct
   let interior = unary B.interior
   let closure  = unary B.closure
   
+  let future_extension ga c1 c2 = failwith "HigherDimension.future_extension NIY"
+  let past_extension ga c1 c2 = failwith "HigherDimension.past_extension NIY"
+  
 end (* Raw *)
 
-module Make(G:Graph.S)(R:OnGraph.Region): S with type graph = G.t 
-  = Raw(G)(R)
+module Make(R:OnGraph.Region): S 
+  with type graph = R.graph and type region_on_graph = R.t
+  = Raw(R)
