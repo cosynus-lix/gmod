@@ -428,7 +428,7 @@ let next next_value re =
     done;
     !y in
   let rec init k re =
-    if (Pervasives.(>)) k 0 
+    if (Stdlib.(>)) k 0 
     then 
       init (pred k) (
         match re with 

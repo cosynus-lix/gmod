@@ -1316,7 +1316,7 @@ end (*Terminal*)
 module IntSet =
 struct
 
-  include Set.Make(struct type t = int let compare = Pervasives.compare end)
+  include Set.Make(struct type t = int let compare = Stdlib.compare end)
 
   let from_array a = Array.fold_right (fun term accu -> (add term accu)) a empty
 
@@ -1333,15 +1333,15 @@ end
 (* StringSet: Set of strings *)
 module StringSet =
 struct
-  include Set.Make(struct type t = string let compare = Pervasives.compare end)
+  include Set.Make(struct type t = string let compare = Stdlib.compare end)
   let longest s = fold (fun s accu -> max accu (String.length s)) s 0
 end
 
-module StringMap = Map.Make(struct type t = string let compare = Pervasives.compare end)
+module StringMap = Map.Make(struct type t = string let compare = Stdlib.compare end)
 
 (* Moi : Maps whose keys are integers *)
 module Moi = struct
-  include Map.Make (struct type t = int let compare = Pervasives.compare let default = 0 end)
+  include Map.Make (struct type t = int let compare = Stdlib.compare let default = 0 end)
   let make converter list_of_bindings =
     List.fold_left (fun accu (i,s) -> add i (converter s) accu) empty list_of_bindings
   let dod m =

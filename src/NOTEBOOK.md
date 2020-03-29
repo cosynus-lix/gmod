@@ -4,8 +4,7 @@
 *Général*
 -----------
 
-L'arborescence des fichiers reflète les librairies que l'on pourrait 
-*moralement* utiliser hors du projet. On essaie de fournir des *feuilles de calcul* pour tester les librairies qui introduisent de nouveaux types.
+L'arborescence des fichiers reflète les librairies que l'on pourrait *moralement* utiliser hors du projet. On essaie de fournir des *feuilles de calcul* pour tester les librairies qui introduisent de nouveaux types.
 
 *Détails de l'arborescence des fichiers*
 ----------------------------------------

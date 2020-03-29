@@ -65,8 +65,8 @@ module Raw(R:OnGraph.Region) = struct
   let interior = unary B.interior
   let closure  = unary B.closure
   
-  let future_extension ga c1 c2 = failwith "HigherDimension.future_extension NIY"
-  let past_extension ga c1 c2 = failwith "HigherDimension.past_extension NIY"
+  let future_extension ga c1 c2 = failwith "Covering.future_extension NIY"
+  let past_extension ga c1 c2 = failwith "Covering.past_extension NIY"
   
 end (* Raw *)
 

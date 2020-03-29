@@ -508,7 +508,7 @@ struct
 
   let union = binary_boolean_operator (||)
 
-  let difference = binary_boolean_operator Pervasives.(>)
+  let difference = binary_boolean_operator Stdlib.(>)
 
   (*
 
@@ -762,13 +762,13 @@ struct
 	  | false,false -> false
 
 (* The following function is buggy *)
-  let is_included = for_all Pervasives.(<=)
+  let is_included = for_all Stdlib.(<=)
   
 (*
   let is_included x y = (union x y) = y
 *)
 
-  let is_not_included = exists Pervasives.(>)
+  let is_not_included = exists Stdlib.(>)
 
 (*
   let is_included x y = not (is_not_included x y) 

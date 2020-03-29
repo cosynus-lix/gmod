@@ -9,10 +9,10 @@ SOURCES = \
 $(REGIONS)bound.ml $(ON_HALFLINE)onHalfLine.ml \
 $(GRAPH)graph.ml $(ON_GRAPH)onGraph.ml \
 $(BLOCK)block.ml \
-higherDimension.ml
+covering.ml
 RESULT = main
 ANNOTATE = true
-DOC_FILES = higherDimension.ml
+DOC_FILES = covering.ml
 
 all: dnc
 

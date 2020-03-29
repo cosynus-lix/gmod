@@ -1,13 +1,13 @@
 CFLAGS = -g -O2
 LDFLAGS = 
-INCDIRS =  /home/emmanuel/.opam/4.04.1/lib/lablgtk2
+INCDIRS = 
 OCAMLLDFLAGS = 
 
 OCAMLMAKEFILE = OCamlMakefile
 
 THREADS = yes
-PACKS =  lablgtk2 ocamlgraph str
-LIBS =  lablglade
+PACKS =  ocamlgraph str
+LIBS = 
 CLIBS = 
 
 ANNOTATE = yes
@@ -20,7 +20,7 @@ ifneq "no" "no"
 NUMERIX = geometric_model/half_line_with_numerix.ml geometric_model/algebra_with_numerix.ml
 endif
 
-ifneq "yes" "no"
+ifneq "no" "no"
 LABLGTK = gui/treeview_simple.ml gui/gui2.glade gui/display_with_gtk2.ml
 ifneq "no" "no"
 LABLGTK += gui/gtkgl.ml
