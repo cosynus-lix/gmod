@@ -111,38 +111,38 @@ let wrapper legacy_bin_op =
 let exhaustive_join max = 
   let oracle = wrapper Legacy.union in
   let bin_op = HL.join in
-  print_endline "Testing DashDot2.join";
+  print_endline "Testing OnHalfLine.join";
   exhaustive_test_binary oracle bin_op max HL.empty HL.string_of HL.string_of
 
 let exhaustive_meet max = 
   let oracle = wrapper Legacy.intersection in
   let bin_op = HL.meet in
-  print_endline "Testing DashDot2.meet";
+  print_endline "Testing OnHalfLine.meet";
   exhaustive_test_binary oracle bin_op max HL.empty HL.string_of HL.string_of
 
 let exhaustive_difference max = 
   let oracle = wrapper Legacy.difference in
   let bin_op = HL.difference in
-  print_endline "Testing DashDot2.difference";
+  print_endline "Testing OnHalfLine.difference";
   exhaustive_test_binary oracle bin_op max HL.empty HL.string_of HL.string_of
 
 let exhaustive_future_extension max = 
   let oracle = wrapper (fun x y -> Legacy.union x (HL_legacy.future_extension x y)) in
   let bin_op = HL.future_extension in
-  print_endline "Testing DashDot2.HalfLine.future_extension";
+  print_endline "Testing OnHalfLine.HalfLine.future_extension";
   exhaustive_test_binary oracle bin_op max HL.empty HL.string_of HL.string_of
 
 let exhaustive_past_extension max = 
   let oracle = wrapper (fun x y -> Legacy.union x (HL_legacy.past_extension x y)) in
   let bin_op = HL.past_extension in
-  print_endline "Testing DashDot2.HalfLine.past_extension";
+  print_endline "Testing OnHalfLine.HalfLine.past_extension";
   exhaustive_test_binary oracle bin_op max HL.empty HL.string_of HL.string_of
 
 (*
 let exhaustive_future_extension_on_circle max =   
   let oracle = wrapper (fun x y -> Legacy.union x (Ci_legacy.future_extension x y)) in
   let bin_op = HL.Circle.future_extension in
-  print_endline "Testing DashDot2.Circle.future_extension";
+  print_endline "Testing OnHalfLine.Circle.future_extension";
   exhaustive_test_binary oracle bin_op max HL.empty HL.string_of HL.string_of
 *)
 
@@ -150,14 +150,14 @@ let exhaustive_future_extension_on_circle max =
 let exhaustive_past_extension_on_circle max = 
   let oracle = wrapper (fun x y -> Legacy.union x (Ci_legacy.past_extension x y)) in
   let bin_op = HL.Circle.past_extension in
-  print_endline "Testing DashDot2.Circle.past_extension";
+  print_endline "Testing OnHalfLine.Circle.past_extension";
   exhaustive_test_binary oracle bin_op max HL.empty HL.string_of HL.string_of
 *)
 
 let exhaustive_is_included max = 
   let oracle at1 at2 = Legacy.is_included (dd2_to_legacy at1) (dd2_to_legacy at2) in
   let bin_op = HL.is_included in
-  print_endline "Testing DashDot2.is_included";
+  print_endline "Testing OnHalfLine.is_included";
   exhaustive_test_binary oracle bin_op max false HL.string_of string_of_bool 
 
 let exhaustive_test_unary oracle un_op max dummy string_of_operand string_of_result =
@@ -198,41 +198,41 @@ let wrapper legacy_un_op =
 let exhaustive_complement max = 
   let oracle = wrapper Legacy.complement in
   let un_op = HL.complement in
-  print_endline "Testing DashDot2.complement";
+  print_endline "Testing OnHalfLine.complement";
   exhaustive_test_unary oracle un_op max HL.empty HL.string_of HL.string_of
 
 let exhaustive_closure_on_half_line max = 
   let oracle = wrapper HL_legacy.closure in
   let un_op = HL.closure in
-  print_endline "Testing DashDot2.closure on half-line";
+  print_endline "Testing OnHalfLine.closure on half-line";
   exhaustive_test_unary oracle un_op max HL.empty HL.string_of HL.string_of
 
 (*
 let exhaustive_closure_on_circle max = 
   let oracle = wrapper Ci_legacy.closure in
   let un_op = HL.Circle.closure in
-  print_endline "Testing DashDot2.closure on circle";
+  print_endline "Testing OnHalfLine.closure on circle";
   exhaustive_test_unary oracle un_op max HL.empty HL.string_of HL.string_of
 *)
 
 let exhaustive_interior_on_half_line max = 
   let oracle = wrapper HL_legacy.interior in
   let un_op = HL.interior in
-  print_endline "Testing DashDot2.interior on half-line";
+  print_endline "Testing OnHalfLine.interior on half-line";
   exhaustive_test_unary oracle un_op max HL.empty HL.string_of HL.string_of
 
 (*
 let exhaustive_interior_on_circle max = 
   let oracle = wrapper Ci_legacy.interior in
   let un_op = HL.Circle.interior in
-  print_endline "Testing DashDot2.interior on circle";
+  print_endline "Testing OnHalfLine.interior on circle";
   exhaustive_test_unary oracle un_op max HL.empty HL.string_of HL.string_of
 *)
 
 let exhaustive_interior_on_half_line max = 
   let oracle = wrapper HL_legacy.interior in
   let un_op = HL.interior in
-  print_endline "Testing DashDot2.interior on half-line";
+  print_endline "Testing OnHalfLine.interior on half-line";
   exhaustive_test_unary oracle un_op max HL.empty HL.string_of HL.string_of
 
 let exhaustive_mem max =
@@ -246,7 +246,7 @@ let exhaustive_mem max =
   let nb_of_tests = Int64.(shift_left 2L (2*max+1)) in
   let nb_of_tests = Int64.mul (Int64.of_int (max+1)) nb_of_tests in
   let one_percent = Int64.(to_int (div nb_of_tests 100L)) in
-  let () = Printf.printf "Testing DashDot2.mem\nThere are %s tests to perform\n" 
+  let () = Printf.printf "Testing OnHalfLine.mem\nThere are %s tests to perform\n" 
     (Int64.to_string nb_of_tests) in 
   let percent = ref 0 in
   let counter = ref 0 in
@@ -439,7 +439,7 @@ let command_line_options = [
   "--exhaustively-testing-mem",Arg.Int (exhaustive_mem),"Compare the new implementation of mem with the current one";
 ]
 
-let msg = "This tool tests the DashDot library, which implements boolean, topological, \n\
+let msg = "This tool tests the library «OnHalfLine», which implements boolean, topological, \n\
     and order theoretic operations on the finite union of intervals.\n
 \
     The tests to perform are stored in a file given as an argument.\n
