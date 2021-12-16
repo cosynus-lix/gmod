@@ -3,7 +3,8 @@ RESULT = gmod
 ANNOTATE = true
 DOC_FILES = stdlib.ml lang.ml simple.ml
 
-all: dnc
-	./gmod test.c
+all: build
+	@dune exec ./gmod.exe test.c
 
-include OCamlMakefile
+build:
+	@dune build

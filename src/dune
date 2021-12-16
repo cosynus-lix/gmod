@@ -1,0 +1,5 @@
+(executable
+ (name gmod))
+
+(ocamllex  lexer)
+(ocamlyacc parser)

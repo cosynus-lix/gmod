@@ -54,7 +54,7 @@ module E = struct
     in
     match e with
     | Assign (s,e) -> Printf.sprintf "%s = %s" s (to_string e)
-    | New_var (t,v,e) -> Printf.sprintf "%s %s" (T.to_string t) v
+    | New_var (t,v,_) -> Printf.sprintf "%s %s" (T.to_string t) v
     | Var v -> v
     | Val Bot -> "?"
     | Val (Int n) -> string_of_int n
