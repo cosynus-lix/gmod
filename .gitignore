@@ -3,3 +3,4 @@
 *.cmi
 *.cmx
 *.o
+_build
