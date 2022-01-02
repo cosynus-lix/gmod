@@ -1,8 +1,7 @@
 (lang dune 2.8)
-(version 0.0.0)
 (name gmod)
-(source (github cosynus-lix/gmod))
 (license GPL-3.0)
+(source (github cosynus-lix/gmod))
 (authors "Emmanuel Haucourt <emmanuel.haucourt@polytechnique.edu>")
 (maintainers "Emmanuel Haucourt <emmanuel.haucourt@polytechnique.edu>")
 
